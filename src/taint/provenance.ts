@@ -46,6 +46,12 @@ interface TierBEntry {
 
 /** Minimum length of an argument value for a whole-value `copy` match; shorter values are too common. */
 const MIN_COPY_LEN = 16;
+/** Cap on argument leaves attributed per call, so a many-field call cannot make attribution slow. */
+export const MAX_ATTRIBUTED_LEAVES = 512;
+/** Total characters attributed per call across all leaves. */
+export const MAX_ATTRIBUTED_TOTAL = 1024 * 1024;
+/** Cap on characters of a single leaf that are attributed (identifier scan + copy match). */
+export const MAX_ATTRIBUTED_CHARS = 64 * 1024;
 
 /**
  * Per-session provenance index (DESIGN.md §2, "Bounded memory and eviction").
@@ -114,7 +120,15 @@ export class ProvenanceIndex {
         out.push(e);
       }
     };
-    for (const leaf of leaves(args)) {
+    // Bound the work: attributing thousands of leaves (a hostile or pathological call) is capped so
+    // one call cannot make the decision path slow. The Layer-1 context label is unaffected either way.
+    const allLeaves = leaves(args);
+    let budget = MAX_ATTRIBUTED_TOTAL;
+    for (const full of allLeaves.slice(0, MAX_ATTRIBUTED_LEAVES)) {
+      if (budget <= 0) break;
+      const take = Math.min(full.value.length, MAX_ATTRIBUTED_CHARS, budget);
+      budget -= take;
+      const leaf = take < full.value.length ? { path: full.path, value: full.value.slice(0, take) } : full;
       // Tier B: identifiers reproduced in the argument. Extraction runs on the raw value, on its folded
       // form (zero-width / fullwidth disguises removed, case kept for case-sensitive detectors) and on
       // its normalized form; only a raw-hash hit on the raw value counts as an exact match.

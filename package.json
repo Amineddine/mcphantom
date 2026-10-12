@@ -24,6 +24,7 @@
     "test:watch": "vitest",
     "bench:latency": "tsx bench/latency.ts",
     "bench:scanner": "tsx bench/scanner-bench.mts",
+    "bench:policy": "tsx bench/policy-bench.mts",
     "demo": "tsx src/demo/run.ts",
     "check": "npm run lint && npm run typecheck && npm run build && npm test"
   },
@@ -36,6 +37,7 @@
     "llm"
   ],
   "dependencies": {
+    "@bufbuild/cel": "0.6.1",
     "@modelcontextprotocol/sdk": "1.32.1",
     "better-sqlite3": "13.0.3",
     "yaml": "2.9.1",

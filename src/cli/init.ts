@@ -128,6 +128,7 @@ export async function runInit(opts: InitOptions, io: Io): Promise<void> {
 
   io.out(`\nDone. Backup of the original client config: ${backup}`);
   io.out(`Restart ${target.label.replace(/ \(.*\)$/, '')} to pick up the change. Undo with: mcphantom uninstall --profile ${profile}`);
+  io.out(`Tip: run \`mcphantom suggest --profile ${profile}\` to get per-tool classification suggestions from the servers' annotations.`);
 }
 
 export interface UninstallOptions {

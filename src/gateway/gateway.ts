@@ -40,6 +40,7 @@ import type { Logger } from '../util/log.js';
 import { TaintEngine, type Decision, type IngestResult } from '../taint/engine.js';
 import { scanInstructions, scanPrompt, scanTool, type ScanOptions, type ScanResult } from '../scanner/scan.js';
 import { RugpullChecker, type PinResult } from '../rugpull/checker.js';
+import { PolicyEngine } from '../policy/engine.js';
 import { exposeName } from './naming.js';
 import { Upstream, type UpstreamHooks } from './upstream.js';
 
@@ -95,7 +96,7 @@ export class Gateway {
     this.opts = opts;
     this.upstreams = upstreams;
     this.server = server;
-    this.taint = new TaintEngine(opts.config);
+    this.taint = new TaintEngine(opts.config, new PolicyEngine(opts.config));
     this.scanOpts = { block: opts.config.scan.block };
     this.rugpull = opts.rugpull ?? new RugpullChecker(undefined, false);
   }
@@ -243,6 +244,16 @@ export class Gateway {
         if (decision.verdict === 'deny') {
           meta.outcome = 'denied';
           return blockedResult(decision);
+        }
+        if (decision.verdict === 'ask') {
+          // Only an explicit approval from the user lets an `ask` through; every other outcome
+          // (no elicitation support, decline, cancel, timeout, malformed reply) is a deny.
+          const approved = await this.askUser(decision, route.serverId, req.params.arguments ?? {}, extra);
+          this.record({ kind: 'decision', server: route.serverId, name: exposed, method: 'tools/call', outcome: approved ? 'approved' : 'denied', payload: { id: decision.id, ask: approved ? 'approved' : 'refused' } });
+          if (!approved) {
+            meta.outcome = 'denied';
+            return blockedResult(decision);
+          }
         }
         const result = (await u.client.callTool(
           forUpstream(req.params, { name: route.name }),
@@ -490,7 +501,7 @@ export class Gateway {
           this.record({ kind: 'warning', server: u.id, name: p.name, error: 'prompt name cannot be namespaced; hidden' });
           continue;
         }
-        if (this.inspectBlocks(() => this.scanBlocks(scanPrompt({ ...p, name: exposed }, this.scanOpts), 'prompt', u.id, exposed) || this.rugpullBlocks(this.rugpull.checkPrompt(u.id, { ...p, name: exposed }), 'prompt', u.id, exposed), 'prompt', u.id, exposed)) continue;
+        if (this.inspectBlocks(() => this.scanBlocks(scanPrompt({ ...p, name: exposed }, this.scanOpts), 'prompt', u.id, exposed) || this.rugpullBlocks(this.rugpull.checkPrompt(u.id, p), 'prompt', u.id, exposed), 'prompt', u.id, exposed)) continue;
         this.promptRoutes.set(exposed, { serverId: u.id, name: p.name });
         out.push({ ...p, name: exposed });
       }
@@ -713,9 +724,33 @@ export class Gateway {
   private recordDecision(d: Decision): void {
     this.record({
       kind: 'decision', server: d.server, name: d.tool, method: 'tools/call',
-      outcome: d.verdict === 'deny' ? 'denied' : d.rule ? 'flagged' : 'allowed',
+      outcome: d.verdict === 'deny' ? 'denied' : d.verdict === 'ask' ? 'ask' : d.rule ? 'flagged' : 'allowed',
       payload: d,
     });
+  }
+
+  /**
+   * Asks the user to confirm a call through MCP elicitation. Returns true only for an explicit
+   * `accept` with `approve: true`. The prompt names the tool, the rule and the argument *names* — not
+   * their values, which may be large or carry attacker-controlled text.
+   */
+  private async askUser(d: Decision, serverId: string, args: unknown, extra: Extra): Promise<boolean> {
+    if (!this.server.getClientCapabilities()?.elicitation) return false;
+    const argNames = args && typeof args === 'object' ? Object.keys(args) : [];
+    try {
+      const r = await this.server.elicitInput(
+        {
+          message:
+            `MCPhantom: '${d.tool}' (server '${serverId}') needs your confirmation.\n` +
+            `Reason: ${d.reason}\nArguments: ${argNames.length ? argNames.join(', ') : '(none)'}\nAllow this one call?`,
+          requestedSchema: { type: 'object', properties: { approve: { type: 'boolean', title: 'Allow this call' } }, required: ['approve'] },
+        },
+        { timeout: this.opts.config.timeouts.tool_call_ms, signal: extra.signal },
+      );
+      return r.action === 'accept' && (r.content as { approve?: unknown } | undefined)?.approve === true;
+    } catch {
+      return false;
+    }
   }
 
   private recordIngest(r: IngestResult): void {
@@ -810,8 +845,12 @@ export function blockedResult(d: Decision): CallToolResult {
         type: 'text',
         text:
           `MCPhantom blocked this call (rule: ${d.rule ?? 'policy'}, decision ${d.id}). ` +
-          `This session has handled untrusted content and secret data, so tools that can send data out ` +
-          `are disabled for it. Tell the user; they can inspect the flow with "mcphantom trace".`,
+          (d.rule === 'trifecta'
+            ? 'This session has handled untrusted content and secret data, so tools that can send data out are disabled for it. '
+            : d.verdict === 'ask'
+              ? 'This call needs the user’s confirmation, which was not given (or the client cannot ask). '
+              : `It is not allowed by the configured policy: ${d.reason}. `) +
+          'Tell the user; they can inspect it with "mcphantom trace".',
       },
     ],
   };

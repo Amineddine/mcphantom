@@ -15,6 +15,9 @@ import { errorMessage, UserError } from '../util/errors.js';
 import { createLogger } from '../util/log.js';
 import { VERSION } from '../version.js';
 import { runApprove, runLockDiff } from './approve.js';
+import { runPolicyLint, runPolicyTest, runPolicyExplain } from './policy.js';
+import { runSuggest } from './suggest-cmd.js';
+import { BOTTOM, type Label } from '../taint/labels.js';
 import { runInit, runUninstall, type Io } from './init.js';
 import { loadLockfile } from '../rugpull/lockfile.js';
 import { RugpullChecker } from '../rugpull/checker.js';
@@ -38,6 +41,11 @@ Usage:
       Pin the servers' current tool/prompt/instruction definitions into the lockfile.
   mcphantom lock diff (--profile <name> | --config <file>)
       Show how the live definitions differ from the approved lockfile.
+  mcphantom policy lint | test --fixtures <f.yaml> | explain --tool <t> [--arg k=v] [--context i/c]
+      Lint rules against live schemas, run decision fixtures, or dry-run one tool call.
+  mcphantom suggest (--profile <name> | --config <file>) [--write] [--accept-loose]
+      Suggest per-tool classifications from server annotations/names (server-claimed; looser ones
+      need --accept-loose).
   mcphantom --version | --help
 `;
 
@@ -89,6 +97,10 @@ async function main(argv: string[]): Promise<number> {
       return cmdApprove(rest);
     case 'lock':
       return cmdLock(rest);
+    case 'policy':
+      return cmdPolicy(rest);
+    case 'suggest':
+      return cmdSuggest(rest);
     default:
       throw new UserError(`Unknown command: ${cmd}`, 'Run `mcphantom --help` for usage.');
   }
@@ -140,8 +152,13 @@ async function cmdRun(args: string[]): Promise<number> {
 
   // Load and verify the rug-pull lockfile. A tampered/foreign signature refuses to start by default.
   const lock = loadLockfile(file, paths.configDir);
-  if (lock.integrity === 'bad-signature' || lock.integrity === 'missing-key') {
-    const detail = lock.integrity === 'bad-signature' ? 'failed HMAC verification (tampered, or a different key/machine)' : 'has no HMAC key to verify against';
+  // Anything other than a verified or absent lockfile fails closed by default: a corrupted/truncated
+  // lockfile must not silently switch rug-pull enforcement off.
+  if (lock.integrity === 'bad-signature' || lock.integrity === 'missing-key' || lock.integrity === 'malformed') {
+    const detail =
+      lock.integrity === 'bad-signature' ? 'failed HMAC verification (tampered, or a different key/machine)'
+        : lock.integrity === 'missing-key' ? 'has no HMAC key to verify against'
+          : 'is malformed (corrupted or truncated)';
     if (cfg.rugpull.on_bad_signature === 'refuse') {
       throw new UserError(`Lockfile ${lock.path} ${detail}.`, 'Re-approve with `mcphantom approve`, or set rugpull.on_bad_signature: warn to proceed unverified.');
     }
@@ -198,6 +215,48 @@ async function cmdUninstall(args: string[]): Promise<number> {
   if (!PROFILE_NAME_RE.test(v.profile)) throw new UserError(`Invalid profile name: ${v.profile}`);
   await runUninstall({ profile: v.profile, yes: v.yes ?? false, dryRun: v['dry-run'] ?? false, paths: resolvePaths() }, io);
   return 0;
+}
+
+async function cmdSuggest(args: string[]): Promise<number> {
+  const v = parse(args, { profile: { type: 'string' }, config: { type: 'string' }, write: { type: 'boolean' }, 'accept-loose': { type: 'boolean' } });
+  const paths = resolvePaths();
+  return runSuggest({ configFile: resolveConfigFile(paths, v).file, paths, write: v.write ?? false, acceptLoose: v['accept-loose'] ?? false }, io);
+}
+
+async function cmdPolicy(args: string[]): Promise<number> {
+  const [sub, ...rest] = args;
+  const paths = resolvePaths();
+  if (sub === 'lint') {
+    const v = parse(rest, { profile: { type: 'string' }, config: { type: 'string' } });
+    return runPolicyLint(resolveConfigFile(paths, v).file, paths, io);
+  }
+  if (sub === 'test') {
+    const v = parse(rest, { profile: { type: 'string' }, config: { type: 'string' }, fixtures: { type: 'string' } });
+    if (!v.fixtures) throw new UserError('Pass --fixtures <file.yaml>.');
+    return runPolicyTest(resolveConfigFile(paths, v).file, path.resolve(v.fixtures), io);
+  }
+  if (sub === 'explain') {
+    const v = parse(rest, { profile: { type: 'string' }, config: { type: 'string' }, tool: { type: 'string' }, arg: { type: 'string', multiple: true }, context: { type: 'string' } });
+    if (!v.tool) throw new UserError('Pass --tool <server>__<tool>.');
+    const argObj: Record<string, unknown> = {};
+    for (const kv of (v.arg as string[] | undefined) ?? []) {
+      const eq = kv.indexOf('=');
+      if (eq < 0) throw new UserError(`--arg must be key=value, got '${kv}'`);
+      argObj[kv.slice(0, eq)] = kv.slice(eq + 1);
+    }
+    const ctx: Label = contextFromFlag(v.context);
+    return runPolicyExplain(resolveConfigFile(paths, v).file, v.tool, argObj, ctx, io);
+  }
+  throw new UserError(`Unknown policy subcommand: ${sub ?? '(none)'}`, 'Usage: mcphantom policy (lint | test --fixtures <f> | explain --tool <t> [--arg k=v] [--context untrusted/secret])');
+}
+
+function contextFromFlag(flag: string | undefined): Label {
+  if (!flag) return BOTTOM;
+  const [integrity, confidentiality] = flag.split('/');
+  return {
+    integrity: integrity === 'untrusted' ? 'untrusted' : 'trusted',
+    confidentiality: confidentiality === 'secret' ? 'secret' : confidentiality === 'internal' ? 'internal' : 'public',
+  };
 }
 
 async function cmdApprove(args: string[]): Promise<number> {

@@ -305,6 +305,17 @@ Every phase ends with green CI, a commit, and a written hostile review with its 
   schema canonicalisation hardened and per-item inspection made fail-closed (review R6). Also landed the
   Phase-3 cross-span scanner follow-up. See `docs/reviews/phase-4.md`.
 
+- 2026-10-13 — Phase 5 (CEL policy engine): per-tool deny/ask/allow rules + declassify, ask via MCP
+  elicitation (deny if unavailable), fail-closed on absent arguments and CEL errors, cost budget,
+  `policy lint/test/explain`, `suggest` (server-claimed, tighten-or-match unless `--accept-loose`).
+  Audit of Phases 2–5 fixed three High fail-open/false-hide defects (pinned prompts hidden, `ask`
+  allowed, malformed lockfile disabled enforcement) and five more; see `docs/reviews/phase-5.md`.
+
+### Before v1 (owner)
+
+- **Resource pinning:** pin resource and resource-template definitions in the lockfile like tools and
+  prompts, with the same enforce/observe semantics.
+
 ### Scanner follow-ups (owner, Phase 3 → later)
 
 - **Done now:** scan a tool's descriptions concatenated to catch instructions split across properties

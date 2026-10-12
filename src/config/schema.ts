@@ -12,6 +12,10 @@ export const ServerIdSchema = z.string().regex(SERVER_ID_RE, 'server ids must ma
  * server's `defaults`, then to the secure global default (egress, untrusted output, internal).
  * Server-provided annotations never feed into this: they are controlled by the server.
  */
+const RuleSchema = z
+  .strictObject({ deny: z.string().optional(), ask: z.string().optional(), allow: z.string().optional() })
+  .refine((r) => [r.deny, r.ask, r.allow].filter((x) => x !== undefined).length === 1, { message: 'each rule must have exactly one of deny/ask/allow' });
+
 export const ClassificationSchema = z.strictObject({
   /** What a call can do: `egress` and `exec` can move data off the machine. */
   effect: z.enum(['read', 'write', 'egress', 'exec']).optional(),
@@ -25,6 +29,9 @@ export const ClassificationSchema = z.strictObject({
   workspace: z.string().optional(),
   /** Argument names that name a write destination. Defaults to a built-in set (path, file, dest, ...). */
   path_args: z.array(z.string()).optional(),
+  /** Per-tool policy rules, evaluated in order; strongest effect wins (deny > ask > allow). Each entry
+   *  has exactly one of deny/ask/allow mapping to a CEL expression over `arg` and `context`. */
+  rules: z.array(RuleSchema).optional(),
 });
 
 const common = {
@@ -117,6 +124,18 @@ export const ConfigSchema = z.strictObject({
       on_bad_signature: z.enum(['refuse', 'warn']).default('refuse'),
     })
     .default({ mode: 'enforce', on_bad_signature: 'refuse' }),
+  /** Named exceptions that lift the global trifecta invariant for a specific tool when a condition
+   *  holds. Each is audited on every decision it affects. */
+  declassify: z
+    .array(
+      z.strictObject({
+        id: z.string().min(1),
+        tool: z.string().min(1),
+        when: z.string().min(1),
+        reason: z.string().min(1),
+      }),
+    )
+    .default([]),
   /** Pass upstream servers' `instructions` to the client (concatenated, one section per server). */
   forward_instructions: z.boolean().default(true),
   /** Override the event-database directory. */
@@ -132,6 +151,8 @@ function withDefaultType(v: unknown): unknown {
 
 export type Config = z.infer<typeof ConfigSchema>;
 export type Classification = z.infer<typeof ClassificationSchema>;
+export type Rule = z.infer<typeof RuleSchema>;
+export type Declassify = z.infer<typeof ConfigSchema>['declassify'];
 export type ServerConfig = z.infer<typeof ServerSchema>;
 export type StdioServerConfig = z.infer<typeof StdioServerSchema>;
 export type HttpServerConfig = z.infer<typeof HttpServerSchema>;

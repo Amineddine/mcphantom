@@ -2,8 +2,10 @@ import { resolve } from 'node:path';
 import type { Classification, Config } from '../config/schema.js';
 import { hasOutsideTarget } from './egress.js';
 import { BOTTOM, canExfiltrate, join, type Effect, type Label } from './labels.js';
-import { ProvenanceIndex, type EvictionNotice, type Evidence, type OutputRef } from './provenance.js';
+import { MAX_ATTRIBUTED_CHARS, MAX_ATTRIBUTED_LEAVES, MAX_ATTRIBUTED_TOTAL, ProvenanceIndex, type EvictionNotice, type Evidence, type OutputRef } from './provenance.js';
+import { leaves } from './text.js';
 import { resultTexts } from './text.js';
+import { PolicyEngine, type PolicyOutcome } from '../policy/engine.js';
 
 export interface ResolvedClassification {
   effect: Effect;
@@ -46,14 +48,18 @@ export interface IngestResult {
   contextAfter: Label;
 }
 
-export type Verdict = 'allow' | 'deny';
+/** `ask`: the call may proceed only after the user explicitly confirms it (elicitation); if the user
+ *  cannot be asked, the gateway denies. Never an implicit allow. */
+export type Verdict = 'allow' | 'deny' | 'ask';
 
 export interface Decision {
   id: string;
   verdict: Verdict;
-  /** Set when an invariant matched; in audit mode the verdict stays `allow`. */
-  rule?: 'trifecta';
+  /** Set when an invariant or policy rule drove the verdict; in audit mode the verdict stays `allow`. */
+  rule?: 'trifecta' | 'policy';
   enforced: boolean;
+  /** Policy rule matches and errors for this call (undefined if the tool has no rules). */
+  policy?: PolicyOutcome;
   server: string;
   tool: string;
   effect: Effect;
@@ -83,10 +89,12 @@ export class TaintEngine {
   private readonly untrustedSources: OutputRef[] = [];
   private readonly secretSources: OutputRef[] = [];
   private degraded = false;
+  private readonly policy: PolicyEngine | undefined;
 
-  constructor(config: Config) {
+  constructor(config: Config, policy?: PolicyEngine) {
     this.config = config;
     this.index = new ProvenanceIndex({ maxTierABytes: config.taint.max_index_mb * 1024 * 1024 });
+    this.policy = policy;
   }
 
   /** Records content entering the model's context and raises the context label. */
@@ -118,26 +126,56 @@ export class TaintEngine {
     // `..` escape) is exfiltration in disguise, so it is treated as `egress` for the invariant.
     const effect: Effect = cls.effect === 'write' && hasOutsideTarget(args, cls.workspace, cls.pathArgs) ? 'egress' : cls.effect;
     const upgraded = effect !== cls.effect;
+    const policy = this.policy?.evaluate({ serverId, toolName, args, context: this.context, provenanceOf: (v) => this.provenanceOf(v) });
     const base = {
       id, server: serverId, tool, effect, context: { ...this.context },
       untrustedSources: [...this.untrustedSources], secretSources: [...this.secretSources],
-      evidence, attributionDegraded: this.degraded,
+      evidence, attributionDegraded: this.degraded || exceedsAttributionBounds(args),
+      ...(policy ? { policy } : {}),
     };
-    const trifecta = canExfiltrate(effect) && this.context.integrity === 'untrusted' && this.context.confidentiality === 'secret';
-    if (!trifecta) {
-      return { ...base, verdict: 'allow', enforced: false, reason: allowReason(effect, this.context) };
+
+    // 1. An explicit policy deny (or a fail-closed policy error) always wins.
+    if (policy && (policy.effect === 'deny' || policy.errors.length > 0)) {
+      const err = policy.errors[0];
+      return { ...base, verdict: 'deny', rule: 'policy', enforced: true, reason: err ? `policy failed closed (${err.origin}): ${err.message}` : `denied by policy rule (${policy.matches.find((m) => m.effect === 'deny')?.origin ?? '?'})` };
     }
-    const enforced = this.config.taint.trifecta === 'deny';
-    const why = upgraded ? 'write to a target outside the declared workspace (treated as egress)' : `${effect} call`;
+
+    // 2. The trifecta invariant, unless a named declassify entry lifts it for this call.
+    const trifecta = canExfiltrate(effect) && this.context.integrity === 'untrusted' && this.context.confidentiality === 'secret';
+    if (trifecta && !policy?.declassified) {
+      const enforced = this.config.taint.trifecta === 'deny';
+      const why = upgraded ? 'write to a target outside the declared workspace (treated as egress)' : `${effect} call`;
+      return {
+        ...base,
+        verdict: enforced ? 'deny' : 'allow',
+        rule: 'trifecta',
+        enforced,
+        reason:
+          `${why} while the session holds untrusted content (${describe(this.untrustedSources)}) ` +
+          `and secret data (${describe(this.secretSources)})${enforced ? '' : ' — audit mode, not blocked'}`,
+      };
+    }
+
+    // 3. A policy `ask`.
+    if (policy?.effect === 'ask') {
+      return { ...base, verdict: 'ask', rule: 'policy', enforced: true, reason: `policy requires user confirmation (${policy.matches.find((m) => m.effect === 'ask')?.origin ?? '?'})` };
+    }
+
+    // 4. Allow (noting a lifted invariant when that is why we are here).
+    const lifted = trifecta && policy?.declassified;
     return {
       ...base,
-      verdict: enforced ? 'deny' : 'allow',
-      rule: 'trifecta',
-      enforced,
-      reason:
-        `${why} while the session holds untrusted content (${describe(this.untrustedSources)}) ` +
-        `and secret data (${describe(this.secretSources)})${enforced ? '' : ' — audit mode, not blocked'}`,
+      verdict: 'allow',
+      enforced: false,
+      reason: lifted ? `trifecta lifted by declassify '${policy.declassified?.id}': ${policy.declassified?.reason}` : allowReason(effect, this.context),
     };
+  }
+
+  /** Integrity levels the provenance index attributes to a value — for the policy `from()` predicate. */
+  provenanceOf(value: string): Set<'trusted' | 'untrusted'> {
+    const out = new Set<'trusted' | 'untrusted'>();
+    for (const e of this.index.attribute({ v: value })) out.add(e.output.label.integrity);
+    return out;
   }
 
   get indexStats() {
@@ -154,4 +192,11 @@ function allowReason(effect: Effect, ctx: Label): string {
 function describe(refs: OutputRef[]): string {
   const names = [...new Set(refs.map((r) => r.source))];
   return names.length <= 3 ? names.join(', ') : `${names.slice(0, 3).join(', ')} and ${names.length - 3} more`;
+}
+
+/** True when a call's arguments are larger than Layer-2 attribution examines, so evidence may be
+ *  incomplete. Layer 1 (the context label) is content-blind and unaffected. */
+function exceedsAttributionBounds(args: unknown): boolean {
+  const ls = leaves(args);
+  return ls.length > MAX_ATTRIBUTED_LEAVES || ls.some((l) => l.value.length > MAX_ATTRIBUTED_CHARS) || ls.reduce((n, l) => n + l.value.length, 0) > MAX_ATTRIBUTED_TOTAL;
 }

@@ -1,6 +1,6 @@
 # Tier-1 static scanner benchmark
 
-Generated 2026-10-12T21:05:17.534Z · scanner block threshold: medium.
+Generated 2026-10-12T22:52:15.339Z · scanner block threshold: medium.
 
 Corpus: 14 malicious (synthetic, hand-labelled) + 35 benign (real tool definitions).
 Benign sources: @modelcontextprotocol/server-filesystem@2026.8.31, @modelcontextprotocol/server-everything@2025.8.18, @modelcontextprotocol/server-memory@2025.8.4, @modelcontextprotocol/server-sequential-thinking@2025.7.1.

@@ -73,7 +73,7 @@ function renderIngest(e: StoredEvent, out: (s: string) => void): void {
 function renderDecision(e: StoredEvent, out: (s: string) => void): void {
   const d = parsePayload(e) as Decision | undefined;
   if (!d) return;
-  const mark = d.verdict === 'deny' ? 'DENY' : d.rule ? 'FLAG' : 'allow';
+  const mark = d.verdict === 'deny' ? 'DENY' : d.verdict === 'ask' ? 'ASK' : d.rule ? 'FLAG' : 'allow';
   out(`\n  [${mark}] ${d.tool}  (decision ${d.id})`);
   out(`    context: ${d.context.integrity}/${d.context.confidentiality}; effect: ${d.effect}`);
   out(`    reason:  ${d.reason}`);

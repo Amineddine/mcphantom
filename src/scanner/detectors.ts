@@ -108,7 +108,7 @@ export function detectExfiltrationHint(span: TextSpan): Finding[] {
   const sv = SEND_VERB.exec(span.text);
   if (!sv) return [];
   if (!DESTINATION.test(span.text)) return [];
-  return [{ category: 'exfiltration-hint', severity: 'medium', where: span.where, evidence: excerpt(span.text, sv.index, 24), detail: 'description directs sending data to an external destination' }];
+  return [{ category: 'exfiltration-hint', severity: 'low', where: span.where, evidence: excerpt(span.text, sv.index, 24), detail: 'description directs sending data to an external destination' }];
 }
 
 // --------------------------------------------------------------------------------------------------
@@ -120,7 +120,7 @@ const SENSITIVE_PATHS = /(?:^|[\s"'`(=/])(?:\.env(?:\.[a-z]+)?|\.ssh\/|id_rsa\b|
 export function detectDataAccessHint(span: TextSpan): Finding[] {
   const m = SENSITIVE_PATHS.exec(span.text);
   if (!m) return [];
-  return [{ category: 'data-access-hint', severity: 'medium', where: span.where, evidence: excerpt(span.text, m.index, 24), detail: 'description references sensitive credential files' }];
+  return [{ category: 'data-access-hint', severity: 'low', where: span.where, evidence: excerpt(span.text, m.index, 24), detail: 'description references sensitive credential files' }];
 }
 
 // --------------------------------------------------------------------------------------------------

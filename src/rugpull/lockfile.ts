@@ -95,16 +95,27 @@ export function ensureKey(keyDir: string): Buffer {
   ensurePrivateDir(keyDir);
   const key = crypto.randomBytes(32);
   const p = keyPath(keyDir);
-  // Create exclusively so we never overwrite a key another concurrent process just wrote.
+  // Exclusive create ('wx'): if another process created the key first, we use theirs instead of
+  // replacing it (a rename-over would orphan every lockfile they had already signed). The directory
+  // is owner-only, so the file inherits private permissions before any bytes are written.
+  let fd: number;
   try {
-    writePrivateFile(p, key.toString('hex') + '\n');
-  } catch {
-    const raced = readKeyIfPresent(keyDir);
-    if (raced) return raced;
-    throw new Error(`could not create HMAC key at ${p}`);
+    fd = fs.openSync(p, 'wx', 0o600);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === 'EEXIST') {
+      const raced = readKeyIfPresent(keyDir);
+      if (raced) return raced;
+    }
+    throw new Error(`could not create HMAC key at ${p}: ${(err as Error).message}`, { cause: err });
+  }
+  try {
+    fs.writeFileSync(fd, key.toString('hex') + '\n');
+    fs.fsyncSync(fd);
+  } finally {
+    fs.closeSync(fd);
   }
   restrictFile(p);
-  return readKeyIfPresent(keyDir) ?? key;
+  return key;
 }
 
 function hmac(key: Buffer, servers: unknown): string {
