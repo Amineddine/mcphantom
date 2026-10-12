@@ -1,0 +1,6 @@
+node_modules/
+dist/
+coverage/
+*.log
+.mcphantom-test-*/
+bench/results/*.tmp.json
