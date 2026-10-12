@@ -69,3 +69,9 @@ now has to list the paths it *didn't* test, not only the findings it fixed.
 `npm run check`: lint + typecheck + build clean, **236/236 tests** across 21 files. `npm run
 bench:scanner` (held-out TPR 100% / FPR 0%) and `npm run bench:policy` (all worst cases bounded,
 results committed) rerun after the fixes.
+
+## Found by CI after the Phase 5 push
+
+| # | Severity | Defect | Fix |
+|---|---|---|---|
+| AUD-10 | Medium | (Phase 1 code) The gateway relayed upstream progress fire-and-forget, so the response could overtake the last progress notification; the client stops listening for a progress token once its response arrives and dropped it. Seen only on Linux CI (`[1,2,3]` instead of `[1,2,3,4]`). | Relayed progress writes are awaited before the response is sent (tools/call, prompts/get, resources/read). |

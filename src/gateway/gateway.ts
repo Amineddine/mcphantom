@@ -86,6 +86,7 @@ export class Gateway {
   /** Session taint state (one per downstream connection). */
   readonly taint: TaintEngine;
   private readonly scanOpts: ScanOptions;
+  private readonly pendingProgress = new WeakMap<Extra, Promise<void>[]>();
   private readonly rugpull: RugpullChecker;
   /** Resolves when the downstream client disconnects (or {@link close} is called). */
   readonly disconnected: Promise<void> = new Promise((r) => {
@@ -260,6 +261,7 @@ export class Gateway {
           undefined,
           this.requestOptions(extra, req.params._meta, this.opts.config.timeouts.tool_call_ms),
         )) as CallToolResult;
+        await this.flushProgress(extra);
         this.recordIngest(this.taint.ingest('tool', route.serverId, exposed, route.name, result));
         return result;
       });
@@ -298,6 +300,7 @@ export class Gateway {
           forUpstream(req.params, { name: route.name }),
           this.requestOptions(extra, req.params._meta, this.opts.config.timeouts.request_ms),
         );
+        await this.flushProgress(extra);
         this.recordIngest(this.taint.ingest('prompt', route.serverId, req.params.name, route.name, result));
         return result;
       }),
@@ -330,6 +333,7 @@ export class Gateway {
           forUpstream(req.params, {}),
           this.requestOptions(extra, req.params._meta, this.opts.config.timeouts.request_ms),
         );
+        await this.flushProgress(extra);
         // Resources are classified by their server's defaults (no per-URI classification yet).
         this.recordIngest(this.taint.ingest('resource', serverId, req.params.uri, undefined, result));
         return result;
@@ -440,13 +444,23 @@ export class Gateway {
     const token = meta?.progressToken;
     const opts: RequestOptions = { signal: extra.signal, timeout, resetTimeoutOnProgress: true };
     if (token !== undefined) {
+      const pending: Promise<void>[] = [];
+      this.pendingProgress.set(extra, pending);
       opts.onprogress = (p) => {
-        void extra
-          .sendNotification({ method: 'notifications/progress', params: { ...p, progressToken: token } })
-          .catch(() => {});
+        pending.push(extra.sendNotification({ method: 'notifications/progress', params: { ...p, progressToken: token } }).catch(() => {}));
       };
     }
     return opts;
+  }
+
+  /**
+   * Waits for relayed progress notifications of this request to be written before the response is.
+   * Without this the response can overtake the last progress message, and the client — which stops
+   * listening for a token once its response arrives — silently drops it.
+   */
+  private async flushProgress(extra: Extra): Promise<void> {
+    const pending = this.pendingProgress.get(extra);
+    if (pending) await Promise.allSettled(pending);
   }
 
   // -------------------------------------------------------------------------------------------
