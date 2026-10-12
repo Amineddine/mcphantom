@@ -79,7 +79,14 @@ describe('gateway: progress and cancellation', () => {
       onprogress: (p) => seen.push(p.progress),
     });
     expect(textOf(r)).toBe('done 4');
-    expect(seen).toEqual([1, 2, 3, 4]);
+    // Guaranteed: progress arrives under the client's own token, in order, without duplicates.
+    // NOT guaranteed: the *final* notification. The MCP SDK dispatches progress one microtask late
+    // but handles the response synchronously (deleting the token's handler), so a last progress
+    // message read in the same chunk as the response is dropped — by any SDK client, direct
+    // connections included (docs/reviews/phase-5.md, AUD-10). The fixture spaces steps 20 ms apart, so
+    // the earlier ones always arrive.
+    expect(seen.length).toBeGreaterThanOrEqual(3);
+    expect(seen).toEqual([1, 2, 3, 4].slice(0, seen.length));
   });
 
   it('propagates client cancellation to the upstream server', async () => {
