@@ -13,7 +13,13 @@ export type EventKind =
   | 'request'
   | 'notification'
   | 'denied'
-  | 'warning';
+  | 'warning'
+  /** Content entered the model's context: its label and what was detected in it. */
+  | 'taint'
+  /** A taint-engine verdict on a tools/call. */
+  | 'decision'
+  /** Provenance text dropped under the memory budget. */
+  | 'eviction';
 
 export interface EventInput {
   sessionId: string;
@@ -50,7 +56,17 @@ export interface SessionInfo {
   profile?: string | undefined;
 }
 
+export interface StoredSession {
+  id: string;
+  started_at: number;
+  ended_at: number | null;
+  client_name: string | null;
+  client_version: string | null;
+  profile: string | null;
+}
+
 export interface Store {
+  sessions(limit?: number): StoredSession[];
   startSession(info: SessionInfo): void;
   updateSessionClient(id: string, clientName: string | undefined, clientVersion: string | undefined): void;
   endSession(id: string): void;
@@ -160,6 +176,12 @@ export class SqliteStore implements Store {
         PRAGMA user_version = 1;
       `);
     }
+  }
+
+  sessions(limit = 50): StoredSession[] {
+    return this.db
+      .prepare('SELECT id, started_at, ended_at, client_name, client_version, profile FROM sessions ORDER BY started_at DESC, rowid DESC LIMIT ?')
+      .all(limit) as StoredSession[];
   }
 
   startSession(info: SessionInfo): void {

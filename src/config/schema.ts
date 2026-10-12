@@ -7,7 +7,23 @@ import { z } from 'zod';
 export const SERVER_ID_RE = /^[a-z][a-z0-9-]{0,31}$/;
 export const ServerIdSchema = z.string().regex(SERVER_ID_RE, 'server ids must match ^[a-z][a-z0-9-]{0,31}$');
 
+/**
+ * How a tool's calls and outputs are treated by the taint engine. Anything not stated falls back to the
+ * server's `defaults`, then to the secure global default (egress, untrusted output, internal).
+ * Server-provided annotations never feed into this: they are controlled by the server.
+ */
+export const ClassificationSchema = z.strictObject({
+  /** What a call can do: `egress` and `exec` can move data off the machine. */
+  effect: z.enum(['read', 'write', 'egress', 'exec']).optional(),
+  /** Integrity of the tool's output: `untrusted` if a third party can influence it (web, email, ...). */
+  integrity: z.enum(['trusted', 'untrusted']).optional(),
+  /** Confidentiality floor of the output. Detected credentials always raise it to `secret`. */
+  confidentiality: z.enum(['public', 'internal', 'secret']).optional(),
+});
+
 const common = {
+  defaults: ClassificationSchema.default({}),
+  tools: z.record(z.string(), ClassificationSchema).default({}),
   /** Relay `sampling/createMessage` from this server to the client. Off by default: sampling lets a
    *  server put arbitrary text straight into the model. */
   allow_sampling: z.boolean().default(false),
@@ -67,6 +83,15 @@ export const ConfigSchema = z.strictObject({
       insecure_permissions: z.enum(['fix', 'warn', 'refuse']).default('fix'),
     })
     .default({ insecure_permissions: 'fix' }),
+  taint: z
+    .strictObject({
+      /** The lethal-trifecta invariant: an egress/exec call while the context holds both untrusted and
+       *  secret data. `deny` blocks it; `log` only records the decision (audit mode). */
+      trifecta: z.enum(['deny', 'log']).default('deny'),
+      /** Full-text provenance budget per session (Tier A). Identifier fingerprints are kept separately. */
+      max_index_mb: z.number().positive().max(4096).default(32),
+    })
+    .default({ trifecta: 'deny', max_index_mb: 32 }),
   /** Pass upstream servers' `instructions` to the client (concatenated, one section per server). */
   forward_instructions: z.boolean().default(true),
   /** Override the event-database directory. */
@@ -81,6 +106,7 @@ function withDefaultType(v: unknown): unknown {
 }
 
 export type Config = z.infer<typeof ConfigSchema>;
+export type Classification = z.infer<typeof ClassificationSchema>;
 export type ServerConfig = z.infer<typeof ServerSchema>;
 export type StdioServerConfig = z.infer<typeof StdioServerSchema>;
 export type HttpServerConfig = z.infer<typeof HttpServerSchema>;

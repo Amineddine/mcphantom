@@ -37,6 +37,7 @@ import type { Config } from '../config/schema.js';
 import type { EventInput, Store } from '../store/store.js';
 import { errorMessage } from '../util/errors.js';
 import type { Logger } from '../util/log.js';
+import { TaintEngine, type Decision, type IngestResult } from '../taint/engine.js';
 import { exposeName } from './naming.js';
 import { Upstream, type UpstreamHooks } from './upstream.js';
 
@@ -77,6 +78,8 @@ export class Gateway {
   private closed = false;
   private storeWarned = false;
   private resolveDisconnected!: () => void;
+  /** Session taint state (one per downstream connection). */
+  readonly taint: TaintEngine;
   /** Resolves when the downstream client disconnects (or {@link close} is called). */
   readonly disconnected: Promise<void> = new Promise((r) => {
     this.resolveDisconnected = r;
@@ -86,6 +89,7 @@ export class Gateway {
     this.opts = opts;
     this.upstreams = upstreams;
     this.server = server;
+    this.taint = new TaintEngine(opts.config);
   }
 
   /** Connects all upstreams (in parallel, each with its own startup timeout), then builds the server. */
@@ -192,12 +196,19 @@ export class Gateway {
         const route = await this.resolveTool(exposed, extra.signal);
         meta.server = route.serverId;
         const u = this.requireReady(route.serverId);
-        const result = await u.client.callTool(
+        const decision = this.taint.decide(route.serverId, route.name, exposed, req.params.arguments ?? {});
+        this.recordDecision(decision);
+        if (decision.verdict === 'deny') {
+          meta.outcome = 'denied';
+          return blockedResult(decision);
+        }
+        const result = (await u.client.callTool(
           forUpstream(req.params, { name: route.name }),
           undefined,
           this.requestOptions(extra, req.params._meta, this.opts.config.timeouts.tool_call_ms),
-        );
-        return result as CallToolResult;
+        )) as CallToolResult;
+        this.recordIngest(this.taint.ingest('tool', route.serverId, exposed, route.name, result));
+        return result;
       });
     });
 
@@ -230,10 +241,12 @@ export class Gateway {
         const route = await this.resolvePrompt(req.params.name, extra.signal);
         meta.server = route.serverId;
         const u = this.requireReady(route.serverId);
-        return u.client.getPrompt(
+        const result = await u.client.getPrompt(
           forUpstream(req.params, { name: route.name }),
           this.requestOptions(extra, req.params._meta, this.opts.config.timeouts.request_ms),
         );
+        this.recordIngest(this.taint.ingest('prompt', route.serverId, req.params.name, route.name, result));
+        return result;
       }),
     );
 
@@ -260,10 +273,13 @@ export class Gateway {
         const serverId = await this.resolveResource(req.params.uri, extra.signal);
         meta.server = serverId;
         const u = this.requireReady(serverId);
-        return u.client.readResource(
+        const result = await u.client.readResource(
           forUpstream(req.params, {}),
           this.requestOptions(extra, req.params._meta, this.opts.config.timeouts.request_ms),
         );
+        // Resources are classified by their server's defaults (no per-URI classification yet).
+        this.recordIngest(this.taint.ingest('resource', serverId, req.params.uri, undefined, result));
+        return result;
       }),
     );
 
@@ -344,15 +360,15 @@ export class Gateway {
     initial: { name?: string },
     params: unknown,
     _extra: Extra,
-    fn: (meta: { server?: string }) => Promise<T>,
+    fn: (meta: { server?: string; outcome?: string }) => Promise<T>,
     summarize?: (r: T) => unknown,
   ): Promise<T> {
-    const meta: { server?: string } = {};
+    const meta: { server?: string; outcome?: string } = {};
     const t0 = performance.now();
     try {
       const result = await fn(meta);
       this.record({
-        kind: 'request', method, name: initial.name, server: meta.server, outcome: 'ok',
+        kind: 'request', method, name: initial.name, server: meta.server, outcome: meta.outcome ?? 'ok',
         durationMs: performance.now() - t0,
         payload: { params, result: summarize ? summarize(result) : result },
       });
@@ -600,6 +616,24 @@ export class Gateway {
   // -------------------------------------------------------------------------------------------
   // Event log
 
+  private recordDecision(d: Decision): void {
+    this.record({
+      kind: 'decision', server: d.server, name: d.tool, method: 'tools/call',
+      outcome: d.verdict === 'deny' ? 'denied' : d.rule ? 'flagged' : 'allowed',
+      payload: d,
+    });
+  }
+
+  private recordIngest(r: IngestResult): void {
+    this.record({
+      kind: 'taint', server: r.ref.server, name: r.ref.source, method: r.ref.kind,
+      payload: { output: r.ref, secretsDetected: r.secretsDetected, identifiers: r.identifiers, contextBefore: r.contextBefore, contextAfter: r.contextAfter },
+    });
+    for (const e of r.evictions) {
+      this.record({ kind: 'eviction', server: e.output.server, name: e.output.source, payload: { output: e.output, bytes: e.bytes, stats: this.taint.indexStats } });
+    }
+  }
+
   private record(e: Omit<EventInput, 'sessionId'>): void {
     this.append({ ...e, sessionId: this.opts.sessionId });
   }
@@ -675,4 +709,23 @@ function combineInstructions(upstreams: Upstream[]): string | undefined {
     .filter((p): p is readonly [string, string] => typeof p[1] === 'string' && p[1].trim() !== '')
     .map(([id, text]) => `## Server '${id}' (tools prefixed '${id}__')\n${text.trim()}`);
   return parts.length ? parts.join('\n\n') : undefined;
+}
+
+/**
+ * What the model sees when a call is blocked: an ordinary tool error (so the agent can continue and
+ * tell the user), naming the rule and the decision id the user can look up with `mcphantom trace`.
+ */
+export function blockedResult(d: Decision): CallToolResult {
+  return {
+    isError: true,
+    content: [
+      {
+        type: 'text',
+        text:
+          `MCPhantom blocked this call (rule: ${d.rule ?? 'policy'}, decision ${d.id}). ` +
+          `This session has handled untrusted content and secret data, so tools that can send data out ` +
+          `are disabled for it. Tell the user; they can inspect the flow with "mcphantom trace".`,
+      },
+    ],
+  };
 }

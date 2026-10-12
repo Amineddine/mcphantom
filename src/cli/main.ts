@@ -15,6 +15,7 @@ import { errorMessage, UserError } from '../util/errors.js';
 import { createLogger } from '../util/log.js';
 import { VERSION } from '../version.js';
 import { runInit, runUninstall, type Io } from './init.js';
+import { runTrace } from './trace.js';
 
 const HELP = `MCPhantom ${VERSION} — security gateway for MCP
 
@@ -28,6 +29,8 @@ Usage:
       Run the gateway on stdio. This is what the MCP client launches.
   mcphantom doctor [--profile <name> | --config <file>]
       Show paths, profiles and permission checks; validate a config.
+  mcphantom trace [--last] [--json] [--session <id>] [--config <file>]
+      Show the taint trace (context labels, decisions, evidence) for a session.
   mcphantom --version | --help
 `;
 
@@ -73,6 +76,8 @@ async function main(argv: string[]): Promise<number> {
       return cmdUninstall(rest);
     case 'doctor':
       return cmdDoctor(rest);
+    case 'trace':
+      return cmdTrace(rest);
     default:
       throw new UserError(`Unknown command: ${cmd}`, 'Run `mcphantom --help` for usage.');
   }
@@ -171,6 +176,18 @@ async function cmdUninstall(args: string[]): Promise<number> {
   if (!PROFILE_NAME_RE.test(v.profile)) throw new UserError(`Invalid profile name: ${v.profile}`);
   await runUninstall({ profile: v.profile, yes: v.yes ?? false, dryRun: v['dry-run'] ?? false, paths: resolvePaths() }, io);
   return 0;
+}
+
+function cmdTrace(args: string[]): number {
+  const v = parse(args, { session: { type: 'string' }, config: { type: 'string' }, 'data-dir': { type: 'string' }, last: { type: 'boolean' }, json: { type: 'boolean' } });
+  const paths = resolvePaths();
+  let dataDir = v['data-dir'];
+  if (!dataDir && v.config) {
+    const file = path.resolve(v.config);
+    const cfg = loadConfigFile(file).config;
+    if (cfg.data_dir) dataDir = path.resolve(path.dirname(file), cfg.data_dir);
+  }
+  return runTrace({ dataDir, sessionId: v.session, last: v.last ?? false, json: v.json ?? false, paths }, out);
 }
 
 function cmdDoctor(args: string[]): number {

@@ -344,6 +344,14 @@ across conversations; image/audio content is labeled by source but not inspected
   `better-sqlite3` chosen over `node:sqlite`; no-API-credit operation (Ollama default, Claude Code for
   the demo, Anthropic backend capped at USD 50 with per-batch confirmation); Apache-2.0; benchmark
   named `mcp-attack-bench`; secure defaults with `init` suggestions.
+- 2026-10-12 — Phase 2 (vertical slice): information-flow labels and a per-connection context label;
+  the trifecta invariant (egress/exec while untrusted+secret) enforced by default; exact + normalized
+  argument provenance with a two-tier bounded index (Tier A full text FIFO, Tier B identifier hashes
+  that survive eviction); secret detection as a taint source; `mcphantom trace`; three demo servers,
+  a deterministic injected agent, and a one-command side-by-side demo whose oracle is the attacker's
+  own request log. Config gains per-server/-tool classification and `taint.{trifecta,max_index_mb}`.
+  Server env default changed to `minimal`. See `docs/reviews/phase-2.md` (finding A1: `write` effect
+  not covered by the invariant; A2: test-concurrency flakiness fixed with maxForks).
 - 2026-10-12 — Phase 1 review: upstream servers get a `minimal` environment by default (never wider than
   SDK-based clients give them); resource URIs claimed by several servers are hidden and unroutable
   (resource shadowing); HTTP upstream bodies and paginated listings are byte-bounded; HTTP redirects are

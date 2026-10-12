@@ -3,11 +3,12 @@
 A security gateway between LLM agents and MCP servers: tool-poisoning and rug-pull detection, taint
 tracking across the LLM boundary, and a declarative per-tool policy. Design: [docs/DESIGN.md](docs/DESIGN.md).
 
-> **Status: Phase 1 of 10 — transparent gateway only. MCPhantom does not detect or block attacks yet.**
-> What works today: one gateway in front of many MCP servers (stdio and Streamable HTTP), namespaced tools,
-> an owner-only, secret-redacted audit log, fail-closed handling of unknown methods, server sampling
-> denied by default, and `init`/`uninstall` for Claude Code, Claude Desktop and Cursor configs.
-> See [the Phase 1 review](docs/reviews/phase-1.md) for known weaknesses.
+> **Status: Phase 2 of 10 — enforces the lethal-trifecta rule; narrow but real.**
+> MCPhantom blocks an `egress`/`exec` tool call once a session has taken in both untrusted content and
+> secret data, and shows the full taint trace (`mcphantom trace`). It does **not** yet scan tool
+> descriptions for poisoning or detect rug-pulls (Phases 3–4), and only exact/normalized provenance
+> exists (encoded/paraphrased payloads still block via Layer 1 but are not attributed — Phase 6).
+> Reviews: [Phase 1](docs/reviews/phase-1.md), [Phase 2](docs/reviews/phase-2.md). Demo: [docs/DEMO.md](docs/DEMO.md).
 
 ## Install and set up
 
@@ -17,6 +18,12 @@ Requires Node ≥ 22.13.
 npm install -g mcphantom        # not published yet; for now: npm install && npm run build && npm link
 cd your-project
 mcphantom init                  # finds .mcp.json / Claude Desktop / Cursor config, shows a diff, asks
+```
+
+See the end-to-end exfiltration demo — unprotected vs. blocked — in [docs/DEMO.md](docs/DEMO.md):
+
+```sh
+npm run demo
 ```
 
 `init` moves your MCP servers into an MCPhantom profile and replaces them with one `mcphantom` entry.

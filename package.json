@@ -23,6 +23,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "bench:latency": "tsx bench/latency.ts",
+    "demo": "tsx src/demo/run.ts",
     "check": "npm run lint && npm run typecheck && npm run build && npm test"
   },
   "keywords": [
@@ -41,6 +42,7 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@modelcontextprotocol/server-filesystem": "2026.8.31",
     "@types/better-sqlite3": "9.6.0",
     "@types/node": "22.20.5",
     "eslint": "10.12.0",
