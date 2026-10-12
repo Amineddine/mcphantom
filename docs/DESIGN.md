@@ -312,6 +312,11 @@ Every phase ends with green CI, a commit, and a written hostile review with its 
 - **Latency:** proxy overhead in isolation (null echo server) and against real servers; p50/p95/p99
   after warmup; output sizes 1 KB–1 MB; with/without semantic layer; hardware and Node version recorded.
 - **Memory:** RSS and index bytes per scenario; attribution loss at reduced memory budgets (§2).
+- **Tracked regression — 1 MB results:** Phase 1 measured ~37 ms extra per call at 1 MB (three runs,
+  one machine; `bench/results/phase1-latency.md`). The Phase 7 benchmark must report it with repeated runs
+  (≥ 10 independent process launches per configuration), bootstrap 95% confidence intervals on p50/p95/p99,
+  and on a quiet Linux CI runner as well as a laptop, and must break the cost down (transport hop, SDK
+  validation, redaction, storage) before any optimisation is claimed.
 - **Bias controls:** dev/test split with the test split frozen before tuning; published third-party
   payloads included where licenses allow; every failure reported.
 
