@@ -23,6 +23,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "bench:latency": "tsx bench/latency.ts",
+    "bench:scanner": "tsx bench/scanner-bench.mts",
     "demo": "tsx src/demo/run.ts",
     "check": "npm run lint && npm run typecheck && npm run build && npm test"
   },

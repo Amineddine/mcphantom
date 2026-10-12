@@ -1,0 +1,54 @@
+{
+  "env": {
+    "date": "2026-10-12T18:12:12.918Z",
+    "node": "v22.19.0",
+    "os": "Windows_NT 10.0.26200"
+  },
+  "test": {
+    "tp": 7,
+    "fp": 0,
+    "tn": 21,
+    "fn": 0,
+    "tpr": 1,
+    "fpr": 0,
+    "precision": 1
+  },
+  "dev": {
+    "tp": 7,
+    "fp": 0,
+    "tn": 14,
+    "fn": 0,
+    "tpr": 1,
+    "fpr": 0,
+    "precision": 1
+  },
+  "all": {
+    "tp": 14,
+    "fp": 0,
+    "tn": 35,
+    "fn": 0,
+    "tpr": 1,
+    "fpr": 0,
+    "precision": 1
+  },
+  "byCategory": {
+    "hidden-unicode": {
+      "total": 4,
+      "caught": 4
+    },
+    "embedded-instruction": {
+      "total": 6,
+      "caught": 6
+    },
+    "exfiltration-hint": {
+      "total": 2,
+      "caught": 2
+    },
+    "tool-shadowing": {
+      "total": 2,
+      "caught": 2
+    }
+  },
+  "falsePositives": [],
+  "falseNegatives": []
+}

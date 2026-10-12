@@ -38,6 +38,7 @@ import type { EventInput, Store } from '../store/store.js';
 import { errorMessage } from '../util/errors.js';
 import type { Logger } from '../util/log.js';
 import { TaintEngine, type Decision, type IngestResult } from '../taint/engine.js';
+import { scanInstructions, scanPrompt, scanTool, type ScanOptions, type ScanResult } from '../scanner/scan.js';
 import { exposeName } from './naming.js';
 import { Upstream, type UpstreamHooks } from './upstream.js';
 
@@ -80,6 +81,7 @@ export class Gateway {
   private resolveDisconnected!: () => void;
   /** Session taint state (one per downstream connection). */
   readonly taint: TaintEngine;
+  private readonly scanOpts: ScanOptions;
   /** Resolves when the downstream client disconnects (or {@link close} is called). */
   readonly disconnected: Promise<void> = new Promise((r) => {
     this.resolveDisconnected = r;
@@ -90,6 +92,7 @@ export class Gateway {
     this.upstreams = upstreams;
     this.server = server;
     this.taint = new TaintEngine(opts.config);
+    this.scanOpts = { block: opts.config.scan.block };
   }
 
   /** Connects all upstreams (in parallel, each with its own startup timeout), then builds the server. */
@@ -140,7 +143,30 @@ export class Gateway {
     if (ready.some((u) => u.capabilities.prompts)) capabilities.prompts = { listChanged: true };
     if (ready.some((u) => u.capabilities.completions)) capabilities.completions = {};
 
-    const instructions = opts.config.forward_instructions ? combineInstructions(ready) : undefined;
+    // Scan each server's instructions; a flagged section is dropped (it would inject into the model
+    // the moment the client reads it), and the drop is logged.
+    const instructionParts: [string, string][] = [];
+    if (opts.config.forward_instructions) {
+      for (const u of ready) {
+        const text = u.instructions;
+        if (typeof text !== 'string' || text.trim() === '') continue;
+        if (opts.config.scan.enabled) {
+          const res = scanInstructions(text, { block: opts.config.scan.block });
+          if (res.findings.length > 0) {
+            const hide = res.flagged && opts.config.scan.mode === 'hide';
+            events.push({ sessionId: opts.sessionId, kind: 'scan', server: u.id, method: 'instructions', outcome: hide ? 'hidden' : res.flagged ? 'flagged' : 'noted', payload: { worst: res.worst, findings: res.findings } });
+            if (hide) {
+              opts.logger.warn(`scanner dropped instructions from '${u.id}': ${res.findings[0]?.detail ?? ''}`);
+              continue;
+            }
+          }
+        }
+        instructionParts.push([u.id, text.trim()]);
+      }
+    }
+    const instructions = instructionParts.length
+      ? instructionParts.map(([id, t]) => `## Server '${id}' (tools prefixed '${id}__')\n${t}`).join('\n\n')
+      : undefined;
     const server = new Server(
       { name: 'mcphantom', version: opts.version, title: 'MCPhantom security gateway' },
       { capabilities, ...(instructions ? { instructions } : {}) },
@@ -426,8 +452,9 @@ export class Gateway {
           this.record({ kind: 'warning', server: u.id, name: tool.name, error: 'tool name cannot be namespaced within MCP name limits; hidden' });
           continue;
         }
-        this.toolRoutes.set(exposed, { serverId: u.id, name: tool.name });
         const { execution: _execution, ...rest } = tool;
+        if (this.scanBlocks(scanTool(rest, this.scanOpts), 'tool', u.id, exposed)) continue;
+        this.toolRoutes.set(exposed, { serverId: u.id, name: tool.name });
         out.push({ ...rest, name: exposed });
       }
     }
@@ -445,6 +472,7 @@ export class Gateway {
           this.record({ kind: 'warning', server: u.id, name: p.name, error: 'prompt name cannot be namespaced; hidden' });
           continue;
         }
+        if (this.scanBlocks(scanPrompt({ ...p, name: exposed }, this.scanOpts), 'prompt', u.id, exposed)) continue;
         this.promptRoutes.set(exposed, { serverId: u.id, name: p.name });
         out.push({ ...p, name: exposed });
       }
@@ -616,6 +644,24 @@ export class Gateway {
   // -------------------------------------------------------------------------------------------
   // Event log
 
+  /**
+   * Applies a scan verdict to a tool/prompt at list time. Returns true if the subject must be hidden.
+   * Findings are always recorded; hiding happens only when scanning is enabled, the mode is `hide`,
+   * and the verdict is at or above the configured block severity.
+   */
+  private scanBlocks(result: ScanResult, kind: 'tool' | 'prompt' | 'instructions', server: string, name: string): boolean {
+    if (!this.opts.config.scan.enabled || result.findings.length === 0) return false;
+    const hide = result.flagged && this.opts.config.scan.mode === 'hide';
+    this.record({
+      kind: 'scan', server, name, method: kind,
+      outcome: hide ? 'hidden' : result.flagged ? 'flagged' : 'noted',
+      payload: { worst: result.worst, findings: result.findings },
+      error: hide ? `${kind} hidden: ${result.findings[0]?.detail ?? 'scanner finding'}` : undefined,
+    });
+    if (hide) this.opts.logger.warn(`scanner hid ${kind} '${name}' from '${server}': ${result.findings[0]?.detail ?? ''}`);
+    return hide;
+  }
+
   private recordDecision(d: Decision): void {
     this.record({
       kind: 'decision', server: d.server, name: d.tool, method: 'tools/call',
@@ -703,13 +749,6 @@ function toMcpError(err: unknown, serverId: string | undefined): Error & { code:
   return new McpError(ErrorCode.InternalError, `MCPhantom: request failed${where}: ${errorMessage(err)}`);
 }
 
-function combineInstructions(upstreams: Upstream[]): string | undefined {
-  const parts = upstreams
-    .map((u) => [u.id, u.instructions] as const)
-    .filter((p): p is readonly [string, string] => typeof p[1] === 'string' && p[1].trim() !== '')
-    .map(([id, text]) => `## Server '${id}' (tools prefixed '${id}__')\n${text.trim()}`);
-  return parts.length ? parts.join('\n\n') : undefined;
-}
 
 /**
  * What the model sees when a call is blocked: an ordinary tool error (so the agent can continue and

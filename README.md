@@ -3,12 +3,13 @@
 A security gateway between LLM agents and MCP servers: tool-poisoning and rug-pull detection, taint
 tracking across the LLM boundary, and a declarative per-tool policy. Design: [docs/DESIGN.md](docs/DESIGN.md).
 
-> **Status: Phase 2 of 10 — enforces the lethal-trifecta rule; narrow but real.**
-> MCPhantom blocks an `egress`/`exec` tool call once a session has taken in both untrusted content and
-> secret data, and shows the full taint trace (`mcphantom trace`). It does **not** yet scan tool
-> descriptions for poisoning or detect rug-pulls (Phases 3–4), and only exact/normalized provenance
-> exists (encoded/paraphrased payloads still block via Layer 1 but are not attributed — Phase 6).
-> Reviews: [Phase 1](docs/reviews/phase-1.md), [Phase 2](docs/reviews/phase-2.md). Demo: [docs/DEMO.md](docs/DEMO.md).
+> **Status: Phase 3 of 10 — static scanner + trifecta enforcement.**
+> MCPhantom scans every tool/prompt/instructions for poisoning (hidden-Unicode smuggling, embedded
+> instructions, tool shadowing, exfiltration hints) and hides flagged tools before they reach the model;
+> and it blocks an `egress`/`exec` call once a session holds both untrusted and secret data
+> (`mcphantom trace` shows why). Not yet: rug-pull detection (Phase 4) and encoded/paraphrased
+> attribution (Phase 6). Known scanner bypasses are documented in the Phase 3 review.
+> Reviews: [1](docs/reviews/phase-1.md) · [2](docs/reviews/phase-2.md) · [3](docs/reviews/phase-3.md). Demo: [docs/DEMO.md](docs/DEMO.md).
 
 ## Install and set up
 

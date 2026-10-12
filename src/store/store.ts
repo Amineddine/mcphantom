@@ -19,7 +19,9 @@ export type EventKind =
   /** A taint-engine verdict on a tools/call. */
   | 'decision'
   /** Provenance text dropped under the memory budget. */
-  | 'eviction';
+  | 'eviction'
+  /** A static-scanner verdict on a tool, prompt, or a server's instructions. */
+  | 'scan';
 
 export interface EventInput {
   sessionId: string;

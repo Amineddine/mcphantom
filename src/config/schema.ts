@@ -98,6 +98,15 @@ export const ConfigSchema = z.strictObject({
       max_index_mb: z.number().positive().max(4096).default(32),
     })
     .default({ trifecta: 'deny', max_index_mb: 32 }),
+  scan: z
+    .strictObject({
+      enabled: z.boolean().default(true),
+      /** Minimum finding severity that hides a tool/prompt (or strips an instructions section). */
+      block: z.enum(['low', 'medium', 'high']).default('medium'),
+      /** `hide`: remove the flagged tool from tools/list. `warn`: keep it but record the findings. */
+      mode: z.enum(['hide', 'warn']).default('hide'),
+    })
+    .default({ enabled: true, block: 'medium', mode: 'hide' }),
   /** Pass upstream servers' `instructions` to the client (concatenated, one section per server). */
   forward_instructions: z.boolean().default(true),
   /** Override the event-database directory. */

@@ -352,6 +352,13 @@ across conversations; image/audio content is labeled by source but not inspected
   `better-sqlite3` chosen over `node:sqlite`; no-API-credit operation (Ollama default, Claude Code for
   the demo, Anthropic backend capped at USD 50 with per-batch confirmation); Apache-2.0; benchmark
   named `mcp-attack-bench`; secure defaults with `init` suggestions.
+- 2026-10-12 — Phase 3 (static scanner): model-visible text extracted from tools/prompts/instructions
+  (name, title, description, every schema description/enum/default/const, annotation titles) and scanned
+  for hidden-Unicode smuggling, embedded instructions, tool shadowing, and exfiltration/credential-file
+  hints; flagged subjects hidden at list time (config `scan.{enabled,block,mode}`). Tier-1 static
+  benchmark (`npm run bench:scanner`) over 35 real official-server tools + 14 synthetic poisoned ones,
+  frozen dev/test split, CI-enforced floor. Known bypasses (homoglyph, cross-span, base64, letter-
+  spacing) documented and pinned; see `docs/reviews/phase-3.md`.
 - 2026-10-12 — Phase 2 follow-ups (owner): A1 fixed — a `write` to a remote URL or outside its declared
   `workspace` (synced/pushed folders included) is treated as `egress` (`src/taint/egress.ts`,
   test-pinned). Showcase plan (Phase 9) now requires the headline demo to use real Claude Code against a
