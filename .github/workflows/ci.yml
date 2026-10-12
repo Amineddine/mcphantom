@@ -53,7 +53,9 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
-      - run: npm ci
+      # --ignore-scripts: dependencies never run install scripts in CI (supply-chain hygiene). It also
+      # avoids npm 10 running node-gyp on better-sqlite3, which ships prebuilt binaries in its tarball.
+      - run: npm ci --ignore-scripts
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build

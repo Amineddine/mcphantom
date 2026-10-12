@@ -101,18 +101,46 @@ function winRestrict(p: string, isDir: boolean): void {
   const sid = currentUserSid();
   const grant = isDir ? `*${sid}:(OI)(CI)F` : `*${sid}:F`;
   icacls([p, '/inheritance:r', '/grant:r', grant, '/q']);
-  // Remove any remaining explicit ACEs for other principals (e.g. pre-existing grants).
-  const acl = readSddl(p);
+  // Remove remaining explicit ACEs for other principals (e.g. pre-existing grants).
+  for (const other of acesToRemove(readSddl(p, sid), sid)) {
+    icacls([p, '/remove:g', `*${other}`, '/remove:d', `*${other}`, '/q']);
+  }
+  assertStillAccessible(p, isDir);
+}
+
+/**
+ * SIDs whose ACEs may be removed. Only fully resolved SIDs other than the user's qualify: an alias we
+ * cannot resolve might *be* the user (the built-in Administrator appears as `LA`), and removing it
+ * would lock MCPhantom out of its own files. Unresolved entries are left for winCheck to report.
+ */
+export function acesToRemove(acl: Sddl, userSid: string): string[] {
+  const out = new Set<string>();
   for (const ace of acl.aces) {
-    if (ace.sid !== sid) icacls([p, '/remove:g', `*${ace.sidForIcacls}`, '/remove:d', `*${ace.sidForIcacls}`, '/q']);
+    if (ace.resolved && ace.sid !== userSid) out.add(ace.sid);
+  }
+  return [...out];
+}
+
+/** Proves the current process can still use the path after its ACL was rewritten. */
+function assertStillAccessible(p: string, isDir: boolean): void {
+  try {
+    if (isDir) {
+      const probe = path.join(p, `.mcphantom-probe-${crypto.randomBytes(4).toString('hex')}`);
+      fs.writeFileSync(probe, '');
+      fs.rmSync(probe);
+    } else {
+      fs.closeSync(fs.openSync(p, 'r+'));
+    }
+  } catch (err) {
+    throw new Error(`restricting ${p} to the current user (SID ${currentUserSid()}) left it inaccessible: ${(err as Error).message}`, { cause: err });
   }
 }
 
 interface Ace {
   type: string;
+  /** Full SID string when resolved; otherwise the raw SDDL alias. */
   sid: string;
-  /** Full SID, or the SDDL alias resolved to a well-known SID string. */
-  sidForIcacls: string;
+  resolved: boolean;
 }
 
 interface Sddl {
@@ -120,18 +148,28 @@ interface Sddl {
   aces: Ace[];
 }
 
-/** SDDL aliases icacls/Windows may emit for well-known principals. */
+/** SDDL aliases for well-known principals with fixed SIDs. */
 const SDDL_ALIASES: Record<string, string> = {
   SY: 'S-1-5-18', BA: 'S-1-5-32-544', BU: 'S-1-5-32-545', WD: 'S-1-1-0', AU: 'S-1-5-11',
   CO: 'S-1-3-0', CG: 'S-1-3-1', OW: 'S-1-3-4', IU: 'S-1-5-4', NS: 'S-1-5-20', LS: 'S-1-5-19',
   AN: 'S-1-5-7', PU: 'S-1-5-32-547', BG: 'S-1-5-32-546', AC: 'S-1-15-2-1', RC: 'S-1-5-12',
+  BO: 'S-1-5-32-551', SO: 'S-1-5-32-549', AO: 'S-1-5-32-548', PO: 'S-1-5-32-550', RD: 'S-1-5-32-555',
+  RU: 'S-1-5-32-554', NU: 'S-1-5-2', SU: 'S-1-5-6', WR: 'S-1-5-33', ED: 'S-1-5-9', PS: 'S-1-5-10',
+};
+
+/**
+ * SDDL aliases relative to the account's domain (or the machine, for local accounts): `LA` is the
+ * built-in Administrator (RID 500), which is what GitHub's Windows runners run as.
+ */
+const SDDL_RID_ALIASES: Record<string, number> = {
+  LA: 500, LG: 501, DA: 512, DU: 513, DG: 514, DC: 515, DD: 516, CA: 517, SA: 518, EA: 519, PA: 520, RO: 521,
 };
 
 /**
  * Reads a DACL as SDDL through `icacls /save`, which is locale-independent (SIDs rather than
  * localized account names like "AUTORITE NT\Système").
  */
-export function readSddl(p: string): Sddl {
+export function readSddl(p: string, userSid?: string): Sddl {
   const tmp = path.join(os.tmpdir(), `mcphantom-acl-${crypto.randomBytes(8).toString('hex')}.txt`);
   try {
     icacls([p, '/save', tmp, '/q']);
@@ -140,13 +178,15 @@ export function readSddl(p: string): Sddl {
     const text = raw.toString('utf16le').replace(/^\uFEFF/, '');
     const line = text.split(/\r?\n/).find((l) => l.startsWith('D:'));
     if (!line) throw new Error(`no DACL in icacls output for ${p}`);
-    return parseSddl(line.trim());
+    return parseSddl(line.trim(), userSid);
   } finally {
     fs.rmSync(tmp, { force: true });
   }
 }
 
-export function parseSddl(dacl: string): Sddl {
+export function parseSddl(dacl: string, userSid?: string): Sddl {
+  // Domain prefix of the user's SID (S-1-5-21-a-b-c), used to resolve RID-relative aliases.
+  const domain = userSid && /^S-1-5-21-\d+-\d+-\d+-\d+$/.test(userSid) ? userSid.slice(0, userSid.lastIndexOf('-')) : undefined;
   const flagsEnd = dacl.indexOf('(');
   const flags = flagsEnd < 0 ? dacl.slice(2) : dacl.slice(2, flagsEnd);
   const aces: Ace[] = [];
@@ -154,20 +194,25 @@ export function parseSddl(dacl: string): Sddl {
     const parts = (m[1] ?? '').split(';');
     const type = parts[0] ?? '';
     const rawSid = parts[5] ?? '';
-    const sid = SDDL_ALIASES[rawSid] ?? rawSid;
-    aces.push({ type, sid, sidForIcacls: sid });
+    const fixed = SDDL_ALIASES[rawSid];
+    const rid = SDDL_RID_ALIASES[rawSid];
+    if (fixed) aces.push({ type, sid: fixed, resolved: true });
+    else if (rid !== undefined && domain) aces.push({ type, sid: `${domain}-${rid}`, resolved: true });
+    else aces.push({ type, sid: rawSid, resolved: rawSid.startsWith('S-1-') });
   }
   return { protectedDacl: flags.includes('P'), aces };
 }
 
 function winCheck(p: string): PermCheck {
   const sid = currentUserSid();
-  const acl = readSddl(p);
+  const acl = readSddl(p, sid);
   const problems: string[] = [];
   // Inherited ACEs are fine as long as they, too, name only the current user (files inside a private
   // directory inherit its single ACE). What matters is that no other principal is granted access.
   for (const ace of acl.aces) {
-    if (ace.sid !== sid && !ace.type.startsWith('D')) problems.push(`${p} grants access to ${ace.sid}`);
+    if (ace.sid !== sid && !ace.type.startsWith('D')) {
+      problems.push(`${p} grants access to ${ace.sid}${ace.resolved ? '' : ' (unresolved SDDL alias)'}`);
+    }
   }
   if (!acl.aces.some((a) => a.sid === sid && a.type === 'A')) problems.push(`${p} has no access entry for the current user`);
   return { ok: problems.length === 0, problems };

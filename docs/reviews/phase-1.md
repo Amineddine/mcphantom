@@ -63,3 +63,13 @@ and hardened local storage — nothing more. The README says this at the top.
 across 8 files (conformance, gateway behaviour, redaction incl. ReDoS timing, store, permissions, config,
 init/uninstall, review regressions). The CLI e2e suite also passes against the built `dist/` (4/4), and a
 packed tarball installs into a fresh prefix and runs (`--version`, `doctor`).
+
+## Findings from the first CI run (all three OSes)
+
+Linux and macOS passed on Node 22 and 24 on the first run, including the POSIX permission tests that had
+never executed before. Windows failed, for two real reasons:
+
+| # | Severity | Finding | Fix |
+|---|---|---|---|
+| C1 | **High** | **ACL hardening locked MCPhantom out of its own files when running as the built-in Administrator.** SDDL writes that account (RID 500) as the machine-relative alias `LA`; the alias table only had fixed well-known SIDs, so the user's own ACE was classified as "another principal" and removed. Every store, profile and init operation then failed with EPERM. GitHub's Windows runners run as that account; so do some real machines. Failure was closed (nothing was exposed), but the product was unusable there. | RID-relative aliases (`LA`, `LG`, `DA`, `DU`, …) resolved against the user's domain SID; an ACE whose SID cannot be resolved is **never** removed (it might be the user) and is reported instead; after every ACL rewrite a real write/read probe proves the process can still use the path. Unit tests reproduce the runner's exact SDDL. |
+| C2 | Medium | `npm ci` on npm 10 (Node 22) ran `node-gyp rebuild` for `better-sqlite3` despite `"gypfile": false`, failing without Visual Studio, although the package ships prebuilt binaries in its tarball. Reproduced locally. `npm install` / `npm install -g` from a tarball are not affected (verified locally). | CI installs with `npm ci --ignore-scripts` (also: dependencies never run install scripts in CI). The packed-tarball install step still runs scripts, so a user-facing regression would surface. |

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import Database from 'better-sqlite3';
 import { afterEach, describe, expect, it } from 'vitest';
-import { checkPrivate, parseSddl } from '../src/security/fileperms.js';
+import { acesToRemove, checkPrivate, parseSddl } from '../src/security/fileperms.js';
 import { SqliteStore, type StoreOptions } from '../src/store/store.js';
 import { silentLogger } from '../src/util/log.js';
 import { tempDir } from './helpers.js';
@@ -121,10 +121,28 @@ describe('file permissions', () => {
     const acl = parseSddl('D:PAI(A;OICI;FA;;;S-1-5-21-1-2-3-1001)(A;;FA;;;SY)(D;;FA;;;WD)');
     expect(acl.protectedDacl).toBe(true);
     expect(acl.aces).toEqual([
-      { type: 'A', sid: 'S-1-5-21-1-2-3-1001', sidForIcacls: 'S-1-5-21-1-2-3-1001' },
-      { type: 'A', sid: 'S-1-5-18', sidForIcacls: 'S-1-5-18' },
-      { type: 'D', sid: 'S-1-1-0', sidForIcacls: 'S-1-1-0' },
+      { type: 'A', sid: 'S-1-5-21-1-2-3-1001', resolved: true },
+      { type: 'A', sid: 'S-1-5-18', resolved: true },
+      { type: 'D', sid: 'S-1-1-0', resolved: true },
     ]);
     expect(parseSddl('D:AI(A;ID;FA;;;BA)').protectedDacl).toBe(false);
+  });
+
+  // Regression (found by the first Windows CI run): GitHub's runners run as the built-in
+  // Administrator, RID 500, which SDDL writes as `LA`. Treating `LA` as "someone else" removed the
+  // user's only ACE and locked MCPhantom out of its own directory.
+  it('resolves RID-relative aliases against the user SID (built-in Administrator = LA)', () => {
+    const admin = 'S-1-5-21-111-222-333-500';
+    const acl = parseSddl('D:PAI(A;OICI;FA;;;LA)', admin);
+    expect(acl.aces).toEqual([{ type: 'A', sid: admin, resolved: true }]);
+    expect(acesToRemove(acl, admin)).toEqual([]);
+  });
+
+  it('never removes an ACE it cannot resolve (it might be the user)', () => {
+    const user = 'S-1-5-21-111-222-333-1001';
+    const acl = parseSddl('D:PAI(A;;FA;;;S-1-5-21-111-222-333-1001)(A;;FA;;;LA)(A;;FA;;;ZZ)(A;;FA;;;SY)');
+    // Without a user SID, LA cannot be resolved; neither it nor the unknown ZZ may be removed.
+    expect(acesToRemove(acl, user)).toEqual(['S-1-5-18']);
+    expect(acesToRemove(parseSddl('D:PAI(A;;FA;;;LA)', user), user)).toEqual(['S-1-5-21-111-222-333-500']);
   });
 });
