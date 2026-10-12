@@ -9,6 +9,6 @@ export default defineConfig({
     // run at once. Unbounded file parallelism starves CPU on small machines (and CI runners), which
     // makes child-process MCP startup exceed its timeout and produces flaky failures.
     pool: 'forks',
-    poolOptions: { forks: { maxForks: 2, minForks: 1 } },
+    maxWorkers: 2,
   },
 });
