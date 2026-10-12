@@ -288,8 +288,16 @@ Every phase ends with green CI, a commit, and a written hostile review with its 
 | 6 | **Taint deepening.** Decoded/fuzzy/cumulative matchers, secret detectors, Tier A/B bounded index with eviction events and `attribution_degraded`, elicitation/ask flow; exfiltration attack servers | Adversarial evasion suite, with the evasions that succeed published |
 | 7 | **Semantic layer + tier-1 runtime benchmark** (`mcp-attack-bench`), adapter spec, latency + memory + eviction-loss benchmarks | Numbers and methodology published |
 | 8 | **Dashboard** ("Blacklight") | Playwright e2e + dashboard security tests |
-| 9 | **Tier-2 live runs** (Ollama default; Anthropic API behind a flag with cost cap), demo polish | Attack success rates with confidence intervals |
+| 9 | **Showcase + Tier-2 live runs.** The headline demo uses **real Claude Code as the MCP client against a real poisoned page**, with a **replay mode** (recorded real transcript, model + date shown) for anyone without Claude Code. The demo must run **from the installed package — `npx mcphantom demo`** — not only a dev checkout. Tier-2 bulk runs: Ollama default; Anthropic API behind a flag with the USD-50 cap. The deterministic `npm run demo` is kept as the CI regression test. | Live attack-success rates with confidence intervals; `npx mcphantom demo` works from a clean global install; replay mode needs no network or model |
 | 10 | **Docs + release**: README, architecture diagram, threat model, known bypasses, write-up, demo GIF; GitHub + npm (each push/publish confirmed with the owner first) | Every claim linked to a reproducible command |
+
+### Repository security (enable when GitHub Pro is active)
+
+The repo is a free private repo today, so GitHub refuses secret scanning, push protection and branch
+protection. The owner is applying for GitHub Pro via the Student Developer Pack; when it is active,
+enable, as originally planned: **secret scanning**, **push protection**, and **branch protection on
+`main` requiring the CI and gitleaks checks to pass before merge** (the ruleset JSON is ready in the
+Phase-1 notes). Until then the gitleaks CI job is the stand-in and `main` is unprotected.
 
 ---
 
@@ -344,6 +352,12 @@ across conversations; image/audio content is labeled by source but not inspected
   `better-sqlite3` chosen over `node:sqlite`; no-API-credit operation (Ollama default, Claude Code for
   the demo, Anthropic backend capped at USD 50 with per-batch confirmation); Apache-2.0; benchmark
   named `mcp-attack-bench`; secure defaults with `init` suggestions.
+- 2026-10-12 — Phase 2 follow-ups (owner): A1 fixed — a `write` to a remote URL or outside its declared
+  `workspace` (synced/pushed folders included) is treated as `egress` (`src/taint/egress.ts`,
+  test-pinned). Showcase plan (Phase 9) now requires the headline demo to use real Claude Code against a
+  real poisoned page with a replay fallback, and `npx mcphantom demo` to work from the installed
+  package. Repo security settings (secret scanning, push protection, branch protection requiring CI) to
+  be enabled once GitHub Pro / Student Pack is active.
 - 2026-10-12 — Phase 2 (vertical slice): information-flow labels and a per-connection context label;
   the trifecta invariant (egress/exec while untrusted+secret) enforced by default; exact + normalized
   argument provenance with a two-tier bounded index (Tier A full text FIFO, Tier B identifier hashes

@@ -1,4 +1,6 @@
+import { resolve } from 'node:path';
 import type { Classification, Config } from '../config/schema.js';
+import { hasOutsideTarget } from './egress.js';
 import { BOTTOM, canExfiltrate, join, type Effect, type Label } from './labels.js';
 import { ProvenanceIndex, type EvictionNotice, type Evidence, type OutputRef } from './provenance.js';
 import { resultTexts } from './text.js';
@@ -7,17 +9,19 @@ export interface ResolvedClassification {
   effect: Effect;
   integrity: Label['integrity'];
   confidentiality: Label['confidentiality'];
+  workspace: string | undefined;
+  pathArgs: readonly string[] | undefined;
   /** Which fields came from explicit configuration (for the trace), vs. the secure default. */
   explicit: (keyof Classification)[];
 }
 
 /** Secure global default for anything the user has not classified (DESIGN.md §3.4). */
-export const DEFAULT_CLASSIFICATION: Omit<ResolvedClassification, 'explicit'> = { effect: 'egress', integrity: 'untrusted', confidentiality: 'internal' };
+export const DEFAULT_CLASSIFICATION: Omit<ResolvedClassification, 'explicit' | 'workspace' | 'pathArgs'> = { effect: 'egress', integrity: 'untrusted', confidentiality: 'internal' };
 
 export function classify(config: Config, serverId: string, name: string | undefined): ResolvedClassification {
   const server = config.servers[serverId];
   const tool = name !== undefined ? server?.tools[name] : undefined;
-  const out: ResolvedClassification = { ...DEFAULT_CLASSIFICATION, explicit: [] };
+  const out: ResolvedClassification = { ...DEFAULT_CLASSIFICATION, workspace: undefined, pathArgs: undefined, explicit: [] };
   for (const key of ['effect', 'integrity', 'confidentiality'] as const) {
     const v = tool?.[key] ?? server?.defaults[key];
     if (v !== undefined) {
@@ -25,6 +29,11 @@ export function classify(config: Config, serverId: string, name: string | undefi
       out.explicit.push(key);
     }
   }
+  const ws = tool?.workspace ?? server?.defaults.workspace;
+  if (ws !== undefined) {
+    out.workspace = server?.type === 'stdio' && server.cwd !== undefined ? resolve(server.cwd, ws) : ws;
+  }
+  out.pathArgs = tool?.path_args ?? server?.defaults.path_args;
   return out;
 }
 
@@ -105,23 +114,28 @@ export class TaintEngine {
     const tool = exposedName;
     const evidence = this.index.attribute(args);
     const id = `d${++this.decisions}`;
+    // A `write` whose target leaves the declared workspace (remote URL, absolute path elsewhere, or a
+    // `..` escape) is exfiltration in disguise, so it is treated as `egress` for the invariant.
+    const effect: Effect = cls.effect === 'write' && hasOutsideTarget(args, cls.workspace, cls.pathArgs) ? 'egress' : cls.effect;
+    const upgraded = effect !== cls.effect;
     const base = {
-      id, server: serverId, tool, effect: cls.effect, context: { ...this.context },
+      id, server: serverId, tool, effect, context: { ...this.context },
       untrustedSources: [...this.untrustedSources], secretSources: [...this.secretSources],
       evidence, attributionDegraded: this.degraded,
     };
-    const trifecta = canExfiltrate(cls.effect) && this.context.integrity === 'untrusted' && this.context.confidentiality === 'secret';
+    const trifecta = canExfiltrate(effect) && this.context.integrity === 'untrusted' && this.context.confidentiality === 'secret';
     if (!trifecta) {
-      return { ...base, verdict: 'allow', enforced: false, reason: allowReason(cls.effect, this.context) };
+      return { ...base, verdict: 'allow', enforced: false, reason: allowReason(effect, this.context) };
     }
     const enforced = this.config.taint.trifecta === 'deny';
+    const why = upgraded ? 'write to a target outside the declared workspace (treated as egress)' : `${effect} call`;
     return {
       ...base,
       verdict: enforced ? 'deny' : 'allow',
       rule: 'trifecta',
       enforced,
       reason:
-        `${cls.effect} call while the session holds untrusted content (${describe(this.untrustedSources)}) ` +
+        `${why} while the session holds untrusted content (${describe(this.untrustedSources)}) ` +
         `and secret data (${describe(this.secretSources)})${enforced ? '' : ' — audit mode, not blocked'}`,
     };
   }

@@ -191,14 +191,26 @@ describe('TaintEngine: hostile-review findings (Phase 2)', () => {
     expect(t.context.integrity).toBe('untrusted');
   });
 
-  it('A1 KNOWN LIMITATION: a tool classified `write` is NOT caught by the trifecta invariant', () => {
-    // Only egress/exec are treated as exfiltration channels. A tool the user labels `write` is assumed
-    // to write locally; a write whose destination is attacker-controlled is a multi-hop flow left to
-    // the policy engine (Phase 4) and documented in docs/reviews/phase-2.md.
-    const writeCfg = cfg({ ...demoServers, hook: { command: 'x', tools: { post_webhook: { effect: 'write', integrity: 'trusted' } } } });
-    const t = new TaintEngine(writeCfg);
-    t.ingest('tool', 'web', 'web__fetch_url', 'fetch_url', text(page));
-    t.ingest('tool', 'files', 'files__read_file', 'read_file', text(envFile));
-    expect(t.decide('hook', 'post_webhook', 'hook__post_webhook', { url: ATTACKER, body: CANARY }).verdict).toBe('allow');
+  it('A1 FIX: a `write` to a target outside the declared workspace is treated as egress and blocked', () => {
+    const writeCfg = cfg({
+      ...demoServers,
+      store: { command: 'x', cwd: '/srv/app', tools: { save: { effect: 'write', integrity: 'trusted', workspace: 'workspace' } } },
+    });
+    const t = () => {
+      const e = new TaintEngine(writeCfg);
+      e.ingest('tool', 'web', 'web__fetch_url', 'fetch_url', text(page));
+      e.ingest('tool', 'files', 'files__read_file', 'read_file', text(envFile));
+      return e;
+    };
+    // remote URL target → egress → blocked
+    expect(t().decide('store', 'save', 'store__save', { url: ATTACKER, body: CANARY }).verdict).toBe('deny');
+    // absolute path into a synced folder → egress → blocked
+    const d = t().decide('store', 'save', 'store__save', { path: '/home/user/Dropbox/leak.txt', body: CANARY });
+    expect(d).toMatchObject({ verdict: 'deny', effect: 'egress' });
+    expect(d.reason).toContain('outside the declared workspace');
+    // `..` escape → blocked
+    expect(t().decide('store', 'save', 'store__save', { path: '../../etc/out', body: CANARY }).verdict).toBe('deny');
+    // a write that stays inside the workspace is still a local write → allowed
+    expect(t().decide('store', 'save', 'store__save', { path: 'notes/summary.md', body: CANARY }).verdict).toBe('allow');
   });
 });

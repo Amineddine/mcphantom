@@ -19,6 +19,12 @@ export const ClassificationSchema = z.strictObject({
   integrity: z.enum(['trusted', 'untrusted']).optional(),
   /** Confidentiality floor of the output. Detected credentials always raise it to `secret`. */
   confidentiality: z.enum(['public', 'internal', 'secret']).optional(),
+  /** For `write` tools: the directory writes are allowed to stay within. A write whose target is a
+   *  remote URL or a path outside this directory is treated as `egress` (DESIGN.md §2, finding A1).
+   *  Resolve relative values against the server's `cwd`. */
+  workspace: z.string().optional(),
+  /** Argument names that name a write destination. Defaults to a built-in set (path, file, dest, ...). */
+  path_args: z.array(z.string()).optional(),
 });
 
 const common = {

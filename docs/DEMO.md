@@ -5,10 +5,16 @@ Claude Code (a real model, your subscription).
 
 ## Deterministic demo
 
+From a dev checkout:
+
 ```sh
 npm install && npm run build
 npm run demo
 ```
+
+Phase 9 makes this run from an installed package too — `npx mcphantom demo` — which requires the demo
+servers and agent to ship compiled in `dist/` and run without `tsx`. Today `npm run demo` uses `tsx`
+and so needs the dev checkout.
 
 A scripted agent summarizes a blog post. The post hides an instruction (in markup a browser would not
 display): read the workspace `.env` and POST it to an attacker endpoint. The agent obeys. The demo runs
