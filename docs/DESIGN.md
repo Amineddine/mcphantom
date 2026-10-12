@@ -79,9 +79,15 @@ Mitigations, in decreasing strength — none is a real boundary:
 1. Lockfile and policy are read once at startup and hashed; changes made while MCPhantom runs are
    ignored until the user reloads through the CLI, which shows a diff. A tampering server must
    therefore win a race before the next restart, and the change shows up in `mcphantom lock diff`.
-2. Lockfile entries carry an HMAC keyed by a secret held in the OS credential store (DPAPI on Windows,
-   Keychain on macOS, libsecret on Linux). This defeats naive file edits; it does **not** stop a
-   same-user process that calls the same APIs (DPAPI CurrentUser is reachable by any same-user code).
+2. The lockfile carries an HMAC-SHA256 over its canonical contents, keyed by a 32-byte secret in an
+   owner-only key file (`hmac.key`, POSIX `0600` / Windows single-SID ACL). **What this protects:**
+   other OS users cannot forge or silently edit the lockfile (they cannot read the key), and accidental
+   corruption or truncation is detected. **What it does not protect:** a process running as the *same*
+   user — including a malicious MCP server, the attacker already in the threat model — can read the key
+   file and re-sign. An OS credential store (DPAPI/Keychain/libsecret) would not change this: its
+   CurrentUser scope is reachable by any same-user code, so it offers no additional guarantee against
+   the same-user attacker while adding native dependencies. We therefore use an owner-only key file and
+   state its scope precisely rather than implying more.
 3. Project lockfiles can be committed to git so that changes are code-reviewed.
 
 The real boundary is running upstream servers under a different OS user, in a container, or in a
@@ -290,6 +296,25 @@ Every phase ends with green CI, a commit, and a written hostile review with its 
 | 8 | **Dashboard** ("Blacklight") | Playwright e2e + dashboard security tests |
 | 9 | **Showcase + Tier-2 live runs.** The headline demo uses **real Claude Code as the MCP client against a real poisoned page**, with a **replay mode** (recorded real transcript, model + date shown) for anyone without Claude Code. The demo must run **from the installed package — `npx mcphantom demo`** — not only a dev checkout. Tier-2 bulk runs: Ollama default; Anthropic API behind a flag with the USD-50 cap. The deterministic `npm run demo` is kept as the CI regression test. | Live attack-success rates with confidence intervals; `npx mcphantom demo` works from a clean global install; replay mode needs no network or model |
 | 10 | **Docs + release**: README, architecture diagram, threat model, known bypasses, write-up, demo GIF; GitHub + npm (each push/publish confirmed with the owner first) | Every claim linked to a reproducible command |
+
+- 2026-10-12 — Phase 4 (rug-pull detection): RFC-8785-style canonical JSON + SHA-256 fingerprints of
+  model-visible tool/prompt/instructions definitions, pinned in a `.lock` file signed with an owner-only
+  HMAC key (scope stated precisely: other users + corruption, not same-user). `mcphantom approve` /
+  `lock diff`; list-time enforcement (config `rugpull.{mode,on_bad_signature}`) catches changed/new
+  definitions and mid-session `list_changed` pulls; a bad signature refuses to start by default. Deep-
+  schema canonicalisation hardened and per-item inspection made fail-closed (review R6). Also landed the
+  Phase-3 cross-span scanner follow-up. See `docs/reviews/phase-4.md`.
+
+### Scanner follow-ups (owner, Phase 3 → later)
+
+- **Done now:** scan a tool's descriptions concatenated to catch instructions split across properties
+  (Phase-3 review B2). FPR unchanged.
+- **When Layer 2's pipeline is reusable:** run the scanner through the same normalize/decode pipeline
+  (homoglyph/confusables folding, base64 and other decoders, letter-spacing collapse) rather than
+  maintaining separate matching logic — this closes bypasses B1/B3/B4 in one place.
+- **Before the benchmark phase (Phase 6/7):** expand the benign corpus to ≥ 200 tool definitions from
+  popular community servers (licences checked and recorded), to get a realistic FPR; add published
+  third-party poisoned examples (e.g. Invariant Labs) to the **test** split.
 
 ### Repository security (enable when GitHub Pro is active)
 

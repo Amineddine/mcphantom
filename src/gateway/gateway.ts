@@ -39,6 +39,7 @@ import { errorMessage } from '../util/errors.js';
 import type { Logger } from '../util/log.js';
 import { TaintEngine, type Decision, type IngestResult } from '../taint/engine.js';
 import { scanInstructions, scanPrompt, scanTool, type ScanOptions, type ScanResult } from '../scanner/scan.js';
+import { RugpullChecker, type PinResult } from '../rugpull/checker.js';
 import { exposeName } from './naming.js';
 import { Upstream, type UpstreamHooks } from './upstream.js';
 
@@ -55,6 +56,8 @@ export interface GatewayOptions {
   logger: Logger;
   sessionId: string;
   version: string;
+  /** Pin checker for rug-pull detection. Omit (or pass an unlocked checker) to disable. */
+  rugpull?: RugpullChecker;
 }
 
 const LOG_LEVELS: LoggingLevel[] = ['debug', 'info', 'notice', 'warning', 'error', 'critical', 'alert', 'emergency'];
@@ -82,6 +85,7 @@ export class Gateway {
   /** Session taint state (one per downstream connection). */
   readonly taint: TaintEngine;
   private readonly scanOpts: ScanOptions;
+  private readonly rugpull: RugpullChecker;
   /** Resolves when the downstream client disconnects (or {@link close} is called). */
   readonly disconnected: Promise<void> = new Promise((r) => {
     this.resolveDisconnected = r;
@@ -93,6 +97,7 @@ export class Gateway {
     this.server = server;
     this.taint = new TaintEngine(opts.config);
     this.scanOpts = { block: opts.config.scan.block };
+    this.rugpull = opts.rugpull ?? new RugpullChecker(undefined, false);
   }
 
   /** Connects all upstreams (in parallel, each with its own startup timeout), then builds the server. */
@@ -145,6 +150,7 @@ export class Gateway {
 
     // Scan each server's instructions; a flagged section is dropped (it would inject into the model
     // the moment the client reads it), and the drop is logged.
+    const rugpull = opts.rugpull ?? new RugpullChecker(undefined, false);
     const instructionParts: [string, string][] = [];
     if (opts.config.forward_instructions) {
       for (const u of ready) {
@@ -159,6 +165,16 @@ export class Gateway {
               opts.logger.warn(`scanner dropped instructions from '${u.id}': ${res.findings[0]?.detail ?? ''}`);
               continue;
             }
+          }
+        }
+        const pin = rugpull.checkInstructions(u.id, text);
+        if ((pin.status === 'changed' || pin.status === 'new') && rugpull.enforcing) {
+          const hide = opts.config.rugpull.mode === 'enforce';
+          const what = pin.status === 'changed' ? 'instructions changed since approval (possible rug-pull)' : 'instructions added since approval';
+          events.push({ sessionId: opts.sessionId, kind: 'rugpull', server: u.id, method: 'instructions', outcome: hide ? 'hidden' : 'flagged', payload: { status: pin.status, fingerprint: pin.fingerprint, pinned: pin.pinned }, error: what });
+          if (hide) {
+            opts.logger.warn(`rug-pull blocked: instructions from '${u.id}' ${what}`);
+            continue;
           }
         }
         instructionParts.push([u.id, text.trim()]);
@@ -453,7 +469,9 @@ export class Gateway {
           continue;
         }
         const { execution: _execution, ...rest } = tool;
-        if (this.scanBlocks(scanTool(rest, this.scanOpts), 'tool', u.id, exposed)) continue;
+        // Per-tool fail-closed: a malformed/hostile definition (e.g. a schema deep enough to overflow
+        // the canonicaliser) hides only that tool, never the whole listing.
+        if (this.inspectBlocks(() => this.scanBlocks(scanTool(rest, this.scanOpts), 'tool', u.id, exposed) || this.rugpullBlocks(this.rugpull.checkTool(u.id, rest), 'tool', u.id, exposed), 'tool', u.id, exposed)) continue;
         this.toolRoutes.set(exposed, { serverId: u.id, name: tool.name });
         out.push({ ...rest, name: exposed });
       }
@@ -472,7 +490,7 @@ export class Gateway {
           this.record({ kind: 'warning', server: u.id, name: p.name, error: 'prompt name cannot be namespaced; hidden' });
           continue;
         }
-        if (this.scanBlocks(scanPrompt({ ...p, name: exposed }, this.scanOpts), 'prompt', u.id, exposed)) continue;
+        if (this.inspectBlocks(() => this.scanBlocks(scanPrompt({ ...p, name: exposed }, this.scanOpts), 'prompt', u.id, exposed) || this.rugpullBlocks(this.rugpull.checkPrompt(u.id, { ...p, name: exposed }), 'prompt', u.id, exposed), 'prompt', u.id, exposed)) continue;
         this.promptRoutes.set(exposed, { serverId: u.id, name: p.name });
         out.push({ ...p, name: exposed });
       }
@@ -659,6 +677,36 @@ export class Gateway {
       error: hide ? `${kind} hidden: ${result.findings[0]?.detail ?? 'scanner finding'}` : undefined,
     });
     if (hide) this.opts.logger.warn(`scanner hid ${kind} '${name}' from '${server}': ${result.findings[0]?.detail ?? ''}`);
+    return hide;
+  }
+
+  /**
+   * Applies a pin check at list time. A `changed` pin is a rug-pull; a `new` item appeared after the
+   * lockfile was approved. In `enforce` mode either is hidden; in `observe` mode it is kept and the
+   * change recorded. `match`/`unpinned` are silent (unpinned = no lockfile yet).
+   */
+  /** Runs the per-item inspections; any thrown error hides the item and is logged (fail-closed). */
+  private inspectBlocks(fn: () => boolean, kind: 'tool' | 'prompt', server: string, name: string): boolean {
+    try {
+      return fn();
+    } catch (err) {
+      this.record({ kind: 'warning', server, name, method: kind, outcome: 'hidden', error: `could not inspect ${kind}; hidden (${errorMessage(err)})` });
+      this.opts.logger.warn(`hiding ${kind} '${name}' from '${server}': inspection failed: ${errorMessage(err)}`);
+      return true;
+    }
+  }
+
+  private rugpullBlocks(result: PinResult, kind: 'tool' | 'prompt' | 'instructions', server: string, name: string): boolean {
+    if (result.status === 'match' || result.status === 'unpinned') return false;
+    const hide = this.opts.config.rugpull.mode === 'enforce';
+    const what = result.status === 'changed' ? 'definition changed since it was approved (possible rug-pull)' : 'not in the approved lockfile (added since approval)';
+    this.record({
+      kind: 'rugpull', server, name, method: kind,
+      outcome: hide ? 'hidden' : 'flagged',
+      payload: { status: result.status, fingerprint: result.fingerprint, pinned: result.pinned },
+      error: `${kind} ${what}`,
+    });
+    this.opts.logger.warn(`rug-pull ${hide ? 'blocked' : 'detected'}: ${kind} '${name}' from '${server}' ${what}`);
     return hide;
   }
 

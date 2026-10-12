@@ -107,6 +107,16 @@ export const ConfigSchema = z.strictObject({
       mode: z.enum(['hide', 'warn']).default('hide'),
     })
     .default({ enabled: true, block: 'medium', mode: 'hide' }),
+  rugpull: z
+    .strictObject({
+      /** `enforce`: hide tools/prompts whose definition changed from the pin, or that are new since
+       *  the lockfile was approved. `observe`: allow them but record the change. With no lockfile,
+       *  nothing is pinned and this has no effect until `mcphantom approve` creates one. */
+      mode: z.enum(['enforce', 'observe']).default('enforce'),
+      /** What to do when a present lockfile fails HMAC verification (tampered, or wrong key/machine). */
+      on_bad_signature: z.enum(['refuse', 'warn']).default('refuse'),
+    })
+    .default({ mode: 'enforce', on_bad_signature: 'refuse' }),
   /** Pass upstream servers' `instructions` to the client (concatenated, one section per server). */
   forward_instructions: z.boolean().default(true),
   /** Override the event-database directory. */

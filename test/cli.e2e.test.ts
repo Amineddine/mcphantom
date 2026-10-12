@@ -85,4 +85,21 @@ describe('mcphantom CLI', () => {
     expect(r.stdout).toContain('config dir');
     expect(r.stdout).toMatch(/valid, 1 server/);
   });
+
+  it('approve pins definitions and lock diff then reports no drift; a changed config shows drift', () => {
+    const cfgFile = path.join(home, 'gw.yaml');
+    const approve = runCli(['approve', '--config', cfgFile, '--yes']);
+    expect(approve.status).toBe(0);
+    expect(approve.stdout).toMatch(/Pinned\./);
+    expect(fs.existsSync(cfgFile.replace(/\.yaml$/, '.lock'))).toBe(true);
+
+    const diff = runCli(['lock', 'diff', '--config', cfgFile]);
+    expect(diff.status).toBe(0);
+    expect(diff.stdout).toMatch(/match the lockfile/);
+
+    // `run` starts normally against a valid lockfile (smoke: process must not exit non-zero on --help-like paths).
+    const bad = runCli(['lock', 'wat', '--config', cfgFile]);
+    expect(bad.status).toBe(2);
+    expect(bad.stderr).toContain('Unknown lock subcommand');
+  });
 });

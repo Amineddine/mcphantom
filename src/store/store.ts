@@ -21,7 +21,9 @@ export type EventKind =
   /** Provenance text dropped under the memory budget. */
   | 'eviction'
   /** A static-scanner verdict on a tool, prompt, or a server's instructions. */
-  | 'scan';
+  | 'scan'
+  /** A rug-pull / pin check (definition changed, new since approval, or lockfile tampered). */
+  | 'rugpull';
 
 export interface EventInput {
   sessionId: string;

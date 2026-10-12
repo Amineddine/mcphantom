@@ -36,7 +36,7 @@ benchmark JSON.
 | S2 | Strength | Findings never re-emit the payload: evidence excerpts strip control/format characters, and invisible chars are reported by codepoint. The scanner cannot itself become an injection channel into logs or the dashboard. | Pinned by a test. |
 | S3 | Strength | The scanner is wired at **list time**, so a flagged tool is never offered to the model and has no route to call — closing the window that a call-time-only check would leave open. | `scanner.gateway.test.ts`. |
 | B1 | **Known bypass** | **Homoglyph** substitution (Cyrillic look-alikes for Latin letters) evades the instruction patterns. | Documented; pinned as a MISS test. Confusables folding is Phase 6. |
-| B2 | **Known bypass** | An instruction **split across two property descriptions** (each benign alone) is not caught — the scanner does not concatenate spans, to avoid false positives. | Documented; MISS test. |
+| B2 | ~~Known bypass~~ **Fixed** | An instruction **split across two property descriptions** (each benign alone). | Fixed (owner follow-up): description-like spans are concatenated (newline-joined) and the instruction patterns re-run; a finding is added only when it did not fire on any single span, so per-span FPR is unchanged (benchmark FPR stayed 0%). `scanner.test.ts` cross-span test. |
 | B3 | **Known bypass** | **base64 / encoded** instruction text in a description is not decoded, so it is not matched. | Documented; MISS test. Decoders are Phase 6. |
 | B4 | **Known bypass** | **Letter-spacing** ("i g n o r e") evades word-boundary patterns. | Documented; MISS test. |
 

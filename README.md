@@ -3,13 +3,14 @@
 A security gateway between LLM agents and MCP servers: tool-poisoning and rug-pull detection, taint
 tracking across the LLM boundary, and a declarative per-tool policy. Design: [docs/DESIGN.md](docs/DESIGN.md).
 
-> **Status: Phase 3 of 10 — static scanner + trifecta enforcement.**
-> MCPhantom scans every tool/prompt/instructions for poisoning (hidden-Unicode smuggling, embedded
-> instructions, tool shadowing, exfiltration hints) and hides flagged tools before they reach the model;
-> and it blocks an `egress`/`exec` call once a session holds both untrusted and secret data
-> (`mcphantom trace` shows why). Not yet: rug-pull detection (Phase 4) and encoded/paraphrased
-> attribution (Phase 6). Known scanner bypasses are documented in the Phase 3 review.
-> Reviews: [1](docs/reviews/phase-1.md) · [2](docs/reviews/phase-2.md) · [3](docs/reviews/phase-3.md). Demo: [docs/DEMO.md](docs/DEMO.md).
+> **Status: Phase 4 of 10 — scanner + rug-pull pinning + trifecta enforcement.**
+> MCPhantom scans every tool/prompt/instructions for poisoning and hides flagged ones; pins approved
+> definitions (`mcphantom approve`) and hides any that change or appear afterwards, including a
+> mid-session `list_changed` rug-pull (`mcphantom lock diff`); and blocks an `egress`/`exec` call once a
+> session holds both untrusted and secret data (`mcphantom trace`). Not yet: encoded/paraphrased
+> attribution (Phase 6), dashboard (Phase 8). The lockfile HMAC protects against other users and
+> corruption, **not** a same-user attacker — see the Phase 4 review.
+> Reviews: [1](docs/reviews/phase-1.md) · [2](docs/reviews/phase-2.md) · [3](docs/reviews/phase-3.md) · [4](docs/reviews/phase-4.md). Demo: [docs/DEMO.md](docs/DEMO.md).
 
 ## Install and set up
 

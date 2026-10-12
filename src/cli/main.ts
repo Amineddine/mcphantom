@@ -14,7 +14,10 @@ import { ensureSecureFile, SqliteStore } from '../store/store.js';
 import { errorMessage, UserError } from '../util/errors.js';
 import { createLogger } from '../util/log.js';
 import { VERSION } from '../version.js';
+import { runApprove, runLockDiff } from './approve.js';
 import { runInit, runUninstall, type Io } from './init.js';
+import { loadLockfile } from '../rugpull/lockfile.js';
+import { RugpullChecker } from '../rugpull/checker.js';
 import { runTrace } from './trace.js';
 
 const HELP = `MCPhantom ${VERSION} — security gateway for MCP
@@ -31,6 +34,10 @@ Usage:
       Show paths, profiles and permission checks; validate a config.
   mcphantom trace [--last] [--json] [--session <id>] [--config <file>]
       Show the taint trace (context labels, decisions, evidence) for a session.
+  mcphantom approve (--profile <name> | --config <file>) [--yes]
+      Pin the servers' current tool/prompt/instruction definitions into the lockfile.
+  mcphantom lock diff (--profile <name> | --config <file>)
+      Show how the live definitions differ from the approved lockfile.
   mcphantom --version | --help
 `;
 
@@ -78,6 +85,10 @@ async function main(argv: string[]): Promise<number> {
       return cmdDoctor(rest);
     case 'trace':
       return cmdTrace(rest);
+    case 'approve':
+      return cmdApprove(rest);
+    case 'lock':
+      return cmdLock(rest);
     default:
       throw new UserError(`Unknown command: ${cmd}`, 'Run `mcphantom --help` for usage.');
   }
@@ -127,7 +138,18 @@ async function cmdRun(args: string[]): Promise<number> {
   store.startSession({ id: sessionId, profile });
   store.append({ sessionId, kind: 'session_start', payload: { version: VERSION, config: file, servers: Object.keys(cfg.servers) } });
 
-  const gateway = await Gateway.create({ config: cfg, store, logger, sessionId, version: VERSION });
+  // Load and verify the rug-pull lockfile. A tampered/foreign signature refuses to start by default.
+  const lock = loadLockfile(file, paths.configDir);
+  if (lock.integrity === 'bad-signature' || lock.integrity === 'missing-key') {
+    const detail = lock.integrity === 'bad-signature' ? 'failed HMAC verification (tampered, or a different key/machine)' : 'has no HMAC key to verify against';
+    if (cfg.rugpull.on_bad_signature === 'refuse') {
+      throw new UserError(`Lockfile ${lock.path} ${detail}.`, 'Re-approve with `mcphantom approve`, or set rugpull.on_bad_signature: warn to proceed unverified.');
+    }
+    logger.warn(`lockfile ${detail}; proceeding unverified (rugpull.on_bad_signature: warn)`);
+  }
+  const locked = lock.integrity === 'ok' || (lock.integrity !== 'empty' && cfg.rugpull.on_bad_signature === 'warn');
+  const rugpull = new RugpullChecker(lock.data, locked);
+  const gateway = await Gateway.create({ config: cfg, store, logger, sessionId, version: VERSION, rugpull });
   let finished = false;
   const finish = async (reason: string): Promise<void> => {
     if (finished) return;
@@ -176,6 +198,23 @@ async function cmdUninstall(args: string[]): Promise<number> {
   if (!PROFILE_NAME_RE.test(v.profile)) throw new UserError(`Invalid profile name: ${v.profile}`);
   await runUninstall({ profile: v.profile, yes: v.yes ?? false, dryRun: v['dry-run'] ?? false, paths: resolvePaths() }, io);
   return 0;
+}
+
+async function cmdApprove(args: string[]): Promise<number> {
+  const v = parse(args, { profile: { type: 'string' }, config: { type: 'string' }, yes: { type: 'boolean' } });
+  const paths = resolvePaths();
+  const { file } = resolveConfigFile(paths, v);
+  await runApprove({ configFile: file, paths, yes: v.yes ?? false }, io);
+  return 0;
+}
+
+async function cmdLock(args: string[]): Promise<number> {
+  const [sub, ...rest] = args;
+  if (sub !== 'diff') throw new UserError(`Unknown lock subcommand: ${sub ?? '(none)'}`, 'Usage: mcphantom lock diff [--config <file> | --profile <name>]');
+  const v = parse(rest, { profile: { type: 'string' }, config: { type: 'string' } });
+  const paths = resolvePaths();
+  const { file } = resolveConfigFile(paths, v);
+  return runLockDiff({ configFile: file, paths }, io);
 }
 
 function cmdTrace(args: string[]): number {

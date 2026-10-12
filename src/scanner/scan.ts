@@ -38,7 +38,23 @@ function runDetectors(spans: TextSpan[], ownName: string): Finding[] {
     findings.push(...detectDataAccessHint(span));
     findings.push(...detectShadowing(span, ownName));
   }
+  findings.push(...crossSpan(spans, findings));
   return combine(findings);
+}
+
+/**
+ * Catches an instruction split across several descriptions, each benign alone (Phase-3 review B2).
+ * All description-like spans are concatenated (newline-joined, so word boundaries are preserved) and
+ * the instruction patterns run again. A finding is only added when it did NOT already fire on a single
+ * span — i.e. the match genuinely crosses a boundary — so this adds recall without changing per-span
+ * false positives.
+ */
+function crossSpan(spans: TextSpan[], perSpan: Finding[]): Finding[] {
+  const descriptive = spans.filter((s) => /description|title|\$comment|instructions/.test(s.where));
+  if (descriptive.length < 2) return [];
+  const combined: TextSpan = { where: 'combined-descriptions', text: descriptive.map((s) => s.text).join('\n') };
+  const already = new Set(perSpan.filter((f) => f.category === 'embedded-instruction').map((f) => f.detail));
+  return detectEmbeddedInstruction(combined).filter((f) => !already.has(f.detail));
 }
 
 /**
