@@ -54,6 +54,9 @@ responses) that reorders them inside the client.
 
 ## Proposed fix
 
+(The issue itself is ready to file: the bug is reproduced deterministically. The fix below is not — see
+the status note in `PR.md`: the naive version breaks two task-progress tests.)
+
 Dispatch `notifications/progress` synchronously, in message order, keeping the existing error handling. Other
 notifications keep the current deferred behaviour, so the change is narrow. Draft PR attached (`PR.md`).
 With the change applied (`PATCHED=1 npx tsx repro.mts`): `{"seen":[1],"errors":[]}`.

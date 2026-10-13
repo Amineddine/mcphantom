@@ -1,5 +1,21 @@
 # DRAFT PR — not opened. Target branch: `v1.x` (a port to `main` is needed; see the end)
 
+> **STATUS (2026-10-13): NOT READY — the change below causes a regression.** Verified against a clean
+> clone of `v1.x` at `fa56d81` (1.32.1), full suite (`vitest run --exclude "test/e2e/**"`):
+>
+> | run | result |
+> |---|---|
+> | baseline, unpatched | 56/57 files pass — the only failure is the new regression test (expected) |
+> | patched, new test alone | **passes** |
+> | patched, full suite | 56/57 files — the new test passes, but **2 existing tests now fail** in `test/shared/protocol.test.ts` › "Progress notification support for tasks": *should stop progress notifications when task reaches terminal status (failed)* and *… when task is cancelled* |
+> | patched, `tsc --noEmit` / `eslint src/shared/protocol.ts` | clean |
+>
+> Likely cause (not yet confirmed): task-backed requests stop progress once the task reaches a terminal
+> status, and that relies on progress being dispatched *after* the terminal-status handling; dispatching
+> progress synchronously lets a progress notification in the same batch through. A correct fix probably
+> keeps the carve-out but checks the task's terminal state inside `_onprogress`, or only fast-paths
+> progress for non-task requests. Must be investigated and the suite must be green before this is opened.
+
 **Title:** fix(protocol): dispatch progress notifications synchronously so the final one is not dropped
 
 Fixes: the issue drafted in `ISSUE.md`.

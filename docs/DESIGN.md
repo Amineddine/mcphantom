@@ -299,13 +299,17 @@ Reviews: `docs/reviews/phase-1.md` … `phase-5.md`.
    third-party poisoned examples (e.g. Invariant Labs) in the test split.
 
 **Open items carried forward:** resource pinning (before v1); `ask` without elicitation denies until
-the dashboard approval queue (Phase 8); the MCP SDK final-progress race (AUD-10b) — issue and PR
-drafted in `docs/upstream/sdk-progress-race/`, **not filed** (owner decides); repo security settings
+the dashboard approval queue (Phase 8); the MCP SDK final-progress race (AUD-10b) — issue drafted and
+ready, PR draft **not ready**: verified against SDK `v1.x`, the naive fix passes its own test but breaks
+two existing task-progress tests (details in `docs/upstream/sdk-progress-race/PR.md`); nothing filed
+(owner submits from their account); repo security settings
 (secret scanning, push protection, branch protection) once GitHub Pro is active.
 
 **Process guardrails (mechanical, not memory):** `npm install` installs a versioned pre-push hook
 (`.githooks/pre-push` via `scripts/install-hooks.mjs`) that blocks a push unless `npm run check` passes
-on a clean tree. `git push --no-verify` can bypass it; CI is the backstop.
+on a clean tree. `.claude/settings.json` denies Claude Code `git push --no-verify` / `--force` / `-f`
+(prefix and mid-command forms). Not covered: `+refspec` force pushes and a human running
+`--no-verify`; CI is the backstop.
 
 ## 5. Phase plan
 
