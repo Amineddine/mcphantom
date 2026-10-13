@@ -16,6 +16,9 @@ export interface Finding {
   /** Short, human-readable evidence. Control characters are shown by name, never raw. */
   evidence: string;
   detail: string;
+  /** Set when the finding only appeared after undoing a disguise: `folded` (look-alikes, width,
+   *  invisible characters), `letter-spacing`, or `decoded:<chain>` (e.g. `decoded:base64`). */
+  via?: string;
 }
 
 export const SEVERITY_ORDER: Record<Severity, number> = { info: 0, low: 1, medium: 2, high: 3 };
@@ -135,6 +138,23 @@ export function detectShadowing(span: TextSpan, ownToolName: string): Finding[] 
     const m = re.exec(span.text);
     if (m && m[1] && m[1].toLowerCase() !== ownToolName.toLowerCase()) {
       return [{ category: 'tool-shadowing', severity: 'high', where: span.where, evidence: excerpt(span.text, m.index, 40), detail: `description redefines the behaviour of another tool ('${m[1]}')` }];
+    }
+  }
+  return [];
+}
+
+// --------------------------------------------------------------------------------------------------
+// Mixed-script words: a word that mixes Latin letters with Cyrillic, Greek or Armenian ones is the
+// signature of a homoglyph disguise ("іgnоre" with Cyrillic і and о). Genuine non-Latin text is written
+// in one script per word, so this is rare in benign descriptions; rated low (recorded, not hidden) —
+// the instruction it disguises is caught on the folded text with its own severity.
+
+const MIXED_SCRIPT = /(?=[\p{L}]*\p{Script=Latin})(?=[\p{L}]*[\p{Script=Cyrillic}\p{Script=Greek}\p{Script=Armenian}])[\p{L}]{2,}/u;
+
+export function detectMixedScript(span: TextSpan): Finding[] {
+  for (const m of span.text.matchAll(/[\p{L}]{2,}/gu)) {
+    if (MIXED_SCRIPT.test(m[0]) && MIXED_SCRIPT.exec(m[0])?.[0] === m[0]) {
+      return [{ category: 'hidden-unicode', severity: 'low', where: span.where, evidence: excerpt(span.text, m.index, m[0].length), detail: 'word mixes Latin letters with look-alike letters from another script' }];
     }
   }
   return [];

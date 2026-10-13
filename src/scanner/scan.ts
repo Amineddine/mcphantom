@@ -1,9 +1,12 @@
 import type { Prompt, Tool } from '@modelcontextprotocol/sdk/types.js';
+import { decodeVariants, type DecodeLimits } from '../text/decode.js';
+import { despace, fold } from '../text/normalize.js';
 import {
   detectDataAccessHint,
   detectEmbeddedInstruction,
   detectExfiltrationHint,
   detectHiddenUnicode,
+  detectMixedScript,
   detectShadowing,
   SEVERITY_ORDER,
   type Category,
@@ -29,17 +32,74 @@ export interface ScanOptions {
 
 export const DEFAULT_SCAN_OPTIONS: ScanOptions = { block: 'medium' };
 
+/** The content detectors: everything except the invisible-character ones, which only mean something
+ *  on the raw text. */
+function contentDetectors(span: TextSpan, ownName: string): Finding[] {
+  return [...detectEmbeddedInstruction(span), ...detectExfiltrationHint(span), ...detectDataAccessHint(span), ...detectShadowing(span, ownName)];
+}
+
 function runDetectors(spans: TextSpan[], ownName: string): Finding[] {
   const findings: Finding[] = [];
   for (const span of spans) {
     findings.push(...detectHiddenUnicode(span));
-    findings.push(...detectEmbeddedInstruction(span));
-    findings.push(...detectExfiltrationHint(span));
-    findings.push(...detectDataAccessHint(span));
-    findings.push(...detectShadowing(span, ownName));
+    findings.push(...detectMixedScript(span));
+    findings.push(...contentDetectors(span, ownName));
   }
   findings.push(...crossSpan(spans, findings));
+  findings.push(...disguised(spans, ownName, findings));
   return combine(findings);
+}
+
+/** Decoding bounds for definitions. Rot13 and reversal apply to the whole text: an instruction is a
+ *  sentence, not a token. */
+const SCAN_DECODE: DecodeLimits = { maxDepth: 2, maxVariants: 16, maxChars: 256 * 1024 };
+
+/**
+ * Disguise-undone forms of a span (Phase-3 review B1/B3/B4, closed through the shared pipeline used by
+ * Layer-2 provenance): look-alikes / width / invisible characters folded, letter spacing joined, and
+ * encodings decoded. Labelled with the disguise, for the finding's `via`.
+ */
+function derivedSpans(span: TextSpan): { span: TextSpan; via: string }[] {
+  const out: { span: TextSpan; via: string }[] = [];
+  const seen = new Set([span.text]);
+  const add = (text: string, via: string): void => {
+    if (seen.has(text)) return;
+    seen.add(text);
+    out.push({ span: { where: span.where, text }, via });
+  };
+  const folded = fold(span.text);
+  add(folded, 'folded');
+  add(despace(folded), 'letter-spacing');
+  for (const v of decodeVariants(folded, SCAN_DECODE).variants) add(fold(v.text), `decoded:${v.chain.join('>')}`);
+  return out;
+}
+
+/**
+ * Runs the content detectors on every span's disguise-undone forms (and on the combined descriptions'
+ * forms). A finding is added only if the raw text did not already produce it, so the false-positive
+ * rate on undisguised text is unchanged. An instruction to the model that only appears once a disguise
+ * is undone is rated at least medium: a benign description has no reason to obfuscate one.
+ */
+function disguised(spans: TextSpan[], ownName: string, raw: Finding[]): Finding[] {
+  const known = new Set(raw.map((f) => `${f.category}|${f.detail}`));
+  const out: Finding[] = [];
+  const consider = (f: Finding, via: string): void => {
+    const key = `${f.category}|${f.detail}`;
+    if (known.has(key)) return;
+    known.add(key);
+    const severity = f.category === 'embedded-instruction' && SEVERITY_ORDER[f.severity] < SEVERITY_ORDER.medium ? 'medium' : f.severity;
+    out.push({ ...f, severity, via });
+  };
+  for (const span of spans) for (const d of derivedSpans(span)) for (const f of contentDetectors(d.span, ownName)) consider(f, d.via);
+  const combined = combinedDescriptions(spans);
+  if (combined) for (const d of derivedSpans(combined)) for (const f of detectEmbeddedInstruction(d.span)) consider(f, d.via);
+  return out;
+}
+
+function combinedDescriptions(spans: TextSpan[]): TextSpan | undefined {
+  const descriptive = spans.filter((s) => /description|title|\$comment|instructions/.test(s.where));
+  if (descriptive.length < 2) return undefined;
+  return { where: 'combined-descriptions', text: descriptive.map((s) => s.text).join('\n') };
 }
 
 /**
@@ -50,9 +110,8 @@ function runDetectors(spans: TextSpan[], ownName: string): Finding[] {
  * false positives.
  */
 function crossSpan(spans: TextSpan[], perSpan: Finding[]): Finding[] {
-  const descriptive = spans.filter((s) => /description|title|\$comment|instructions/.test(s.where));
-  if (descriptive.length < 2) return [];
-  const combined: TextSpan = { where: 'combined-descriptions', text: descriptive.map((s) => s.text).join('\n') };
+  const combined = combinedDescriptions(spans);
+  if (!combined) return [];
   const already = new Set(perSpan.filter((f) => f.category === 'embedded-instruction').map((f) => f.detail));
   return detectEmbeddedInstruction(combined).filter((f) => !already.has(f.detail));
 }
