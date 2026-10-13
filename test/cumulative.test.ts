@@ -7,7 +7,8 @@ import { ConfigSchema } from '../src/config/schema.js';
 import { MAX_SINKS, SINK_WINDOW_MS, SinkBuffers } from '../src/taint/cumulative.js';
 import { TaintEngine } from '../src/taint/engine.js';
 import { ProvenanceIndex, type OutputRef } from '../src/taint/provenance.js';
-import { fixtureServer, startGateway, type GatewayHarness } from './helpers.js';
+import { ElicitRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import { fixtureServer, startGateway, startHttpFixture, type GatewayHarness } from './helpers.js';
 
 // Canary in AWS access-key format, assembled at runtime so scanners do not flag the repo.
 const CANARY = ['AKIA', 'CUMULATIVE', 'TEST42'].join('');
@@ -62,6 +63,13 @@ describe('cumulative matcher (ProvenanceIndex)', () => {
     expect(idx.attributeCall({ body: CANARY.slice(9) }, { sink: 'hook__post', now: T0 + 1 }).evidence).toEqual([]);
   });
 
+  // 6a review, untested path 6: the exact window boundary (inclusive).
+  it('a piece exactly at the window edge is still joined', () => {
+    const idx = indexWithSecret();
+    idx.recordSent('hook__post', { body: CANARY.slice(0, 9) }, T0);
+    expect(idx.attributeCall({ body: CANARY.slice(9) }, { sink: 'hook__post', now: T0 + SINK_WINDOW_MS }).evidence[0]).toMatchObject({ matcher: 'cumulative' });
+  });
+
   it('pieces older than the window are not joined', () => {
     const idx = indexWithSecret();
     idx.recordSent('hook__post', { body: CANARY.slice(0, 9) }, T0);
@@ -97,6 +105,17 @@ describe('SinkBuffers bounds', () => {
     expect(b.prior('s0', T0)).toMatchObject({ calls: 0, trimmed: true });
     expect(b.prior(`s${MAX_SINKS}`, T0).calls).toBe(1);
   });
+
+  // 6a review, untested path 6: sink eviction changing a real decision. The lost piece costs the
+  // attribution, and the decision says so (degraded) instead of reporting a clean "no evidence".
+  it('a sink dropped by the LRU cap loses its piece, and the completing call is marked degraded', () => {
+    const idx = indexWithSecret();
+    idx.recordSent('hook__post', { body: CANARY.slice(0, 9) }, T0);
+    for (let i = 0; i < MAX_SINKS; i++) idx.recordSent(`other__t${i}`, { body: 'unrelated' }, T0 + 1);
+    const r = idx.attributeCall({ body: CANARY.slice(9) }, { sink: 'hook__post', now: T0 + 2 });
+    expect(r.evidence.filter((e) => e.matcher === 'cumulative')).toEqual([]);
+    expect(r.degraded).toBe(true);
+  });
 });
 
 describe('cumulative matcher through the gateway', () => {
@@ -117,6 +136,54 @@ describe('cumulative matcher through the gateway', () => {
     const decisions = h.store.events({ kind: 'decision' }).map((e) => JSON.parse(e.payload ?? '{}') as { evidence: { matcher: string; priorCalls?: number }[] });
     const last = decisions[decisions.length - 1];
     expect(last?.evidence.some((e) => e.matcher === 'cumulative' && e.priorCalls === 1)).toBe(true);
+  });
+
+  const lastEvidence = (h: GatewayHarness) => {
+    const decisions = h.store.events({ kind: 'decision' }).map((e) => JSON.parse(e.payload ?? '{}') as { evidence?: { matcher: string; priorCalls?: number }[] }).filter((d) => d.evidence);
+    return decisions[decisions.length - 1]?.evidence ?? [];
+  };
+
+  // 6a review, untested path 6: an `ask` that the user approves is forwarded, so it must count as sent;
+  // a refused one sent nothing and must not.
+  for (const approve of [true, false]) {
+    it(`an ask-${approve ? 'approved' : 'refused'} piece ${approve ? 'is' : 'is not'} recorded as sent`, async () => {
+      let asks = 0;
+      const h = await startGateway(
+        { fx: fixtureServer('everything', { tools: { echo: { rules: [{ ask: 'arg.text.size() < 10' }] } } }) },
+        {
+          config: { taint: { trifecta: 'log', max_index_mb: 32 } },
+          clientCapabilities: { elicitation: {} },
+          setupClient: (c) => {
+            c.setRequestHandler(ElicitRequestSchema, () => {
+              asks++;
+              return approve ? { action: 'accept', content: { approve: true } } : { action: 'decline' };
+            });
+          },
+        },
+      );
+      harnesses.push(h);
+      await h.client.readResource({ uri: `fixture://items/${CANARY}` });
+      await h.client.callTool({ name: 'fx__echo', arguments: { text: CANARY.slice(0, 9) } }); // asks
+      await h.client.callTool({ name: 'fx__echo', arguments: { text: CANARY.slice(9) } }); // 11 chars: no ask
+      expect(asks).toBe(1);
+      expect(lastEvidence(h).some((e) => e.matcher === 'cumulative' && e.priorCalls === 1)).toBe(approve);
+    });
+  }
+
+  // 6a review, untested path 6: the same flow over a Streamable HTTP upstream.
+  it('works the same over an HTTP upstream', async () => {
+    const http = await startHttpFixture();
+    try {
+      const h = await startGateway({ fx: { url: http.url } }, { config: { taint: { trifecta: 'log', max_index_mb: 32 } } });
+      harnesses.push(h);
+      await h.client.readResource({ uri: `fixture://items/${CANARY}` });
+      await h.client.callTool({ name: 'fx__echo', arguments: { text: CANARY.slice(0, 9) } });
+      await h.client.callTool({ name: 'fx__echo', arguments: { text: CANARY.slice(9) } });
+      expect(lastEvidence(h).some((e) => e.matcher === 'cumulative' && e.priorCalls === 1)).toBe(true);
+    } finally {
+      await Promise.all(harnesses.splice(0).map((x) => x.close()));
+      await http.close();
+    }
   });
 });
 

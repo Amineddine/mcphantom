@@ -4,10 +4,11 @@
  */
 import { McpServer, ResourceTemplate } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { completable } from '@modelcontextprotocol/sdk/server/completable.js';
-import { ErrorCode, McpError } from '@modelcontextprotocol/sdk/types.js';
+import { ErrorCode, McpError, SubscribeRequestSchema, UnsubscribeRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 
-const stats = { cancelled: 0 };
+/** Counters a test can read through the `stats` tool, e.g. to prove a request never reached the server. */
+const stats = { cancelled: 0, prompts: 0, completions: 0, subscribes: 0, reads: 0 };
 
 export function buildEverythingServer(): McpServer {
   const server = new McpServer(
@@ -92,14 +93,34 @@ export function buildEverythingServer(): McpServer {
     'item',
     new ResourceTemplate('fixture://items/{id}', { list: undefined }),
     { mimeType: 'application/json' },
-    (uri, { id }) => ({ contents: [{ uri: uri.href, text: JSON.stringify({ id }) }] }),
+    (uri, { id }) => {
+      stats.reads++;
+      return { contents: [{ uri: uri.href, text: JSON.stringify({ id }) }] };
+    },
   );
 
   server.registerPrompt(
     'greet',
-    { description: 'Greets someone', argsSchema: { name: completable(z.string(), (v) => ['alice', 'albert', 'bob'].filter((n) => n.startsWith(v))) } },
-    ({ name }) => ({ messages: [{ role: 'user', content: { type: 'text', text: `Hello, ${name}!` } }] }),
+    {
+      description: 'Greets someone',
+      argsSchema: {
+        name: completable(z.string(), (v) => {
+          stats.completions++;
+          return ['alice', 'albert', 'bob'].filter((n) => n.startsWith(v));
+        }),
+      },
+    },
+    ({ name }) => {
+      stats.prompts++;
+      return { messages: [{ role: 'user', content: { type: 'text', text: `Hello, ${name}!` } }] };
+    },
   );
+
+  server.server.setRequestHandler(SubscribeRequestSchema, () => {
+    stats.subscribes++;
+    return {};
+  });
+  server.server.setRequestHandler(UnsubscribeRequestSchema, () => ({}));
 
   return server;
 }

@@ -150,20 +150,20 @@ export class TaintEngine {
     if (trifecta && !policy?.declassified) {
       const enforced = this.config.taint.trifecta === 'deny';
       const why = upgraded ? 'write to a target outside the declared workspace (treated as egress)' : `${effect} call`;
-      return {
-        ...base,
-        verdict: enforced ? 'deny' : 'allow',
-        rule: 'trifecta',
-        enforced,
-        reason:
-          `${why} while the session holds untrusted content (${describe(this.untrustedSources)}) ` +
-          `and secret data (${describe(this.secretSources)})${enforced ? '' : ' — audit mode, not blocked'}`,
-      };
+      const reason =
+        `${why} while the session holds untrusted content (${describe(this.untrustedSources)}) ` +
+        `and secret data (${describe(this.secretSources)})${enforced ? '' : ' — audit mode, not blocked'}`;
+      // Audit mode records the invariant but must not displace a policy `ask`: returning `allow` here
+      // would silently skip an author-written confirmation (fail-open, found in 6b).
+      if (!enforced && policy?.effect === 'ask') {
+        return { ...base, verdict: 'ask', rule: 'policy', enforced: true, reason: `${askReason(policy)}; also: ${reason}` };
+      }
+      return { ...base, verdict: enforced ? 'deny' : 'allow', rule: 'trifecta', enforced, reason };
     }
 
     // 3. A policy `ask`.
     if (policy?.effect === 'ask') {
-      return { ...base, verdict: 'ask', rule: 'policy', enforced: true, reason: `policy requires user confirmation (${policy.matches.find((m) => m.effect === 'ask')?.origin ?? '?'})` };
+      return { ...base, verdict: 'ask', rule: 'policy', enforced: true, reason: askReason(policy) };
     }
 
     // 4. Allow (noting a lifted invariant when that is why we are here).
@@ -200,6 +200,10 @@ export class TaintEngine {
   get indexStats() {
     return this.index.stats;
   }
+}
+
+function askReason(policy: PolicyOutcome): string {
+  return `policy requires user confirmation (${policy.matches.find((m) => m.effect === 'ask')?.origin ?? '?'})`;
 }
 
 function allowReason(effect: Effect, ctx: Label): string {

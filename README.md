@@ -138,7 +138,7 @@ Security-relevant defaults:
 | `env_inherit` | `minimal` | Servers get the SDK's small environment allowlist plus their own `env`, never the gateway's full environment. |
 | `allow_sampling` | `false` | `sampling/createMessage` lets a server put text straight into the model. |
 | `logging.payloads` | `redacted` | Credentials are removed *before* anything is written to disk. |
-| `logging.on_failure` | `warn` | `deny` makes the audit log a control: a call whose decision or result can't be logged is refused. |
+| `logging.on_failure` | `warn` | `deny` makes the audit log a control: a request (tool call, prompt, resource read or subscription, completion, relayed server request) that can't be logged before it is forwarded is refused, and a result that can't be logged is withheld. |
 | `resources.unrouted` | `deny` | A resource URI that no server listed is refused. |
 | `security.insecure_permissions` | `fix` | Config, profiles and the event DB are restricted to your user (POSIX `0600`/`0700`; on Windows an ACL with a single entry for your SID). |
 

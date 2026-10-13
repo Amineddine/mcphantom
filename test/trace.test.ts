@@ -10,13 +10,13 @@ import { tempDir } from './helpers.js';
 const dirs: string[] = [];
 afterEach(() => { for (const d of dirs.splice(0)) fs.rmSync(d, { recursive: true, force: true }); });
 
-function seed() {
+function seed(evidence?: unknown[], attributionDegraded = false) {
   const dataDir = path.join(tempDir(), 'data');
   dirs.push(path.dirname(dataDir));
   const store = new SqliteStore({ dataDir, payloads: 'redacted', maxPayloadBytes: 65_536, retentionDays: 14, retentionMaxMb: 256, knownSecrets: [], insecurePermissions: 'fix', logger: silentLogger });
   store.startSession({ id: 's1' });
   store.append({ sessionId: 's1', kind: 'taint', server: 'web', name: 'web__fetch', method: 'tool', payload: { contextAfter: { integrity: 'untrusted', confidentiality: 'public' }, secretsDetected: [] } });
-  store.append({ sessionId: 's1', kind: 'decision', server: 'hook', name: 'hook__post', method: 'tools/call', outcome: 'denied', payload: { id: 'd1', verdict: 'deny', rule: 'trifecta', enforced: true, server: 'hook', tool: 'hook__post', effect: 'egress', context: { integrity: 'untrusted', confidentiality: 'secret' }, untrustedSources: [{ source: 'web__fetch' }], secretSources: [{ source: 'files__read' }], evidence: [{ argPath: '$.body', kind: 'identifier:secret', matcher: 'exact', rule: 'aws-access-key-id', output: { source: 'files__read' } }], attributionDegraded: false, reason: 'egress while untrusted+secret' } });
+  store.append({ sessionId: 's1', kind: 'decision', server: 'hook', name: 'hook__post', method: 'tools/call', outcome: 'denied', payload: { id: 'd1', verdict: 'deny', rule: 'trifecta', enforced: true, server: 'hook', tool: 'hook__post', effect: 'egress', context: { integrity: 'untrusted', confidentiality: 'secret' }, untrustedSources: [{ source: 'web__fetch' }], secretSources: [{ source: 'files__read' }], evidence: evidence ?? [{ argPath: '$.body', kind: 'identifier:secret', matcher: 'exact', rule: 'aws-access-key-id', output: { source: 'files__read' } }], attributionDegraded, reason: 'egress while untrusted+secret' } });
   store.close();
   return dataDir;
 }
@@ -32,6 +32,24 @@ describe('mcphantom trace', () => {
     expect(t).toContain('untrusted/secret');
     expect(t).toContain('secret from:    files__read');
     expect(t).toContain('$.body identifier:secret (exact, aws-access-key-id) ← files__read');
+  });
+
+  // 6a review, untested path 8: the evidence fields added by the decoded / fuzzy / cumulative matchers.
+  it('renders decode chains, the fuzzy score, joined calls and the degraded note', () => {
+    const lines: string[] = [];
+    const dataDir = seed([
+      { argPath: '$.body', kind: 'identifier:secret', matcher: 'decoded', rule: 'aws-access-key-id', chain: ['base64', 'url'], output: { source: 'files__read' } },
+      { argPath: '$.to', kind: 'identifier:url', matcher: 'decoded', outputChain: ['reverse'], output: { source: 'web__fetch' } },
+      { argPath: '$.note', kind: 'copy', matcher: 'fuzzy', score: 0.72, output: { source: 'web__fetch' } },
+      { argPath: '$.body', kind: 'identifier:secret', matcher: 'cumulative', priorCalls: 2, output: { source: 'files__read' } },
+    ], true);
+    runTrace({ dataDir, last: true, json: false, paths }, (s) => lines.push(s));
+    const t = lines.join('\n');
+    expect(t).toContain('$.body identifier:secret (decoded, aws-access-key-id, decoded base64 → url) ← files__read');
+    expect(t).toContain('$.to identifier:url (decoded, encoded in output as reverse) ← web__fetch');
+    expect(t).toContain('$.note copy (fuzzy, score 0.72) ← web__fetch');
+    expect(t).toContain('$.body identifier:secret (cumulative, joined with 2 earlier call(s)) ← files__read');
+    expect(t).toMatch(/note: attribution hit a bound/);
   });
 
   it('emits JSON with --json', () => {

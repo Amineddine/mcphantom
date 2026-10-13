@@ -97,6 +97,25 @@ describe('ProvenanceIndex: fuzzy matcher', () => {
     expect(idx.stats.tierABytes).toBeGreaterThan(SOURCE.length * 2);
   });
 
+  // 6a review, untested path 5: fingerprints live in Tier A and leave with it. The loss must be
+  // reported (eviction notice → `attribution_degraded` in the engine), never silent.
+  it('a fuzzy match disappears once its output is evicted from Tier A, and the eviction is reported', () => {
+    const probe = new ProvenanceIndex({ maxTierABytes: 1e7 });
+    probe.add(ref('o1'), [SOURCE]);
+    const oneEntry = probe.stats.tierABytes;
+    const edited = SOURCE.replace('scheduled for', 'planned for').replace('approval from', 'sign-off by');
+
+    const idx = new ProvenanceIndex({ maxTierABytes: Math.ceil(oneEntry * 1.5) });
+    idx.add(ref('o1'), [SOURCE]);
+    expect(idx.attribute({ body: edited })[0]).toMatchObject({ matcher: 'fuzzy', output: expect.objectContaining({ id: 'o1' }) });
+
+    const filler = randomText(rng(7), SOURCE.length);
+    const { evictions } = idx.add(ref('o2'), [filler]);
+    expect(evictions.map((e) => e.output.id)).toEqual(['o1']);
+    expect(idx.stats.tierABytes).toBeLessThanOrEqual(Math.ceil(oneEntry * 1.5));
+    expect(idx.attribute({ body: edited }).filter((e) => e.matcher === 'fuzzy')).toEqual([]);
+  });
+
   it('stays fast against a large index (400 outputs of 8 KB, an 8 KB argument)', () => {
     const r = rng(3);
     const idx = new ProvenanceIndex({ maxTierABytes: 1e9 });
