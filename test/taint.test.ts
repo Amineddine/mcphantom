@@ -104,7 +104,8 @@ describe('ProvenanceIndex', () => {
     const idx = new ProvenanceIndex({ maxTierABytes: 1e6 });
     idx.add(ref('o1'), [envFile]);
     expect(idx.attribute({ body: Array.from(CANARY).map((c) => c.charCodeAt(0)).join(',') })).toEqual([]);
-    // Split across two fields: the cumulative matcher (6a step 3) targets this.
+    // Split across two fields: a decision catches it through the cumulative matcher (cumulative.test.ts),
+    // but attribution without a sink — what the policy from() predicate uses, one value at a time — does not.
     expect(idx.attribute({ a: CANARY.slice(0, 10), b: CANARY.slice(10) })).toEqual([]);
   });
 

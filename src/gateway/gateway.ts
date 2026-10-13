@@ -256,6 +256,8 @@ export class Gateway {
             return blockedResult(decision);
           }
         }
+        // From here the arguments leave the gateway: record them for the cumulative matcher.
+        this.taint.sent(exposed, req.params.arguments ?? {});
         const result = (await u.client.callTool(
           forUpstream(req.params, { name: route.name }),
           undefined,

@@ -125,7 +125,7 @@ export class TaintEngine {
   decide(serverId: string, toolName: string, exposedName: string, args: unknown): Decision {
     const cls = classify(this.config, serverId, toolName);
     const tool = exposedName;
-    const attribution = this.index.attributeCall(args);
+    const attribution = this.index.attributeCall(args, { sink: exposedName, now: this.now() });
     const id = `d${++this.decisions}`;
     // A `write` whose target leaves the declared workspace (remote URL, absolute path elsewhere, or a
     // `..` escape) is exfiltration in disguise, so it is treated as `egress` for the invariant.
@@ -175,6 +175,17 @@ export class TaintEngine {
       reason: lifted ? `trifecta lifted by declassify '${policy.declassified?.id}': ${policy.declassified?.reason}` : allowReason(effect, this.context),
     };
   }
+
+  /**
+   * Records that a call was forwarded (allowed, or approved by the user), for the cumulative matcher.
+   * The gateway calls this only for calls it actually sends; a denied call sent nothing.
+   */
+  sent(exposedName: string, args: unknown): void {
+    this.index.recordSent(exposedName, args, this.now());
+  }
+
+  /** Clock for the cumulative window, injectable for tests. */
+  now: () => number = () => Date.now();
 
   /** Integrity levels the provenance index attributes to a value — for the policy `from()` predicate. */
   provenanceOf(value: string): Set<'trusted' | 'untrusted'> {

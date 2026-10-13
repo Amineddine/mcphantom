@@ -2,6 +2,7 @@ import type { Label } from './labels.js';
 import { extractIdentifiers, fold, leaves, normalize, type IdentifierKind } from './text.js';
 import { decodeVariants, type DecodeLimits, type Decoder } from '../text/decode.js';
 import { containment, fingerprints, reduce } from './fuzzy.js';
+import { joinedLeaves, MAX_SINK_CHARS, SinkBuffers } from './cumulative.js';
 
 /** One piece of content that entered the model's context. */
 export interface OutputRef {
@@ -18,9 +19,11 @@ export interface OutputRef {
  * How the argument was tied to the output: `exact`/`normalized` (verbatim, or after folding case,
  * width, invisible characters and look-alikes), `decoded` (after undoing an encoding on either side —
  * `chain`/`outputChain` say which), `fuzzy` (text copied with light edits or reordering: winnowing
- * fingerprints, `score` = fraction of the argument's fingerprints found in the output).
+ * fingerprints, `score` = fraction of the argument's fingerprints found in the output), `cumulative`
+ * (an identifier that only forms when this call's string arguments are joined to each other and to
+ * what earlier forwarded calls sent to the same tool — an exfiltration split into pieces).
  */
-export type Matcher = 'exact' | 'normalized' | 'decoded' | 'fuzzy';
+export type Matcher = 'exact' | 'normalized' | 'decoded' | 'fuzzy' | 'cumulative';
 
 /** Layer-2 evidence that an argument value came from an earlier output. */
 export interface Evidence {
@@ -38,6 +41,8 @@ export interface Evidence {
   outputChain?: Decoder[];
   /** `fuzzy` only: fraction of the argument's fingerprints present in the output (0–1). */
   score?: number;
+  /** `cumulative` only: earlier forwarded calls to the same tool inside the window that were joined. */
+  priorCalls?: number;
 }
 
 export interface Attribution {
@@ -124,6 +129,8 @@ export class ProvenanceIndex {
   private readonly maxTierBEntries: number;
   /** Outputs whose full text is gone; their identifiers may also be gone if Tier B overflowed. */
   evicted: OutputRef[] = [];
+  /** What forwarded calls sent to each tool, for the cumulative matcher. */
+  private readonly sinks = new SinkBuffers();
 
   constructor(opts: { maxTierABytes: number; maxTierBEntries?: number }) {
     this.maxTierABytes = opts.maxTierABytes;
@@ -184,8 +191,20 @@ export class ProvenanceIndex {
     return this.attributeCall(args).evidence;
   }
 
-  /** Attributes each string leaf of `args` to earlier outputs, reporting whether a bound was hit. */
-  attributeCall(args: unknown): Attribution {
+  /**
+   * Records the string arguments of a call that was forwarded to `sink` (an exposed tool name). Only
+   * forwarded calls are recorded: a denied call sent nothing.
+   */
+  recordSent(sink: string, args: unknown, now = Date.now()): void {
+    const values = leaves(args).slice(0, MAX_ATTRIBUTED_LEAVES).map((l) => l.value);
+    this.sinks.record(sink, joinedLeaves(values), now);
+  }
+
+  /**
+   * Attributes each string leaf of `args` to earlier outputs, reporting whether a bound was hit. With
+   * `sink`, also runs the cumulative matcher against what was previously sent to that tool.
+   */
+  attributeCall(args: unknown, opts: { sink?: string; now?: number } = {}): Attribution {
     const out: Evidence[] = [];
     const seen = new Set<string>();
     let degraded = false;
@@ -196,12 +215,15 @@ export class ProvenanceIndex {
         out.push(e);
       }
     };
+    /** Normalized hashes of identifiers this call already matched leaf by leaf. */
+    const matched = new Set<string>();
     const lookup = (leafPath: string, text: string, isRaw: boolean, chain?: Decoder[]): void => {
       const tokens = !chain?.some((d) => d === 'rot13' || d === 'reverse');
       for (const id of extractIdentifiers(text, { tokens })) {
         const exact = isRaw ? this.tierB.get(`r:${id.rawHash}`) : undefined;
         const hit = exact ?? this.tierB.get(`n:${id.normHash}`);
         if (!hit) continue;
+        matched.add(id.normHash);
         for (const src of hit.outputs) {
           const matcher: Matcher = chain || src.chain ? 'decoded' : exact ? 'exact' : 'normalized';
           push({
@@ -221,6 +243,7 @@ export class ProvenanceIndex {
     let decodeBudget = MAX_DECODED_PER_CALL;
     let fuzzyBudget = MAX_FUZZY_PER_CALL;
     const decodeQueue: { path: string; value: string }[] = [];
+    const attributed: string[] = [];
     for (const full of allLeaves.slice(0, MAX_ATTRIBUTED_LEAVES)) {
       if (budget <= 0) {
         degraded = true;
@@ -230,6 +253,7 @@ export class ProvenanceIndex {
       budget -= take;
       if (take < full.value.length) degraded = true;
       const leaf = take < full.value.length ? { path: full.path, value: full.value.slice(0, take) } : full;
+      attributed.push(leaf.value);
       // Tier B: identifiers reproduced in the argument. Extraction runs on the raw value, on its folded
       // form (zero-width / fullwidth / look-alike disguises removed, case kept for case-sensitive
       // detectors) and on its normalized form; only a raw-hash hit on the raw value counts as exact.
@@ -276,10 +300,54 @@ export class ProvenanceIndex {
       // repeat the work.
       for (const v of r.variants) lookup(leaf.path, fold(v.text), false, v.chain);
     }
+    if (opts.sink !== undefined && this.cumulative(opts.sink, attributed, opts.now ?? Date.now(), matched, push)) degraded = true;
     return { evidence: out, degraded };
   }
 
-  get stats(): { tierABytes: number; tierAOutputs: number; tierBEntries: number; evicted: number } {
-    return { tierABytes: this.tierABytes, tierAOutputs: this.tierA.length, tierBEntries: this.tierBCount, evicted: this.evicted.length };
+  /**
+   * Cumulative matcher. Joins, in order, what earlier forwarded calls sent to `sink` and this call's
+   * string arguments, and reports identifiers that occur in the join — directly or decoded — but not
+   * in the earlier part alone and not in any single leaf of this call: those only exist reassembled.
+   * Only the call that completes an identifier is attributed; earlier pieces have already been sent.
+   * Pieces sent out of order (or to different tools) are not reassembled — a published bypass, still
+   * subject to Layer 1. Returns true if a bound limited the check.
+   */
+  private cumulative(sink: string, values: string[], now: number, matched: Set<string>, push: (e: Evidence) => void): boolean {
+    const prior = this.sinks.prior(sink, now);
+    if (prior.calls === 0 && values.length < 2) return prior.trimmed;
+    const current = joinedLeaves(values);
+    const capped = current.slice(0, MAX_SINK_CHARS);
+    const before = this.identifierHashes(prior.text);
+    for (const [hash, chain] of this.identifierHashes(prior.text + capped)) {
+      if (before.has(hash) || matched.has(hash)) continue;
+      const hit = this.tierB.get(`n:${hash}`);
+      if (!hit) continue;
+      for (const src of hit.outputs) {
+        push({
+          argPath: '$', output: src.ref, kind: `identifier:${hit.kind}`, matcher: 'cumulative', priorCalls: prior.calls,
+          ...(hit.rule ? { rule: hit.rule } : {}),
+          ...(chain ? { chain } : {}),
+          ...(src.chain ? { outputChain: src.chain } : {}),
+        });
+      }
+    }
+    return prior.trimmed || capped.length < current.length;
+  }
+
+  /** Normalized identifier hashes in `text` and in its decoded variants, with the first decode chain. */
+  private identifierHashes(text: string): Map<string, Decoder[] | undefined> {
+    const out = new Map<string, Decoder[] | undefined>();
+    if (text.length === 0) return out;
+    for (const id of extractIdentifiers(fold(text))) if (!out.has(id.normHash)) out.set(id.normHash, undefined);
+    for (const v of decodeVariants(text, ARG_DECODE_LIMITS).variants) {
+      const tokens = !v.chain.some((d) => d === 'rot13' || d === 'reverse');
+      for (const id of extractIdentifiers(fold(v.text), { tokens })) if (!out.has(id.normHash)) out.set(id.normHash, v.chain);
+    }
+    return out;
+  }
+
+  get stats(): { tierABytes: number; tierAOutputs: number; tierBEntries: number; evicted: number; sinks: number; sinkChars: number } {
+    const s = this.sinks.stats;
+    return { tierABytes: this.tierABytes, tierAOutputs: this.tierA.length, tierBEntries: this.tierBCount, evicted: this.evicted.length, sinks: s.sinks, sinkChars: s.chars };
   }
 }

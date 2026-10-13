@@ -80,7 +80,15 @@ function renderDecision(e: StoredEvent, out: (s: string) => void): void {
   if (d.untrustedSources.length) out(`    untrusted from: ${[...new Set(d.untrustedSources.map((s) => s.source))].join(', ')}`);
   if (d.secretSources.length) out(`    secret from:    ${[...new Set(d.secretSources.map((s) => s.source))].join(', ')}`);
   for (const ev of d.evidence) {
-    out(`    evidence: ${ev.argPath} ${ev.kind} (${ev.matcher}${ev.rule ? ', ' + ev.rule : ''}) ← ${ev.output.source}`);
+    const how = [
+      ev.matcher,
+      ev.rule,
+      ev.chain ? `decoded ${ev.chain.join(' → ')}` : undefined,
+      ev.outputChain ? `encoded in output as ${ev.outputChain.join(' → ')}` : undefined,
+      ev.score !== undefined ? `score ${ev.score}` : undefined,
+      ev.priorCalls !== undefined ? `joined with ${ev.priorCalls} earlier call(s)` : undefined,
+    ].filter((x) => x !== undefined).join(', ');
+    out(`    evidence: ${ev.argPath} ${ev.kind} (${how}) ← ${ev.output.source}`);
   }
-  if (d.attributionDegraded) out('    note: provenance was evicted under the memory budget; evidence may be incomplete (Layer 1 still applied)');
+  if (d.attributionDegraded) out('    note: attribution hit a bound (memory budget, size or decode limit); evidence may be incomplete (Layer 1 still applied)');
 }
