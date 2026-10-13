@@ -171,7 +171,8 @@ demo and benchmark. The same detector feeds log redaction.
 ### Ask decisions
 
 Routed to MCP `elicitation` if the client supports it, else a dashboard approval queue with a
-timeout, else deny.
+timeout, else deny. **Staging (owner decision 2026-10-13):** v0.1 has no queue — without elicitation an
+`ask` is a deny; the minimal approval queue ships in the v1 trace view (Phase 8).
 
 ---
 
@@ -312,10 +313,9 @@ pushes).
 3. Benign corpus to ≥ 200 licence-checked community tool definitions; third-party poisoned examples
    (e.g. Invariant Labs) in the test split.
 
-**Open items carried forward:** resource pinning (before v1); `ask` without elicitation denies — the
-dashboard approval queue was part of the full Blacklight UI, which is now after v1, so **through v1 an
-`ask` on a client without elicitation is a deny** (owner to confirm whether the queue moves into the v1
-trace view); the MCP SDK final-progress race (AUD-10b) — issue drafted and
+**Open items carried forward:** resource pinning (before v1); `ask` without elicitation — **owner decision
+(2026-10-13): for v0.1 an `ask` on a client without elicitation is a deny; a minimal approval queue moves
+into the v1 trace view (Phase 8)**; the MCP SDK final-progress race (AUD-10b) — issue drafted and
 ready, PR draft **not ready**: verified against SDK `v1.x`, the naive fix passes its own test but breaks
 two existing task-progress tests (details in `docs/upstream/sdk-progress-race/PR.md`); nothing filed
 (owner submits from their account); repo security settings
@@ -341,7 +341,7 @@ Every phase ends with green CI, a commit, and a written hostile review with its 
 | 6 | **Taint deepening.** Decoded/fuzzy/cumulative matchers, secret detectors, Tier A/B bounded index with eviction events and `attribution_degraded`, elicitation/ask flow; exfiltration attack servers | Adversarial evasion suite, with the evasions that succeed published |
 | 6.5 | **v0.1 public release** (right after 6a): polished README with a "Related work" section, scripted demo GIF, repository made public — **only with the owner's explicit confirmation** | README claims each link to a reproducible command; GIF regenerates from a script |
 | 7 | **Tier-1 runtime benchmark** (`mcp-attack-bench`), adapter spec, latency + memory + eviction-loss benchmarks (semantic layer dropped from v1) | Numbers and methodology published |
-| 8 | **Dashboard, v1 scope: the taint-trace view only** (decision → Layer-1 sources, Layer-2 evidence, rule, degraded flag). The full "Blacklight" UI comes after v1 | Playwright e2e + dashboard security tests |
+| 8 | **Dashboard, v1 scope: the taint-trace view only** (decision → Layer-1 sources, Layer-2 evidence, rule, degraded flag) **plus a minimal approval queue** for `ask` decisions on clients without elicitation (approve/deny one pending call, with a timeout that denies). The full "Blacklight" UI comes after v1 | Playwright e2e + dashboard security tests; queue approval/deny/timeout paths tested |
 | 9 | **Showcase + Tier-2 live runs.** The headline demo uses **real Claude Code as the MCP client against a real poisoned page**, with a **replay mode** (recorded real transcript, model + date shown) for anyone without Claude Code. The demo must run **from the installed package — `npx mcphantom demo`** — not only a dev checkout. Tier-2 bulk runs: Ollama default; Anthropic API behind a flag with the USD-50 cap. The deterministic `npm run demo` is kept as the CI regression test. | Live attack-success rates with confidence intervals; `npx mcphantom demo` works from a clean global install; replay mode needs no network or model |
 | 10 | **v1 hardening.** Claude Code hook integration — a `PreToolUse` hook so the client's built-in tools (Bash, WebFetch, …, which never cross MCP) are checked against the same taint state and policy, and a `SessionStart` hook that resets the session's taint (addresses over-tainting across conversations); optional per-server sandboxing of upstream servers (the real boundary for same-user tampering and host actions); an audited "trust this source" declassify offered from the approval prompt, recorded as a named declassify entry | Hook e2e against real Claude Code; sandbox escape tests per OS; every approval-created declassify appears in the trace and the policy diff |
 | 11 | **Docs + v1 release**: README, architecture diagram, threat model, known bypasses, write-up, demo GIF; GitHub + npm (each push/publish confirmed with the owner first) | Every claim linked to a reproducible command |
@@ -430,6 +430,9 @@ across conversations; image/audio content is labeled by source but not inspected
 ---
 
 ## Change log
+
+- 2026-10-13 — Owner decision on `ask` without elicitation: deny for v0.1; a minimal approval queue is
+  added to the v1 trace view (Phase 8).
 
 - 2026-10-13 — Phase 6a done: carried fail-closed fixes; shared normalize/decode pipeline (Unicode
   confusables 16.0.0, Unicode License v3 in NOTICE); decoded / fuzzy / cumulative Layer-2 matchers;
