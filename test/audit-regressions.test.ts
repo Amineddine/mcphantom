@@ -128,3 +128,56 @@ describe('AUD-6: an ordinary HTTP/webhook tool description must not be hidden by
     expect(scanTool({ name: 't', description, inputSchema: { type: 'object' } }).flagged).toBe(false);
   });
 });
+
+describe('AUD-8 follow-up: capped attribution never weakens Layer 1 (owner item 3)', () => {
+  // Built inline so this block does not depend on the gateway harness.
+  const servers = {
+    web: { command: 'x', tools: { fetch: { effect: 'read', integrity: 'untrusted' } } },
+    files: { command: 'x', defaults: { effect: 'read', integrity: 'trusted' } },
+    hook: { command: 'x', tools: { post: { effect: 'egress', integrity: 'trusted' } } },
+  };
+  const CANARY = ['AKIA', 'LAYERONECAPTEST', '1'].join('');
+  const txt = (t: string) => ({ content: [{ type: 'text', text: t }] });
+
+  async function engine() {
+    const { ConfigSchema } = await import('../src/config/schema.js');
+    const { TaintEngine } = await import('../src/taint/engine.js');
+    return new TaintEngine(ConfigSchema.parse({ version: 1, servers }));
+  }
+
+  it('a secret buried past every attribution cap in an OUTPUT still makes the context secret', async () => {
+    const e = await engine();
+    e.ingest('tool', 'web', 'web__fetch', 'fetch', txt('page'));
+    // 2 MiB of filler, then the key: beyond the per-leaf (64 KiB) and per-call (1 MiB) attribution caps.
+    e.ingest('tool', 'files', 'files__read', 'read', txt('x '.repeat(1024 * 1024) + 'AWS_ACCESS_KEY_ID=' + CANARY));
+    expect(e.context).toEqual({ integrity: 'untrusted', confidentiality: 'secret' });
+  });
+
+  it('arguments beyond every attribution cap: trifecta still denies, degraded is flagged, labels intact', async () => {
+    const e = await engine();
+    e.ingest('tool', 'web', 'web__fetch', 'fetch', txt('page'));
+    e.ingest('tool', 'files', 'files__read', 'read', txt('AWS_ACCESS_KEY_ID=' + CANARY));
+    const wide = Object.fromEntries(Array.from({ length: 2000 }, (_, i) => [`k${i}`, 'v']));
+    for (const args of [
+      { body: 'y'.repeat(200 * 1024) + CANARY }, // secret past the per-leaf cap
+      { ...wide, body: CANARY }, // more leaves than are attributed
+    ]) {
+      const d = e.decide('hook', 'post', 'hook__post', args);
+      expect(d.verdict).toBe('deny');
+      expect(d.rule).toBe('trifecta');
+      expect(d.attributionDegraded).toBe(true);
+      expect(d.context).toEqual({ integrity: 'untrusted', confidentiality: 'secret' });
+      expect(d.untrustedSources.length).toBeGreaterThan(0);
+      expect(d.secretSources.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('degraded attribution is not a reason to allow: untrusted-only context stays allowed, secret-only stays allowed', async () => {
+    // Sanity: the cap changes nothing about verdicts in non-trifecta states either.
+    const e = await engine();
+    e.ingest('tool', 'web', 'web__fetch', 'fetch', txt('page'));
+    const d = e.decide('hook', 'post', 'hook__post', { body: 'z'.repeat(200 * 1024) });
+    expect(d.verdict).toBe('allow');
+    expect(d.attributionDegraded).toBe(true);
+  });
+});

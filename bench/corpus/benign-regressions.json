@@ -1,0 +1,117 @@
+[
+ {
+  "source": "synthetic: AUD-6 false-positive regression (docs/reviews/phase-5.md)",
+  "label": "benign",
+  "tool": {
+   "name": "http_post",
+   "description": "Send an HTTP POST request to a URL such as https://api.example.com/v1/items and return the response body.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "url": {
+      "type": "string",
+      "description": "Target URL, e.g. https://api.example.com/v1/items"
+     },
+     "body": {
+      "type": "string",
+      "description": "Request body to send"
+     }
+    }
+   }
+  }
+ },
+ {
+  "source": "synthetic: AUD-6 false-positive regression (docs/reviews/phase-5.md)",
+  "label": "benign",
+  "tool": {
+   "name": "http_request",
+   "description": "Make an HTTP request (GET, POST, PUT, DELETE) to any https:// endpoint and return status and body.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "method": {
+      "type": "string",
+      "enum": [
+       "GET",
+       "POST",
+       "PUT",
+       "DELETE"
+      ]
+     },
+     "url": {
+      "type": "string"
+     }
+    }
+   }
+  }
+ },
+ {
+  "source": "synthetic: AUD-6 false-positive regression (docs/reviews/phase-5.md)",
+  "label": "benign",
+  "tool": {
+   "name": "slack_post_webhook",
+   "description": "Post a message to a Slack incoming webhook (https://hooks.slack.com/services/...).",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "webhook_url": {
+      "type": "string",
+      "description": "The Slack webhook URL"
+     },
+     "text": {
+      "type": "string",
+      "description": "Message text to send"
+     }
+    }
+   }
+  }
+ },
+ {
+  "source": "synthetic: AUD-6 false-positive regression (docs/reviews/phase-5.md)",
+  "label": "benign",
+  "tool": {
+   "name": "discord_notify",
+   "description": "Send a notification to a Discord webhook URL with the given message.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "url": {
+      "type": "string"
+     },
+     "content": {
+      "type": "string"
+     }
+    }
+   }
+  }
+ },
+ {
+  "source": "synthetic: AUD-6 false-positive regression (docs/reviews/phase-5.md)",
+  "label": "benign",
+  "tool": {
+   "name": "load_dotenv",
+   "description": "Load configuration from .env files in the project directory and return the variable names found.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {
+     "path": {
+      "type": "string",
+      "description": "Directory containing the .env file"
+     }
+    }
+   }
+  }
+ },
+ {
+  "source": "synthetic: AUD-6 false-positive regression (docs/reviews/phase-5.md)",
+  "label": "benign",
+  "tool": {
+   "name": "read_env_example",
+   "description": "Read .env.example to show which environment variables the project expects.",
+   "inputSchema": {
+    "type": "object",
+    "properties": {}
+   }
+  }
+ }
+]

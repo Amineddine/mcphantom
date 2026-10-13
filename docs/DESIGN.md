@@ -280,6 +280,33 @@ moving to `node:sqlite` once it is stable is a contained change. CI installs on 
 
 ---
 
+## Current state and resume point (updated 2026-10-13)
+
+**Done and committed, CI green on Linux/macOS/Windows × Node 22/24:** Phases 1–5 — gateway core,
+taint + trifecta (incl. write-outside-workspace as egress), static scanner + list-time hiding,
+rug-pull pinning (tools, prompts, instructions), CEL policy (deny/ask/allow, declassify, `ask` via
+elicitation else deny, fail-closed on absent arguments), plus the Phase 2–5 audit (AUD-1..10).
+Reviews: `docs/reviews/phase-1.md` … `phase-5.md`.
+
+**Next: Phase 6 — taint deepening.** In order:
+1. Layer-2 decoders (base64, hex, URL, HTML entities, backslash-u escapes, rot13, reversal, separator
+   spelling), fuzzy (winnowing) and cumulative per-sink matching. The pinned KNOWN-GAP tests in
+   `test/taint.test.ts` flip from MISS to caught as each lands.
+2. Route the scanner through the same normalize/decode pipeline (closes scanner bypasses B1/B3/B4,
+   pinned MISS tests in `test/scanner.test.ts`) and add confusables (homoglyph) folding.
+3. Entropy-based secret detection, feeding both taint labels and log redaction.
+4. Before the benchmark phase: benign corpus to ≥ 200 licence-checked community tool definitions;
+   third-party poisoned examples (e.g. Invariant Labs) in the test split.
+
+**Open items carried forward:** resource pinning (before v1); `ask` without elicitation denies until
+the dashboard approval queue (Phase 8); the MCP SDK final-progress race (AUD-10b) — issue and PR
+drafted in `docs/upstream/sdk-progress-race/`, **not filed** (owner decides); repo security settings
+(secret scanning, push protection, branch protection) once GitHub Pro is active.
+
+**Process guardrails (mechanical, not memory):** `npm install` installs a versioned pre-push hook
+(`.githooks/pre-push` via `scripts/install-hooks.mjs`) that blocks a push unless `npm run check` passes
+on a clean tree. `git push --no-verify` can bypass it; CI is the backstop.
+
 ## 5. Phase plan
 
 Every phase ends with green CI, a commit, and a written hostile review with its fixes applied.
@@ -381,6 +408,10 @@ across conversations; image/audio content is labeled by source but not inspected
 ---
 
 ## Change log
+
+- 2026-10-13 — Session close: versioned pre-push hook running `npm run check`; AUD-6 false-positive
+  shapes added to the benign corpus (benchmark: 35 real + 6 synthetic benign, FPR 0%); AUD-8 caps
+  test-pinned as never weakening Layer 1; upstream SDK issue and PR drafted for AUD-10b (not filed).
 
 - 2026-10-12 — Approved with changes: vertical slice by end of Phase 2; gateway-only v1 (wrap mode
   deferred); storage hardening + same-user tampering in the threat model; bounded provenance memory

@@ -40,6 +40,8 @@ function stableSplit(key: string): 'dev' | 'test' {
 const items: Item[] = [
   ...load('benign-fs.json'),
   ...load('benign-official.json'),
+  // Benign shapes that once caused false positives (AUD-6); kept so the regression stays measured.
+  ...load('benign-regressions.json'),
   ...load('malicious.json'),
 ].map((it) => ({ ...it, split: it.split ?? stableSplit(`${it.source ?? ''}|${it.tool.name}|${it.tool.description ?? ''}`) }));
 
@@ -94,8 +96,9 @@ const dev = tally(devSet);
 const all = tally(items);
 
 const benignTotal = items.filter((i) => i.label === 'benign').length;
+const benignSynthetic = items.filter((i) => i.label === 'benign' && (i.source ?? '').startsWith('synthetic')).length;
 const malTotal = items.filter((i) => i.label === 'malicious').length;
-const sources = [...new Set(items.filter((i) => i.label === 'benign').map((i) => i.source))];
+const sources = [...new Set(items.filter((i) => i.label === 'benign' && !(i.source ?? '').startsWith('synthetic')).map((i) => i.source))];
 
 const r = (name: string, t: ReturnType<typeof tally>) => {
   const { tpr, fpr, precision } = rates(t.counts);
@@ -107,7 +110,7 @@ const lines = [
   '',
   `Generated ${new Date().toISOString()} · scanner block threshold: medium.`,
   '',
-  `Corpus: ${malTotal} malicious (synthetic, hand-labelled) + ${benignTotal} benign (real tool definitions).`,
+  `Corpus: ${malTotal} malicious (synthetic, hand-labelled) + ${benignTotal} benign (${benignTotal - benignSynthetic} real tool definitions, ${benignSynthetic} synthetic false-positive regressions).`,
   `Benign sources: ${sources.join(', ')}.`,
   'Split is frozen: `test` is held out and never tuned against; detectors are tuned only on `dev`.',
   '',

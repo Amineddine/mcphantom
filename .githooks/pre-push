@@ -1,0 +1,24 @@
+#!/bin/sh
+# MCPhantom pre-push hook (versioned; installed by `npm install` via scripts/install-hooks.mjs).
+# Blocks the push unless `npm run check` (lint, typecheck, build, full test suite) passes on exactly
+# what is committed. Mechanical enforcement replaces "remember to run the full check".
+set -u
+
+# The check must see what is being pushed, not a working tree that differs from it.
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  echo "pre-push: uncommitted changes to tracked files — commit or stash them so the check runs on what you push." >&2
+  exit 1
+fi
+untracked=$(git ls-files --others --exclude-standard -- src test bench scripts .githooks)
+if [ -n "$untracked" ]; then
+  echo "pre-push: untracked files would change what the check sees — add or remove them first:" >&2
+  echo "$untracked" | sed 's/^/  /' >&2
+  exit 1
+fi
+
+echo "pre-push: running npm run check (blocks the push on failure) ..." >&2
+if ! npm run check; then
+  echo "pre-push: npm run check FAILED — push blocked." >&2
+  exit 1
+fi
+echo "pre-push: check passed." >&2

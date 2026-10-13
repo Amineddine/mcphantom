@@ -26,7 +26,8 @@
     "bench:scanner": "tsx bench/scanner-bench.mts",
     "bench:policy": "tsx bench/policy-bench.mts",
     "demo": "tsx src/demo/run.ts",
-    "check": "npm run lint && npm run typecheck && npm run build && npm test"
+    "check": "npm run lint && npm run typecheck && npm run build && npm test",
+    "prepare": "node scripts/install-hooks.mjs"
   },
   "keywords": [
     "mcp",
