@@ -141,7 +141,7 @@ lint warning.
 
 Every server also receives its arguments, so every `tools/call` is egress to that server's operator:
 per-server `may_receive` bounds the confidentiality of what may be sent to it. **Not implemented in
-v0.1** and not yet scheduled in §5 (owner to place it): today what a server receives is bounded only by policy rules and the trifecta
+v0.1**; scheduled for 6b (owner decision 2026-10-13): today what a server receives is bounded only by policy rules and the trifecta
 invariant, which the README's limitations state.
 
 ### Bounded memory and eviction
@@ -302,14 +302,15 @@ evidence. Measured cost: decision p50 0.35 → 1.6 ms (small), 29 → 86 ms (128
 `npm run check` 331/331 on Windows; pushed 2026-10-13 (`96d7327..337eaba`), CI green on all six
 OS/Node jobs and the gitleaks job.
 
-**Phase 6.5 (v0.1 release) — in progress.** README rewrite (limitations, related work, how it was
-built), scripted demo GIF (`docs/demo/`), SECURITY/CONTRIBUTING/issue templates, publish-safety audit,
-`v0.1.0` tag (local). **Owner decisions (2026-10-13):** vulnerability reports through private GitHub
-advisories only; npm publish waits for v1 (tarball attached to the GitHub release instead); the SDK
-issue drafts were moved out of the tree — the owner files the issue upstream before the repo goes
-public, then the drafts are re-added linking to it; secret scanning, push protection and branch
-protection (require CI) are enabled at the moment the repo goes public. Nothing is pushed (except the
-GIF-render branch) or made public without the owner's explicit confirmation.
+**Phase 6.5 — v0.1.0 release (2026-10-13); review `docs/reviews/phase-6.5.md`.** README rewrite
+(what it blocks, limitations and bypasses, related work checked against primary sources, how it was
+built), scripted demo GIF (`docs/demo/demo.tape`, rendered by the pinned `demo-gif` workflow),
+SECURITY/CONTRIBUTING/issue templates, CHANGELOG, publish-safety audit (gitleaks over all history clean;
+payloads target loopback/`*.example` only). Release-day sequence: push `main` + tag `v0.1.0` → CI green →
+repository public with secret scanning, push protection, private vulnerability reporting and branch
+protection on `main` (requiring the CI and gitleaks checks) enabled in the same sitting → GitHub release
+with the packed tarball and its SHA-256. **Not on npm** (owner decision: waits for v1). Vulnerability
+reports: private GitHub advisories only.
 
 **Next:** **6b** (fresh session), below.
 
@@ -319,16 +320,19 @@ GIF-render branch) or made public without the owner's explicit confirmation.
    SHAs are high-entropy. Redact them in logs, record them as "possible secret", make their effect on
    labels policy-configurable, and benchmark their false-positive rate on benign outputs.
 2. Exfiltration attack servers.
-3. Benign corpus to ≥ 200 licence-checked community tool definitions; third-party poisoned examples
+3. **Per-server `may_receive`** (§2; owner decision 2026-10-13: implemented in 6b alongside the
+   "server that is itself the sink" attack server, which needs it): bound the confidentiality of what a
+   `tools/call` may send to each server; test-pinned against that attack server.
+4. Benign corpus to ≥ 200 licence-checked community tool definitions; third-party poisoned examples
    (e.g. Invariant Labs) in the test split.
 
 **Open items carried forward:** resource pinning (before v1); `ask` without elicitation — **owner decision
 (2026-10-13): for v0.1 an `ask` on a client without elicitation is a deny; a minimal approval queue moves
-into the v1 trace view (Phase 8)**; the MCP SDK final-progress race (AUD-10b) — issue drafted and
-ready, PR draft **not ready**: verified against SDK `v1.x`, the naive fix passes its own test but breaks
-two existing task-progress tests; nothing filed (owner submits from their account; the drafts are
-kept outside the repository until the issue is filed, then re-added linking to it); repo security settings
-(secret scanning, push protection, branch protection) once GitHub Pro is active.
+into the v1 trace view (Phase 8)**; the MCP SDK final-progress race (AUD-10b) — already tracked upstream
+as typescript-sdk #2580; the owner posted our root cause and repro there
+(https://github.com/modelcontextprotocol/typescript-sdk/issues/2580#issuecomment-6156241420); upstream PR
+#2586 (another contributor) takes a different approach; our candidate fix stays unopened (it breaks two
+task-progress tests). Drafts and status: `docs/upstream/sdk-progress-race/`.
 
 **Process guardrails (mechanical, not memory):** `npm install` installs a versioned pre-push hook
 (`.githooks/pre-push` via `scripts/install-hooks.mjs`) that blocks a push unless `npm run check` passes
@@ -385,13 +389,11 @@ Every phase ends with green CI, a commit, and a written hostile review with its 
   popular community servers (licences checked and recorded), to get a realistic FPR; add published
   third-party poisoned examples (e.g. Invariant Labs) to the **test** split.
 
-### Repository security (enable when GitHub Pro is active)
+### Repository security
 
-The repo is a free private repo today, so GitHub refuses secret scanning, push protection and branch
-protection. The owner is applying for GitHub Pro via the Student Developer Pack; when it is active,
-enable, as originally planned: **secret scanning**, **push protection**, and **branch protection on
-`main` requiring the CI and gitleaks checks to pass before merge** (the ruleset JSON is ready in the
-Phase-1 notes). Until then the gitleaks CI job is the stand-in and `main` is unprotected.
+Enabled when the repository went public (v0.1.0, 2026-10-13), in the same sitting: **secret scanning**,
+**push protection**, **private vulnerability reporting**, and **branch protection on `main` requiring
+the CI and gitleaks checks**. The gitleaks CI job stays as a second, full-history check.
 
 ---
 
@@ -439,6 +441,10 @@ across conversations; image/audio content is labeled by source but not inspected
 ---
 
 ## Change log
+
+- 2026-10-13 — Phase 6.5 / v0.1.0: README, demo GIF, repository hygiene, release. Owner decisions:
+  private advisories only; npm waits for v1; `may_receive` implemented in 6b with the sink attack server;
+  SDK race reported as a comment on typescript-sdk #2580. See `docs/reviews/phase-6.5.md`.
 
 - 2026-10-13 — Owner decision on `ask` without elicitation: deny for v0.1; a minimal approval queue is
   added to the v1 trace view (Phase 8).

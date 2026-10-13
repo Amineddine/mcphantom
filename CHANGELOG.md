@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.1.0 (2026-10-13)
 
 First public release. Early software: read
 [Known limitations and bypasses](README.md#known-limitations-and-bypasses) before relying on it. Not on
