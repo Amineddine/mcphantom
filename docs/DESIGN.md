@@ -76,9 +76,10 @@ tracking requires. **Wrap mode (per-server shims + daemon) is deferred to a late
 MCPhantom. File permissions do not stop a same-user process from rewriting the lockfile or policy.
 Mitigations, in decreasing strength — none is a real boundary:
 
-1. Lockfile and policy are read once at startup and hashed; changes made while MCPhantom runs are
-   ignored until the user reloads through the CLI, which shows a diff. A tampering server must
-   therefore win a race before the next restart, and the change shows up in `mcphantom lock diff`.
+1. Lockfile and policy are read once at startup; changes made while MCPhantom runs are ignored until
+   the next restart (there is no live reload). A tampering server must therefore win a race before the
+   next restart, and a changed definition shows up in `mcphantom lock diff`. *(Corrected in Phase 6.5:
+   an earlier version described a CLI reload with a diff, which does not exist.)*
 2. The lockfile carries an HMAC-SHA256 over its canonical contents, keyed by a 32-byte secret in an
    owner-only key file (`hmac.key`, POSIX `0600` / Windows single-SID ACL). **What this protects:**
    other OS users cannot forge or silently edit the lockfile (they cannot read the key), and accidental
@@ -139,7 +140,9 @@ treated as proof of absence of flow; any policy relying on that gets a "precisio
 lint warning.
 
 Every server also receives its arguments, so every `tools/call` is egress to that server's operator:
-per-server `may_receive` bounds the confidentiality of what may be sent to it.
+per-server `may_receive` bounds the confidentiality of what may be sent to it. **Not implemented in
+v0.1** and not yet scheduled in §5 (owner to place it): today what a server receives is bounded only by policy rules and the trifecta
+invariant, which the README's limitations state.
 
 ### Bounded memory and eviction
 

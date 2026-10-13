@@ -39,6 +39,9 @@ npm link                        # puts `mcphantom` on your PATH
 mcphantom trace --last --data-dir "<printed by the demo>"
 ```
 
+From the release tarball instead: `npm install -g ./mcphantom-0.1.0.tgz`. That gives you the
+`mcphantom` CLI; the demo needs a checkout until Phase 9.
+
 Protect your own MCP setup:
 
 ```sh
@@ -93,8 +96,8 @@ Profiles live in the MCPhantom config directory (`%APPDATA%\mcphantom` on Window
 version: 1
 servers:
   web:
-    command: npx
-    args: ["-y", "some-fetch-server"]
+    command: uvx
+    args: ["mcp-server-fetch"]                   # the reference fetch server
     defaults: { integrity: untrusted }            # a third party controls what it returns
   fs:
     command: npx
@@ -187,7 +190,7 @@ agent is safe.
   fake-looking key makes the context `secret`.
 - **`ask` without elicitation is a deny.** There is no approval queue yet (planned for v1).
 - **Per-server `may_receive` confidentiality bounds** are in the design but not implemented. Today every
-  `tools/call` argument goes to that server unconditionally.
+  `tools/call` argument reaches its server unless a rule or the trifecta invariant stops the call.
 - **Images and audio** are labelled by their source but not inspected.
 - **Large inputs fail closed.** Policy evaluation has a 50 ms deadline; an extreme call (≈ 4000 fields
   on a slow machine) can be denied.
