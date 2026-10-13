@@ -1,0 +1,53 @@
+name: demo-gif
+
+# Renders docs/demo/demo.gif from docs/demo/demo.tape and uploads it as an artifact; a maintainer
+# reviews it and commits it. Runs on demand, and on pushes to the `demo-gif` branch (workflow_dispatch
+# only works for workflows already on the default branch).
+on:
+  workflow_dispatch:
+  push:
+    branches: [demo-gif]
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      VHS_VERSION: 0.12.1
+      VHS_SHA256: eb33787a5b1cebf91fe0b18bd231e2d71d36c1ff4babd99ddac1a6ab411efd10
+      TTYD_VERSION: 1.7.7
+      TTYD_SHA256: 8a217c968aba172e0dbf3f34447218dc015bc4d5e59bf51db2f2cd12b7be4f55
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: npm link
+      # Binaries pinned by SHA-256 in this file, so a replaced release asset fails the job.
+      - name: install vhs, ttyd and ffmpeg
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+          mkdir -p "$RUNNER_TEMP/bin"
+          curl -fsSL -o "$RUNNER_TEMP/bin/ttyd" "https://github.com/tsl0922/ttyd/releases/download/${TTYD_VERSION}/ttyd.x86_64"
+          echo "${TTYD_SHA256}  $RUNNER_TEMP/bin/ttyd" | sha256sum -c -
+          chmod +x "$RUNNER_TEMP/bin/ttyd"
+          tarball="vhs_${VHS_VERSION}_Linux_x86_64.tar.gz"
+          curl -fsSLO "https://github.com/charmbracelet/vhs/releases/download/v${VHS_VERSION}/${tarball}"
+          echo "${VHS_SHA256}  ${tarball}" | sha256sum -c -
+          tar -xzf "$tarball" -C "$RUNNER_TEMP" && find "$RUNNER_TEMP" -name vhs -type f -exec mv {} "$RUNNER_TEMP/bin/vhs" \;
+          rm -f "$tarball"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - run: vhs docs/demo/demo.tape
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: demo-gif
+          path: docs/demo/demo.gif
+          if-no-files-found: error
