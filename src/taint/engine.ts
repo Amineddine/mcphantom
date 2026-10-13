@@ -2,8 +2,7 @@ import { resolve } from 'node:path';
 import type { Classification, Config } from '../config/schema.js';
 import { hasOutsideTarget } from './egress.js';
 import { BOTTOM, canExfiltrate, join, type Effect, type Label } from './labels.js';
-import { MAX_ATTRIBUTED_CHARS, MAX_ATTRIBUTED_LEAVES, MAX_ATTRIBUTED_TOTAL, ProvenanceIndex, type EvictionNotice, type Evidence, type OutputRef } from './provenance.js';
-import { leaves } from './text.js';
+import { ProvenanceIndex, type EvictionNotice, type Evidence, type OutputRef } from './provenance.js';
 import { resultTexts } from './text.js';
 import { PolicyEngine, type PolicyOutcome } from '../policy/engine.js';
 
@@ -44,6 +43,8 @@ export interface IngestResult {
   secretsDetected: string[];
   identifiers: number;
   evictions: EvictionNotice[];
+  /** Decoding of this output was cut short by a bound; encoded identifiers past it are not indexed. */
+  decodeTruncated: boolean;
   contextBefore: Label;
   contextAfter: Label;
 }
@@ -69,8 +70,9 @@ export interface Decision {
   secretSources: OutputRef[];
   /** Layer-2 attribution of this call's arguments. Explanation only; never grounds an allow. */
   evidence: Evidence[];
-  /** True if provenance text was evicted for outputs that carried a non-bottom label, so the absence
-   *  of evidence may be an artefact of eviction. */
+  /** True if attribution was bounded for this call (size caps, decode budget) or for an earlier
+   *  output carrying a non-bottom label (eviction, decode cap), so the absence of evidence may be an
+   *  artefact of a bound. */
   attributionDegraded: boolean;
   reason: string;
 }
@@ -110,17 +112,20 @@ export class TaintEngine {
     this.context = join(this.context, provisional.label);
     if (provisional.label.integrity === 'untrusted') this.untrustedSources.push(provisional);
     if (provisional.label.confidentiality === 'secret') this.secretSources.push(provisional);
-    for (const e of added.evictions) {
-      if (e.output.label.integrity === 'untrusted' || e.output.label.confidentiality !== 'public') this.degraded = true;
-    }
-    return { ref: provisional, secretsDetected: added.secrets, identifiers: added.identifiers, evictions: added.evictions, contextBefore: before, contextAfter: this.context };
+    const labelled = (l: Label): boolean => l.integrity === 'untrusted' || l.confidentiality !== 'public';
+    for (const e of added.evictions) if (labelled(e.output.label)) this.degraded = true;
+    if (added.decodeTruncated && labelled(provisional.label)) this.degraded = true;
+    return {
+      ref: provisional, secretsDetected: added.secrets, identifiers: added.identifiers, evictions: added.evictions,
+      decodeTruncated: added.decodeTruncated, contextBefore: before, contextAfter: this.context,
+    };
   }
 
   /** Decides a tools/call before it is forwarded. */
   decide(serverId: string, toolName: string, exposedName: string, args: unknown): Decision {
     const cls = classify(this.config, serverId, toolName);
     const tool = exposedName;
-    const evidence = this.index.attribute(args);
+    const attribution = this.index.attributeCall(args);
     const id = `d${++this.decisions}`;
     // A `write` whose target leaves the declared workspace (remote URL, absolute path elsewhere, or a
     // `..` escape) is exfiltration in disguise, so it is treated as `egress` for the invariant.
@@ -130,7 +135,7 @@ export class TaintEngine {
     const base = {
       id, server: serverId, tool, effect, context: { ...this.context },
       untrustedSources: [...this.untrustedSources], secretSources: [...this.secretSources],
-      evidence, attributionDegraded: this.degraded || exceedsAttributionBounds(args),
+      evidence: attribution.evidence, attributionDegraded: this.degraded || attribution.degraded,
       ...(policy ? { policy } : {}),
     };
 
@@ -192,11 +197,4 @@ function allowReason(effect: Effect, ctx: Label): string {
 function describe(refs: OutputRef[]): string {
   const names = [...new Set(refs.map((r) => r.source))];
   return names.length <= 3 ? names.join(', ') : `${names.slice(0, 3).join(', ')} and ${names.length - 3} more`;
-}
-
-/** True when a call's arguments are larger than Layer-2 attribution examines, so evidence may be
- *  incomplete. Layer 1 (the context label) is content-blind and unaffected. */
-function exceedsAttributionBounds(args: unknown): boolean {
-  const ls = leaves(args);
-  return ls.length > MAX_ATTRIBUTED_LEAVES || ls.some((l) => l.value.length > MAX_ATTRIBUTED_CHARS) || ls.reduce((n, l) => n + l.value.length, 0) > MAX_ATTRIBUTED_TOTAL;
 }

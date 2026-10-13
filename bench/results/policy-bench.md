@@ -4,11 +4,11 @@ Policy deadline: 50 ms over the whole evaluation. Columns: p50 / p95 / max.
 
 | case | whole decision (attribution + policy) | policy evaluation alone | denied by deadline |
 |---|---|---|---|
-| small args | 0.35 / 0.73 / 15.37 ms | 0.06 / 0.16 / 5.02 ms | 0/5000 |
-| 128 KB body | 28.94 / 44.18 / 54.61 ms | 2.13 / 3.68 / 4.20 ms | 0/300 |
-| deeply nested args | 6.99 / 10.98 / 15.67 ms | 0.10 / 0.23 / 3.76 ms | 0/500 |
-| many keys (4000, under the field cap) | 58.43 / 69.12 / 89.81 ms | 21.92 / 27.46 / 40.01 ms | 0/500 |
-| too many keys (5000, expect fast deny) | 45.73 / 52.55 / 68.48 ms | 7.60 / 10.84 / 15.42 ms | 0/500 |
-| over-budget body (expect fast deny) | 13.90 / 16.10 / 23.71 ms | 0.01 / 0.03 / 0.08 ms | 0/200 |
+| small args | 0.74 / 1.50 / 38.25 ms | 0.14 / 0.37 / 7.41 ms | 0/5000 |
+| 128 KB body | 65.45 / 77.47 / 100.86 ms | 15.93 / 20.94 / 26.45 ms | 0/300 |
+| deeply nested args | 12.03 / 18.39 / 42.26 ms | 0.16 / 0.35 / 2.57 ms | 0/500 |
+| many keys (4000, under the field cap) | 56.06 / 72.60 / 147.37 ms | 23.02 / 31.37 / 50.37 ms | 0/500 |
+| too many keys (5000, expect fast deny) | 42.15 / 78.87 / 185.02 ms | 7.66 / 14.72 / 23.48 ms | 0/500 |
+| over-budget body (expect fast deny) | 32.24 / 40.84 / 42.44 ms | 0.01 / 0.03 / 0.09 ms | 0/200 |
 
 The over-budget case denies immediately on the size check (note #2); no rule runs on it.

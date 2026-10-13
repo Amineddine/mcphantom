@@ -56,6 +56,17 @@ describe('PolicyEngine: deny > ask > allow', () => {
     expect(d).toMatchObject({ verdict: 'deny', rule: 'policy' });
   });
 
+  it.each([
+    ['base64', (s: string) => Buffer.from(s).toString('base64')],
+    ['hex', (s: string) => Buffer.from(s).toString('hex')],
+    ['reversed', (s: string) => Array.from(s).reverse().join('')],
+    ['letter-spaced', (s: string) => s.split('').join(' ')],
+    ['Cyrillic look-alikes', (s: string) => s.replace('A', 'А').replace('K', 'К')],
+  ])('containsSecret sees a %s secret (deny-side, so decoding only tightens)', (_n, enc) => {
+    const d = engine({ mail: mailServer }).decide('mail', 'send_email', 'mail__send_email', { to: 'me@corp.example', body: `key ${enc(CANARY)}` });
+    expect(d).toMatchObject({ verdict: 'deny', rule: 'policy' });
+  });
+
   it('allows an explicitly allowed recipient with no secret', () => {
     expect(engine({ mail: mailServer }).decide('mail', 'send_email', 'mail__send_email', { to: 'me@corp.example', body: 'hello' }).verdict).toBe('allow');
   });

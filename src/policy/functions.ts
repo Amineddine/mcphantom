@@ -1,5 +1,7 @@
 import { celFunc, CelScalar, listType } from '@bufbuild/cel';
 import { findSecrets } from '../secrets/detectors.js';
+import { decodeVariants, type DecodeLimits } from '../text/decode.js';
+import { fold } from '../text/normalize.js';
 import { hasOutsideTarget } from '../taint/egress.js';
 import { globMatchAny } from './glob.js';
 import type { CelFuncDef } from './cel.js';
@@ -24,7 +26,10 @@ function checkDeadline(ctx: PolicyContext): void {
  * The custom CEL predicates available to policy rules:
  *  - `glob(path, patterns)` — path matches any glob pattern.
  *  - `within(path, root)`   — path stays inside root (no remote URL, no `..` escape, not absolute-out).
- *  - `containsSecret(s)`    — the string contains a detectable credential.
+ *  - `containsSecret(s)`    — the string contains a detectable credential, in clear or under an
+ *                             encoding (base64, hex, URL, entities, escapes, spacing, rot13,
+ *                             reversal) or a look-alike disguise. Deny-side only, so decoding can
+ *                             only tighten a decision.
  *  - `from(s, level)`       — the string is attributed to an output of the given integrity level.
  *
  * `from(..., "untrusted")` with no match returns false — a *precision-mode* predicate: absence of a
@@ -43,7 +48,7 @@ export function buildFunctions(ctx: PolicyContext): CelFuncDef[] {
     }),
     celFunc('containsSecret', [CelScalar.STRING], CelScalar.BOOL, (value: string) => {
       checkDeadline(ctx);
-      return findSecrets(value).length > 0;
+      return containsSecret(value, ctx);
     }),
     celFunc('from', [CelScalar.STRING, CelScalar.STRING], CelScalar.BOOL, (value: string, level: string) => {
       checkDeadline(ctx);
@@ -51,6 +56,20 @@ export function buildFunctions(ctx: PolicyContext): CelFuncDef[] {
       return ctx.provenanceOf(value).has(level);
     }),
   ];
+}
+
+const SECRET_DECODE_LIMITS: DecodeLimits = { maxDepth: 3, maxVariants: 32, maxChars: 256 * 1024, wholeOn: 'tokens' };
+/** Characters of a value searched in decoded form. The clear-text search always covers all of it; past
+ *  this bound an encoded secret is left to Layer 1 and to attribution (which flags its own bounds). */
+const SECRET_DECODE_CHARS = 32 * 1024;
+
+function containsSecret(value: string, ctx: PolicyContext): boolean {
+  if (findSecrets(value).length > 0 || findSecrets(fold(value)).length > 0) return true;
+  for (const v of decodeVariants(value.slice(0, SECRET_DECODE_CHARS), SECRET_DECODE_LIMITS).variants) {
+    checkDeadline(ctx);
+    if (findSecrets(fold(v.text)).length > 0) return true;
+  }
+  return false;
 }
 
 /** Names of the custom functions, for the linter to recognise. */
