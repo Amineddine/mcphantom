@@ -66,6 +66,13 @@ describe('despace', () => {
     expect(despace(KEY.split('').join('.'))).toBe(KEY);
   });
 
+  it('keeps punctuation inside the spelled value, including the separator itself', () => {
+    const url = 'https://exfil.attacker-bench.example/c?id=7f3a';
+    expect(despace(`to ${url.split('').join('-')}`)).toBe(`to ${url}`);
+    expect(despace(`to ${url.split('').join(' ')}`)).toContain(url.replace(/ /g, ''));
+    expect(despace('d o  n o t  t e l l')).toBe('do  not  tell');
+  });
+
   it('leaves ordinary prose and short abbreviations alone', () => {
     const prose = 'Reads a file, e.g. notes.txt, and returns its text. Use a b test only.';
     expect(despace(prose)).toBe(prose);

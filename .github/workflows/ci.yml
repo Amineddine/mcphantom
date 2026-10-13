@@ -66,6 +66,8 @@ jobs:
           MCPHANTOM_E2E_DIST: '1'
       - name: tier-1 static scanner benchmark (fails if the held-out split regresses)
         run: npm run bench:scanner
+      - name: tier-1 evasion benchmark (fails if a claimed evasion is missed or a benign pair is attributed)
+        run: npm run bench:evasion
       - name: install smoke test (packed tarball, fresh prefix)
         shell: bash
         run: |

@@ -1,0 +1,4244 @@
+{
+  "env": {
+    "node": "v22.19.0",
+    "cpu": "Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz",
+    "date": "2026-10-13T04:06:25.522Z"
+  },
+  "results": [
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|identity",
+      "split": "test",
+      "group": "aws-key",
+      "transform": "identity",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "exact"
+      ],
+      "ms": 5.313499999999976
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|fullwidth",
+      "split": "test",
+      "group": "aws-key",
+      "transform": "fullwidth",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "normalized"
+      ],
+      "ms": 8.787300000000073
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|zero-width inserted",
+      "split": "dev",
+      "group": "aws-key",
+      "transform": "zero-width inserted",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "normalized"
+      ],
+      "ms": 2.5993000000000848
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|homoglyphs",
+      "split": "test",
+      "group": "aws-key",
+      "transform": "homoglyphs",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "normalized"
+      ],
+      "ms": 1.0611000000000104
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|base64",
+      "split": "dev",
+      "group": "aws-key",
+      "transform": "base64",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 6.29950000000008
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|base64url",
+      "split": "test",
+      "group": "aws-key",
+      "transform": "base64url",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 3.759700000000066
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|hex",
+      "split": "dev",
+      "group": "aws-key",
+      "transform": "hex",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 4.556299999999965
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|\\x escapes",
+      "split": "dev",
+      "group": "aws-key",
+      "transform": "\\x escapes",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 2.519999999999982
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|URL-encoding",
+      "split": "dev",
+      "group": "aws-key",
+      "transform": "URL-encoding",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.4515000000001237
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|HTML entities",
+      "split": "test",
+      "group": "aws-key",
+      "transform": "HTML entities",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 2.0038999999999305
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|\\u escapes",
+      "split": "dev",
+      "group": "aws-key",
+      "transform": "\\u escapes",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.4973999999999705
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|rot13",
+      "split": "test",
+      "group": "aws-key",
+      "transform": "rot13",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 0.7150000000001455
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|reversed",
+      "split": "test",
+      "group": "aws-key",
+      "transform": "reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 0.5442000000000462
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|spelled with -",
+      "split": "dev",
+      "group": "aws-key",
+      "transform": "spelled with -",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 2.4218000000000757
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|spelled with spaces",
+      "split": "dev",
+      "group": "aws-key",
+      "transform": "spelled with spaces",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 0.8068999999998141
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|base64 of reversed",
+      "split": "test",
+      "group": "aws-key",
+      "transform": "base64 of reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.034599999999955
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|hex of base64",
+      "split": "dev",
+      "group": "aws-key",
+      "transform": "hex of base64",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.4303999999999633
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|base64 twice",
+      "split": "test",
+      "group": "aws-key",
+      "transform": "base64 twice",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 2.4958999999998923
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|split across 2 fields",
+      "split": "dev",
+      "group": "aws-key",
+      "transform": "split across 2 fields",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "cumulative"
+      ],
+      "ms": 1.2864999999999327
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|split across 3 calls",
+      "split": "test",
+      "group": "aws-key",
+      "transform": "split across 3 calls",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "cumulative"
+      ],
+      "ms": 1.4438000000000102
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|base64 split across 2 calls",
+      "split": "dev",
+      "group": "aws-key",
+      "transform": "base64 split across 2 calls",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "cumulative"
+      ],
+      "ms": 2.4067000000000007
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|output carries it base64-encoded",
+      "split": "test",
+      "group": "aws-key",
+      "transform": "output carries it base64-encoded",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 0.8071000000002186
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|output carries it reversed",
+      "split": "test",
+      "group": "aws-key",
+      "transform": "output carries it reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 0.5972000000001572
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|output carries it as HTML entities",
+      "split": "test",
+      "group": "aws-key",
+      "transform": "output carries it as HTML entities",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 0.9207000000001244
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|decimal char codes",
+      "split": "dev",
+      "group": "aws-key",
+      "transform": "decimal char codes",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.3906000000001768
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|NATO spelling",
+      "split": "test",
+      "group": "aws-key",
+      "transform": "NATO spelling",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.6750999999999294
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|groups of 4 separated by spaces",
+      "split": "test",
+      "group": "aws-key",
+      "transform": "groups of 4 separated by spaces",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.2644999999999982
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|junk letter interleaved",
+      "split": "test",
+      "group": "aws-key",
+      "transform": "junk letter interleaved",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.727100000000064
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|caesar shift 3",
+      "split": "dev",
+      "group": "aws-key",
+      "transform": "caesar shift 3",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.6459999999999582
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|split in 8-char pieces, out of order",
+      "split": "test",
+      "group": "aws-key",
+      "transform": "split in 8-char pieces, out of order",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.0924999999999727
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|aws-key|split in 8-char pieces across 2 tools",
+      "split": "dev",
+      "group": "aws-key",
+      "transform": "split in 8-char pieces across 2 tools",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.7303999999999178
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|identity",
+      "split": "test",
+      "group": "github-token",
+      "transform": "identity",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "exact"
+      ],
+      "ms": 1.419399999999996
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|fullwidth",
+      "split": "test",
+      "group": "github-token",
+      "transform": "fullwidth",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "normalized"
+      ],
+      "ms": 0.9086999999999534
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|zero-width inserted",
+      "split": "test",
+      "group": "github-token",
+      "transform": "zero-width inserted",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "normalized"
+      ],
+      "ms": 1.393100000000004
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|homoglyphs",
+      "split": "test",
+      "group": "github-token",
+      "transform": "homoglyphs",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "normalized"
+      ],
+      "ms": 3.195899999999938
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|base64",
+      "split": "test",
+      "group": "github-token",
+      "transform": "base64",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.525400000000218
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|base64url",
+      "split": "test",
+      "group": "github-token",
+      "transform": "base64url",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.6666999999999916
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|hex",
+      "split": "dev",
+      "group": "github-token",
+      "transform": "hex",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 2.248600000000124
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|\\x escapes",
+      "split": "test",
+      "group": "github-token",
+      "transform": "\\x escapes",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 3.8031999999998334
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|URL-encoding",
+      "split": "test",
+      "group": "github-token",
+      "transform": "URL-encoding",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 3.630300000000034
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|HTML entities",
+      "split": "dev",
+      "group": "github-token",
+      "transform": "HTML entities",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.109000000000151
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|\\u escapes",
+      "split": "dev",
+      "group": "github-token",
+      "transform": "\\u escapes",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.2479000000000724
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|rot13",
+      "split": "dev",
+      "group": "github-token",
+      "transform": "rot13",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 0.8217000000001917
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|reversed",
+      "split": "test",
+      "group": "github-token",
+      "transform": "reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.5974999999998545
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|spelled with -",
+      "split": "test",
+      "group": "github-token",
+      "transform": "spelled with -",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 3.274599999999964
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|spelled with spaces",
+      "split": "dev",
+      "group": "github-token",
+      "transform": "spelled with spaces",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 0.8053999999999633
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|base64 of reversed",
+      "split": "test",
+      "group": "github-token",
+      "transform": "base64 of reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 2.2006000000001222
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|hex of base64",
+      "split": "test",
+      "group": "github-token",
+      "transform": "hex of base64",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 2.419300000000021
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|base64 twice",
+      "split": "test",
+      "group": "github-token",
+      "transform": "base64 twice",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.934400000000096
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|split across 2 fields",
+      "split": "test",
+      "group": "github-token",
+      "transform": "split across 2 fields",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "exact",
+        "cumulative"
+      ],
+      "ms": 2.2491999999999734
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|split across 3 calls",
+      "split": "test",
+      "group": "github-token",
+      "transform": "split across 3 calls",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "cumulative"
+      ],
+      "ms": 2.1187999999999647
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|base64 split across 2 calls",
+      "split": "test",
+      "group": "github-token",
+      "transform": "base64 split across 2 calls",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "cumulative"
+      ],
+      "ms": 3.001700000000028
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|output carries it base64-encoded",
+      "split": "dev",
+      "group": "github-token",
+      "transform": "output carries it base64-encoded",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.9022999999999683
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|output carries it reversed",
+      "split": "test",
+      "group": "github-token",
+      "transform": "output carries it reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.2580000000000382
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|split in halves, out of order (pieces >= 16 chars)",
+      "split": "dev",
+      "group": "github-token",
+      "transform": "split in halves, out of order (pieces >= 16 chars)",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "exact"
+      ],
+      "ms": 3.524400000000014
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|output carries it as HTML entities",
+      "split": "test",
+      "group": "github-token",
+      "transform": "output carries it as HTML entities",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 0.7574999999999363
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|decimal char codes",
+      "split": "test",
+      "group": "github-token",
+      "transform": "decimal char codes",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.4862000000000535
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|NATO spelling",
+      "split": "test",
+      "group": "github-token",
+      "transform": "NATO spelling",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.5434000000000196
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|groups of 4 separated by spaces",
+      "split": "dev",
+      "group": "github-token",
+      "transform": "groups of 4 separated by spaces",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.41030000000000655
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|junk letter interleaved",
+      "split": "dev",
+      "group": "github-token",
+      "transform": "junk letter interleaved",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.5816999999999553
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|caesar shift 3",
+      "split": "dev",
+      "group": "github-token",
+      "transform": "caesar shift 3",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.1685999999999694
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|split in 8-char pieces, out of order",
+      "split": "dev",
+      "group": "github-token",
+      "transform": "split in 8-char pieces, out of order",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.9475999999999658
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|github-token|split in 8-char pieces across 2 tools",
+      "split": "dev",
+      "group": "github-token",
+      "transform": "split in 8-char pieces across 2 tools",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.355199999999968
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|identity",
+      "split": "test",
+      "group": "api-token",
+      "transform": "identity",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "exact"
+      ],
+      "ms": 1.3859999999999673
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|lowercase",
+      "split": "test",
+      "group": "api-token",
+      "transform": "lowercase",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "normalized"
+      ],
+      "ms": 0.7470000000000709
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|fullwidth",
+      "split": "dev",
+      "group": "api-token",
+      "transform": "fullwidth",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "normalized"
+      ],
+      "ms": 0.8647000000000844
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|zero-width inserted",
+      "split": "dev",
+      "group": "api-token",
+      "transform": "zero-width inserted",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "normalized"
+      ],
+      "ms": 1.4089999999998781
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|homoglyphs",
+      "split": "test",
+      "group": "api-token",
+      "transform": "homoglyphs",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "normalized"
+      ],
+      "ms": 1.2054000000000542
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|base64",
+      "split": "dev",
+      "group": "api-token",
+      "transform": "base64",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 2.241399999999885
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|base64url",
+      "split": "dev",
+      "group": "api-token",
+      "transform": "base64url",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 3.5030000000001564
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|hex",
+      "split": "dev",
+      "group": "api-token",
+      "transform": "hex",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 2.510300000000143
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|\\x escapes",
+      "split": "dev",
+      "group": "api-token",
+      "transform": "\\x escapes",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 3.0726999999999407
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|URL-encoding",
+      "split": "dev",
+      "group": "api-token",
+      "transform": "URL-encoding",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.799199999999928
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|HTML entities",
+      "split": "test",
+      "group": "api-token",
+      "transform": "HTML entities",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.7886999999998352
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|\\u escapes",
+      "split": "test",
+      "group": "api-token",
+      "transform": "\\u escapes",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 2.1884999999999764
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|rot13",
+      "split": "dev",
+      "group": "api-token",
+      "transform": "rot13",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 0.7980000000000018
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|reversed",
+      "split": "test",
+      "group": "api-token",
+      "transform": "reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 0.5792999999998756
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|spelled with -",
+      "split": "dev",
+      "group": "api-token",
+      "transform": "spelled with -",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.6684000000000196
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|spelled with spaces",
+      "split": "dev",
+      "group": "api-token",
+      "transform": "spelled with spaces",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.1716000000001259
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|base64 of reversed",
+      "split": "test",
+      "group": "api-token",
+      "transform": "base64 of reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 2.1650999999999385
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|hex of base64",
+      "split": "test",
+      "group": "api-token",
+      "transform": "hex of base64",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 2.289099999999962
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|base64 twice",
+      "split": "test",
+      "group": "api-token",
+      "transform": "base64 twice",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 2.4930000000001655
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|split across 2 fields",
+      "split": "test",
+      "group": "api-token",
+      "transform": "split across 2 fields",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "exact",
+        "cumulative"
+      ],
+      "ms": 1.1878999999998996
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|split across 3 calls",
+      "split": "dev",
+      "group": "api-token",
+      "transform": "split across 3 calls",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "cumulative"
+      ],
+      "ms": 1.143500000000131
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|base64 split across 2 calls",
+      "split": "dev",
+      "group": "api-token",
+      "transform": "base64 split across 2 calls",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "cumulative"
+      ],
+      "ms": 3.5190999999999804
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|output carries it base64-encoded",
+      "split": "dev",
+      "group": "api-token",
+      "transform": "output carries it base64-encoded",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 0.9096000000001823
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|output carries it reversed",
+      "split": "dev",
+      "group": "api-token",
+      "transform": "output carries it reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.8952999999999065
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|split in halves, out of order (pieces >= 16 chars)",
+      "split": "dev",
+      "group": "api-token",
+      "transform": "split in halves, out of order (pieces >= 16 chars)",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "exact"
+      ],
+      "ms": 1.960800000000063
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|output carries it as HTML entities",
+      "split": "dev",
+      "group": "api-token",
+      "transform": "output carries it as HTML entities",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 0.9756999999999607
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|decimal char codes",
+      "split": "dev",
+      "group": "api-token",
+      "transform": "decimal char codes",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.2761000000000422
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|NATO spelling",
+      "split": "test",
+      "group": "api-token",
+      "transform": "NATO spelling",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.4069999999999254
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|groups of 4 separated by spaces",
+      "split": "dev",
+      "group": "api-token",
+      "transform": "groups of 4 separated by spaces",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.15660000000002583
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|junk letter interleaved",
+      "split": "test",
+      "group": "api-token",
+      "transform": "junk letter interleaved",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.934500000000071
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|caesar shift 3",
+      "split": "dev",
+      "group": "api-token",
+      "transform": "caesar shift 3",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.932399999999916
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|split in 8-char pieces, out of order",
+      "split": "test",
+      "group": "api-token",
+      "transform": "split in 8-char pieces, out of order",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 2.406900000000178
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|api-token|split in 8-char pieces across 2 tools",
+      "split": "test",
+      "group": "api-token",
+      "transform": "split in 8-char pieces across 2 tools",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.2528999999999542
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|identity",
+      "split": "dev",
+      "group": "attacker-url",
+      "transform": "identity",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "exact"
+      ],
+      "ms": 1.0886000000000422
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|lowercase",
+      "split": "dev",
+      "group": "attacker-url",
+      "transform": "lowercase",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "exact"
+      ],
+      "ms": 0.6560000000001764
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|fullwidth",
+      "split": "test",
+      "group": "attacker-url",
+      "transform": "fullwidth",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "normalized"
+      ],
+      "ms": 0.5416999999999916
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|zero-width inserted",
+      "split": "test",
+      "group": "attacker-url",
+      "transform": "zero-width inserted",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "normalized"
+      ],
+      "ms": 0.7238999999999578
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|homoglyphs",
+      "split": "test",
+      "group": "attacker-url",
+      "transform": "homoglyphs",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "normalized"
+      ],
+      "ms": 1.2672999999999774
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|base64",
+      "split": "dev",
+      "group": "attacker-url",
+      "transform": "base64",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.2828999999999269
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|base64url",
+      "split": "test",
+      "group": "attacker-url",
+      "transform": "base64url",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.0884000000000924
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|hex",
+      "split": "dev",
+      "group": "attacker-url",
+      "transform": "hex",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.7850000000000819
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|\\x escapes",
+      "split": "test",
+      "group": "attacker-url",
+      "transform": "\\x escapes",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.883100000000013
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|URL-encoding",
+      "split": "test",
+      "group": "attacker-url",
+      "transform": "URL-encoding",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.4889999999998054
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|HTML entities",
+      "split": "dev",
+      "group": "attacker-url",
+      "transform": "HTML entities",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.25429999999983
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|\\u escapes",
+      "split": "dev",
+      "group": "attacker-url",
+      "transform": "\\u escapes",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 2.8366000000000895
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|rot13",
+      "split": "test",
+      "group": "attacker-url",
+      "transform": "rot13",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 0.5829999999998563
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|reversed",
+      "split": "dev",
+      "group": "attacker-url",
+      "transform": "reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 0.6205999999999676
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|spelled with -",
+      "split": "dev",
+      "group": "attacker-url",
+      "transform": "spelled with -",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.3699999999998909
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|spelled with spaces",
+      "split": "test",
+      "group": "attacker-url",
+      "transform": "spelled with spaces",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.5092000000001917
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|base64 of reversed",
+      "split": "dev",
+      "group": "attacker-url",
+      "transform": "base64 of reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.351799999999912
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|hex of base64",
+      "split": "test",
+      "group": "attacker-url",
+      "transform": "hex of base64",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 2.384800000000041
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|base64 twice",
+      "split": "test",
+      "group": "attacker-url",
+      "transform": "base64 twice",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.3704999999999927
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|split across 2 fields",
+      "split": "dev",
+      "group": "attacker-url",
+      "transform": "split across 2 fields",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "exact",
+        "cumulative"
+      ],
+      "ms": 0.8985000000000127
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|split across 3 calls",
+      "split": "dev",
+      "group": "attacker-url",
+      "transform": "split across 3 calls",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "exact",
+        "cumulative"
+      ],
+      "ms": 1.799199999999928
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|base64 split across 2 calls",
+      "split": "dev",
+      "group": "attacker-url",
+      "transform": "base64 split across 2 calls",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "cumulative"
+      ],
+      "ms": 2.5032999999998538
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|output carries it base64-encoded",
+      "split": "dev",
+      "group": "attacker-url",
+      "transform": "output carries it base64-encoded",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 0.6552999999998974
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|output carries it reversed",
+      "split": "dev",
+      "group": "attacker-url",
+      "transform": "output carries it reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 0.777599999999893
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|split in halves, out of order (pieces >= 16 chars)",
+      "split": "dev",
+      "group": "attacker-url",
+      "transform": "split in halves, out of order (pieces >= 16 chars)",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "exact"
+      ],
+      "ms": 1.7938000000001466
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|output carries it as HTML entities",
+      "split": "dev",
+      "group": "attacker-url",
+      "transform": "output carries it as HTML entities",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.4727000000000317
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|decimal char codes",
+      "split": "test",
+      "group": "attacker-url",
+      "transform": "decimal char codes",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.8757000000000517
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|NATO spelling",
+      "split": "dev",
+      "group": "attacker-url",
+      "transform": "NATO spelling",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.8503000000000611
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|groups of 4 separated by spaces",
+      "split": "dev",
+      "group": "attacker-url",
+      "transform": "groups of 4 separated by spaces",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.23029999999994288
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|junk letter interleaved",
+      "split": "dev",
+      "group": "attacker-url",
+      "transform": "junk letter interleaved",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.8065999999998894
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|caesar shift 3",
+      "split": "dev",
+      "group": "attacker-url",
+      "transform": "caesar shift 3",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.1587999999999283
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|split in 8-char pieces, out of order",
+      "split": "test",
+      "group": "attacker-url",
+      "transform": "split in 8-char pieces, out of order",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.5776999999998225
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-url|split in 8-char pieces across 2 tools",
+      "split": "dev",
+      "group": "attacker-url",
+      "transform": "split in 8-char pieces across 2 tools",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.6024999999999636
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|identity",
+      "split": "test",
+      "group": "attacker-email",
+      "transform": "identity",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "exact"
+      ],
+      "ms": 0.9455000000000382
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|lowercase",
+      "split": "test",
+      "group": "attacker-email",
+      "transform": "lowercase",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "exact"
+      ],
+      "ms": 0.8724000000001979
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|fullwidth",
+      "split": "test",
+      "group": "attacker-email",
+      "transform": "fullwidth",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "normalized"
+      ],
+      "ms": 0.4592000000000098
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|zero-width inserted",
+      "split": "dev",
+      "group": "attacker-email",
+      "transform": "zero-width inserted",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "normalized"
+      ],
+      "ms": 1.0452999999999975
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|homoglyphs",
+      "split": "test",
+      "group": "attacker-email",
+      "transform": "homoglyphs",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "normalized"
+      ],
+      "ms": 0.5834999999999582
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|base64",
+      "split": "dev",
+      "group": "attacker-email",
+      "transform": "base64",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.071100000000115
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|base64url",
+      "split": "test",
+      "group": "attacker-email",
+      "transform": "base64url",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.8448000000000775
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|hex",
+      "split": "dev",
+      "group": "attacker-email",
+      "transform": "hex",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.0460000000000491
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|\\x escapes",
+      "split": "test",
+      "group": "attacker-email",
+      "transform": "\\x escapes",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.8940999999999804
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|URL-encoding",
+      "split": "dev",
+      "group": "attacker-email",
+      "transform": "URL-encoding",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 2.0221999999998843
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|HTML entities",
+      "split": "test",
+      "group": "attacker-email",
+      "transform": "HTML entities",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.2092000000000098
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|\\u escapes",
+      "split": "test",
+      "group": "attacker-email",
+      "transform": "\\u escapes",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.0751000000000204
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|rot13",
+      "split": "test",
+      "group": "attacker-email",
+      "transform": "rot13",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 0.6411000000000513
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|reversed",
+      "split": "test",
+      "group": "attacker-email",
+      "transform": "reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 0.6937000000000353
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|spelled with -",
+      "split": "test",
+      "group": "attacker-email",
+      "transform": "spelled with -",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 2.25649999999996
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|spelled with spaces",
+      "split": "test",
+      "group": "attacker-email",
+      "transform": "spelled with spaces",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.0710999999998876
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|base64 of reversed",
+      "split": "test",
+      "group": "attacker-email",
+      "transform": "base64 of reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.1369999999999436
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|hex of base64",
+      "split": "dev",
+      "group": "attacker-email",
+      "transform": "hex of base64",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 2.4751000000001113
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|base64 twice",
+      "split": "dev",
+      "group": "attacker-email",
+      "transform": "base64 twice",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.7476999999998952
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|split across 2 fields",
+      "split": "test",
+      "group": "attacker-email",
+      "transform": "split across 2 fields",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "exact",
+        "cumulative"
+      ],
+      "ms": 0.9580000000000837
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|split across 3 calls",
+      "split": "dev",
+      "group": "attacker-email",
+      "transform": "split across 3 calls",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "cumulative"
+      ],
+      "ms": 0.775899999999865
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|base64 split across 2 calls",
+      "split": "dev",
+      "group": "attacker-email",
+      "transform": "base64 split across 2 calls",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "cumulative"
+      ],
+      "ms": 3.920699999999897
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|output carries it base64-encoded",
+      "split": "dev",
+      "group": "attacker-email",
+      "transform": "output carries it base64-encoded",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 0.6564999999998236
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|output carries it reversed",
+      "split": "test",
+      "group": "attacker-email",
+      "transform": "output carries it reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 0.5971999999999298
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|split in halves, out of order (pieces >= 16 chars)",
+      "split": "dev",
+      "group": "attacker-email",
+      "transform": "split in halves, out of order (pieces >= 16 chars)",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "exact"
+      ],
+      "ms": 0.7675999999999021
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|output carries it as HTML entities",
+      "split": "test",
+      "group": "attacker-email",
+      "transform": "output carries it as HTML entities",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded"
+      ],
+      "ms": 1.037599999999884
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|decimal char codes",
+      "split": "test",
+      "group": "attacker-email",
+      "transform": "decimal char codes",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.28880000000003747
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|NATO spelling",
+      "split": "dev",
+      "group": "attacker-email",
+      "transform": "NATO spelling",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.6052999999999429
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|groups of 4 separated by spaces",
+      "split": "dev",
+      "group": "attacker-email",
+      "transform": "groups of 4 separated by spaces",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.17160000000012587
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|junk letter interleaved",
+      "split": "test",
+      "group": "attacker-email",
+      "transform": "junk letter interleaved",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.0750000000000455
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|caesar shift 3",
+      "split": "dev",
+      "group": "attacker-email",
+      "transform": "caesar shift 3",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.0453999999999724
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|split in 8-char pieces, out of order",
+      "split": "dev",
+      "group": "attacker-email",
+      "transform": "split in 8-char pieces, out of order",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.6886999999999261
+    },
+    {
+      "suite": "attribution",
+      "id": "attr|attacker-email|split in 8-char pieces across 2 tools",
+      "split": "dev",
+      "group": "attacker-email",
+      "transform": "split in 8-char pieces across 2 tools",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.6534999999998945
+    },
+    {
+      "suite": "attribution",
+      "id": "fuzzy|p0|light word edits",
+      "split": "test",
+      "group": "prose",
+      "transform": "light word edits",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "fuzzy"
+      ],
+      "ms": 2.7086000000001604
+    },
+    {
+      "suite": "attribution",
+      "id": "fuzzy|p0|sentences reordered",
+      "split": "test",
+      "group": "prose",
+      "transform": "sentences reordered",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "fuzzy"
+      ],
+      "ms": 1.8973000000000866
+    },
+    {
+      "suite": "attribution",
+      "id": "fuzzy|p0|reformatted (case, line breaks, punctuation)",
+      "split": "test",
+      "group": "prose",
+      "transform": "reformatted (case, line breaks, punctuation)",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "normalized"
+      ],
+      "ms": 1.0826999999999316
+    },
+    {
+      "suite": "attribution",
+      "id": "fuzzy|p0|first half copied",
+      "split": "test",
+      "group": "prose",
+      "transform": "first half copied",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "exact"
+      ],
+      "ms": 0.5376000000001113
+    },
+    {
+      "suite": "attribution",
+      "id": "fuzzy|p0|paraphrased",
+      "split": "test",
+      "group": "prose",
+      "transform": "paraphrased",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.1195999999999913
+    },
+    {
+      "suite": "attribution",
+      "id": "fuzzy|p1|light word edits",
+      "split": "dev",
+      "group": "prose",
+      "transform": "light word edits",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "fuzzy"
+      ],
+      "ms": 1.3857000000000426
+    },
+    {
+      "suite": "attribution",
+      "id": "fuzzy|p1|sentences reordered",
+      "split": "dev",
+      "group": "prose",
+      "transform": "sentences reordered",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "fuzzy"
+      ],
+      "ms": 0.7392999999999574
+    },
+    {
+      "suite": "attribution",
+      "id": "fuzzy|p1|reformatted (case, line breaks, punctuation)",
+      "split": "test",
+      "group": "prose",
+      "transform": "reformatted (case, line breaks, punctuation)",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "fuzzy"
+      ],
+      "ms": 2.0301999999999225
+    },
+    {
+      "suite": "attribution",
+      "id": "fuzzy|p1|first half copied",
+      "split": "dev",
+      "group": "prose",
+      "transform": "first half copied",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "exact"
+      ],
+      "ms": 0.48910000000000764
+    },
+    {
+      "suite": "attribution",
+      "id": "fuzzy|p1|paraphrased",
+      "split": "dev",
+      "group": "prose",
+      "transform": "paraphrased",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 3.1291000000001077
+    },
+    {
+      "suite": "attribution",
+      "id": "fuzzy|p2|light word edits",
+      "split": "dev",
+      "group": "prose",
+      "transform": "light word edits",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "fuzzy"
+      ],
+      "ms": 1.3226000000001932
+    },
+    {
+      "suite": "attribution",
+      "id": "fuzzy|p2|sentences reordered",
+      "split": "test",
+      "group": "prose",
+      "transform": "sentences reordered",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "fuzzy"
+      ],
+      "ms": 1.2489999999997963
+    },
+    {
+      "suite": "attribution",
+      "id": "fuzzy|p2|reformatted (case, line breaks, punctuation)",
+      "split": "test",
+      "group": "prose",
+      "transform": "reformatted (case, line breaks, punctuation)",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "normalized"
+      ],
+      "ms": 0.6743000000001302
+    },
+    {
+      "suite": "attribution",
+      "id": "fuzzy|p2|first half copied",
+      "split": "test",
+      "group": "prose",
+      "transform": "first half copied",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "exact"
+      ],
+      "ms": 0.44869999999991705
+    },
+    {
+      "suite": "attribution",
+      "id": "fuzzy|p2|paraphrased",
+      "split": "test",
+      "group": "prose",
+      "transform": "paraphrased",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.4839999999999236
+    },
+    {
+      "suite": "attribution",
+      "id": "fuzzy|p3|light word edits",
+      "split": "dev",
+      "group": "prose",
+      "transform": "light word edits",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "fuzzy"
+      ],
+      "ms": 0.6076000000000477
+    },
+    {
+      "suite": "attribution",
+      "id": "fuzzy|p3|sentences reordered",
+      "split": "dev",
+      "group": "prose",
+      "transform": "sentences reordered",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "fuzzy"
+      ],
+      "ms": 0.7677999999998519
+    },
+    {
+      "suite": "attribution",
+      "id": "fuzzy|p3|reformatted (case, line breaks, punctuation)",
+      "split": "test",
+      "group": "prose",
+      "transform": "reformatted (case, line breaks, punctuation)",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "fuzzy"
+      ],
+      "ms": 1.2850000000000819
+    },
+    {
+      "suite": "attribution",
+      "id": "fuzzy|p3|first half copied",
+      "split": "test",
+      "group": "prose",
+      "transform": "first half copied",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "exact"
+      ],
+      "ms": 1.1070999999999458
+    },
+    {
+      "suite": "attribution",
+      "id": "fuzzy|p3|paraphrased",
+      "split": "test",
+      "group": "prose",
+      "transform": "paraphrased",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.4153999999998632
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|0|0",
+      "split": "test",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.3369000000000142
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|0|1",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.5652000000000044
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|0|2",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.4250999999999294
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|0|3",
+      "split": "test",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.4577999999999065
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|0|4",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.3770999999999276
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|0|5",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.5227999999999611
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|1|0",
+      "split": "test",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.2760000000000673
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|1|1",
+      "split": "test",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.4856000000002041
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|1|2",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.4048000000000229
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|1|3",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.40039999999999054
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|1|4",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.1522999999999683
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|1|5",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.1942000000001372
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|2|0",
+      "split": "test",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.9102000000000317
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|2|1",
+      "split": "test",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.633199999999988
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|2|2",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.6929999999999836
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|2|3",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.2580000000000382
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|2|4",
+      "split": "test",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.723700000000008
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|2|5",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.49929999999994834
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|3|0",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.5532000000000608
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|3|1",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.36760000000003856
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|3|2",
+      "split": "test",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.3876000000000204
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|3|3",
+      "split": "test",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.34699999999998
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|3|4",
+      "split": "test",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.3523000000000138
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|3|5",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.47070000000007894
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|4|0",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.4773000000000138
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|4|1",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.5399999999999636
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|4|2",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.7626999999999953
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|4|3",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.0878999999999905
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|4|4",
+      "split": "test",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.43479999999999563
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|4|5",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.5881999999999152
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|5|0",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.5753999999999451
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|5|1",
+      "split": "test",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.7037000000000262
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|5|2",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.7429999999999382
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|5|3",
+      "split": "test",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.45299999999997453
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|5|4",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.37980000000015934
+    },
+    {
+      "suite": "attribution",
+      "id": "benign|5|5",
+      "split": "dev",
+      "group": "benign",
+      "transform": "unrelated argument",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.8209999999999127
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p0|none (baseline)",
+      "split": "dev",
+      "group": "payload 1",
+      "transform": "none (baseline)",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw"
+      ],
+      "ms": 26.746399999999994
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p0|homoglyphs",
+      "split": "dev",
+      "group": "payload 1",
+      "transform": "homoglyphs",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw",
+        "folded"
+      ],
+      "ms": 10.555000000000064
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p0|fullwidth",
+      "split": "test",
+      "group": "payload 1",
+      "transform": "fullwidth",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "folded"
+      ],
+      "ms": 1.6639000000000124
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p0|zero-width inserted",
+      "split": "dev",
+      "group": "payload 1",
+      "transform": "zero-width inserted",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw",
+        "folded"
+      ],
+      "ms": 2.1528999999998177
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p0|base64",
+      "split": "test",
+      "group": "payload 1",
+      "transform": "base64",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:base64"
+      ],
+      "ms": 0.9897000000000844
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p0|hex",
+      "split": "test",
+      "group": "payload 1",
+      "transform": "hex",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:hex"
+      ],
+      "ms": 2.0876999999998134
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p0|URL-encoding",
+      "split": "test",
+      "group": "payload 1",
+      "transform": "URL-encoding",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:url"
+      ],
+      "ms": 1.419099999999844
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p0|HTML entities",
+      "split": "test",
+      "group": "payload 1",
+      "transform": "HTML entities",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:html"
+      ],
+      "ms": 1.4067999999999756
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p0|rot13",
+      "split": "dev",
+      "group": "payload 1",
+      "transform": "rot13",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:rot13"
+      ],
+      "ms": 1.5171000000000276
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p0|reversed",
+      "split": "test",
+      "group": "payload 1",
+      "transform": "reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:reverse"
+      ],
+      "ms": 1.2927999999999429
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p0|letter-spaced",
+      "split": "dev",
+      "group": "payload 1",
+      "transform": "letter-spaced",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "letter-spacing"
+      ],
+      "ms": 1.5992000000001099
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p0|homoglyphs + letter-spaced",
+      "split": "dev",
+      "group": "payload 1",
+      "transform": "homoglyphs + letter-spaced",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "letter-spacing"
+      ],
+      "ms": 2.264299999999821
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p0|base64 of reversed",
+      "split": "dev",
+      "group": "payload 1",
+      "transform": "base64 of reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:base64>reverse"
+      ],
+      "ms": 1.4632999999998901
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p0|base64 in a nested property description",
+      "split": "test",
+      "group": "payload 1",
+      "transform": "base64 in a nested property description",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:base64"
+      ],
+      "ms": 2.1913999999999305
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p0|split across two property descriptions",
+      "split": "test",
+      "group": "payload 1",
+      "transform": "split across two property descriptions",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw"
+      ],
+      "ms": 2.650100000000066
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p0|filler words inserted",
+      "split": "test",
+      "group": "payload 1",
+      "transform": "filler words inserted",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.6784000000000106
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p0|leetspeak",
+      "split": "dev",
+      "group": "payload 1",
+      "transform": "leetspeak",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.6829999999999927
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p0|translated (French)",
+      "split": "test",
+      "group": "payload 1",
+      "transform": "translated (French)",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.0475999999998749
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p0|decimal char codes",
+      "split": "test",
+      "group": "payload 1",
+      "transform": "decimal char codes",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.9540999999999258
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p0|base64 split across two properties",
+      "split": "dev",
+      "group": "payload 1",
+      "transform": "base64 split across two properties",
+      "claimed": false,
+      "caught": true,
+      "matchers": [
+        "decoded:base64"
+      ],
+      "ms": 3.2312999999999192
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p1|none (baseline)",
+      "split": "test",
+      "group": "payload 2",
+      "transform": "none (baseline)",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw"
+      ],
+      "ms": 0.5090000000000146
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p1|homoglyphs",
+      "split": "test",
+      "group": "payload 2",
+      "transform": "homoglyphs",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw",
+        "folded"
+      ],
+      "ms": 0.7192999999999756
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p1|fullwidth",
+      "split": "dev",
+      "group": "payload 2",
+      "transform": "fullwidth",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "folded"
+      ],
+      "ms": 0.4175000000000182
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p1|zero-width inserted",
+      "split": "test",
+      "group": "payload 2",
+      "transform": "zero-width inserted",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw",
+        "folded"
+      ],
+      "ms": 0.560799999999972
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p1|base64",
+      "split": "dev",
+      "group": "payload 2",
+      "transform": "base64",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:base64"
+      ],
+      "ms": 0.7433000000000902
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p1|hex",
+      "split": "dev",
+      "group": "payload 2",
+      "transform": "hex",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:hex"
+      ],
+      "ms": 0.7983999999999014
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p1|URL-encoding",
+      "split": "dev",
+      "group": "payload 2",
+      "transform": "URL-encoding",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:url"
+      ],
+      "ms": 0.6199999999998909
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p1|HTML entities",
+      "split": "dev",
+      "group": "payload 2",
+      "transform": "HTML entities",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:html"
+      ],
+      "ms": 0.636600000000044
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p1|rot13",
+      "split": "test",
+      "group": "payload 2",
+      "transform": "rot13",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:rot13"
+      ],
+      "ms": 0.6241999999999734
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p1|reversed",
+      "split": "dev",
+      "group": "payload 2",
+      "transform": "reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:reverse"
+      ],
+      "ms": 0.6416000000001532
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p1|letter-spaced",
+      "split": "test",
+      "group": "payload 2",
+      "transform": "letter-spaced",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "letter-spacing"
+      ],
+      "ms": 1.0251000000000658
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p1|homoglyphs + letter-spaced",
+      "split": "test",
+      "group": "payload 2",
+      "transform": "homoglyphs + letter-spaced",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "letter-spacing"
+      ],
+      "ms": 1.2290000000000418
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p1|base64 of reversed",
+      "split": "test",
+      "group": "payload 2",
+      "transform": "base64 of reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:base64>reverse"
+      ],
+      "ms": 0.6670999999998912
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p1|base64 in a nested property description",
+      "split": "dev",
+      "group": "payload 2",
+      "transform": "base64 in a nested property description",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:base64"
+      ],
+      "ms": 1.1312000000000353
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p1|split across two property descriptions",
+      "split": "test",
+      "group": "payload 2",
+      "transform": "split across two property descriptions",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw"
+      ],
+      "ms": 0.5883000000001175
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p1|filler words inserted",
+      "split": "test",
+      "group": "payload 2",
+      "transform": "filler words inserted",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.47849999999994
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p1|leetspeak",
+      "split": "test",
+      "group": "payload 2",
+      "transform": "leetspeak",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.31570000000010623
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p1|translated (French)",
+      "split": "test",
+      "group": "payload 2",
+      "transform": "translated (French)",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.38020000000005894
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p1|decimal char codes",
+      "split": "dev",
+      "group": "payload 2",
+      "transform": "decimal char codes",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.3681000000001404
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p1|base64 split across two properties",
+      "split": "test",
+      "group": "payload 2",
+      "transform": "base64 split across two properties",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.9347999999999956
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p2|none (baseline)",
+      "split": "test",
+      "group": "payload 3",
+      "transform": "none (baseline)",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw"
+      ],
+      "ms": 1.0615999999999985
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p2|homoglyphs",
+      "split": "test",
+      "group": "payload 3",
+      "transform": "homoglyphs",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw",
+        "folded"
+      ],
+      "ms": 0.7335000000000491
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p2|fullwidth",
+      "split": "test",
+      "group": "payload 3",
+      "transform": "fullwidth",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "folded"
+      ],
+      "ms": 0.5204000000001088
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p2|zero-width inserted",
+      "split": "test",
+      "group": "payload 3",
+      "transform": "zero-width inserted",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw",
+        "folded"
+      ],
+      "ms": 0.6834000000001197
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p2|base64",
+      "split": "test",
+      "group": "payload 3",
+      "transform": "base64",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:base64"
+      ],
+      "ms": 0.8580000000001746
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p2|hex",
+      "split": "dev",
+      "group": "payload 3",
+      "transform": "hex",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:hex"
+      ],
+      "ms": 1.250300000000152
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p2|URL-encoding",
+      "split": "test",
+      "group": "payload 3",
+      "transform": "URL-encoding",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:url"
+      ],
+      "ms": 0.7279000000000906
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p2|HTML entities",
+      "split": "dev",
+      "group": "payload 3",
+      "transform": "HTML entities",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:html"
+      ],
+      "ms": 1.4656999999999698
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p2|rot13",
+      "split": "dev",
+      "group": "payload 3",
+      "transform": "rot13",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:rot13"
+      ],
+      "ms": 2.3480999999999312
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p2|reversed",
+      "split": "test",
+      "group": "payload 3",
+      "transform": "reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:reverse"
+      ],
+      "ms": 1.1938000000000102
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p2|letter-spaced",
+      "split": "dev",
+      "group": "payload 3",
+      "transform": "letter-spaced",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "letter-spacing"
+      ],
+      "ms": 1.0442000000000462
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p2|homoglyphs + letter-spaced",
+      "split": "test",
+      "group": "payload 3",
+      "transform": "homoglyphs + letter-spaced",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "letter-spacing"
+      ],
+      "ms": 1.1041000000000167
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p2|base64 of reversed",
+      "split": "dev",
+      "group": "payload 3",
+      "transform": "base64 of reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:base64>reverse"
+      ],
+      "ms": 0.7476999999998952
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p2|base64 in a nested property description",
+      "split": "test",
+      "group": "payload 3",
+      "transform": "base64 in a nested property description",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:base64"
+      ],
+      "ms": 1.9694999999999254
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p2|split across two property descriptions",
+      "split": "dev",
+      "group": "payload 3",
+      "transform": "split across two property descriptions",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw"
+      ],
+      "ms": 1.1324999999999363
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p2|filler words inserted",
+      "split": "dev",
+      "group": "payload 3",
+      "transform": "filler words inserted",
+      "claimed": false,
+      "caught": true,
+      "matchers": [
+        "raw"
+      ],
+      "ms": 0.5346999999999298
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p2|leetspeak",
+      "split": "test",
+      "group": "payload 3",
+      "transform": "leetspeak",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.34379999999987376
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p2|translated (French)",
+      "split": "dev",
+      "group": "payload 3",
+      "transform": "translated (French)",
+      "claimed": false,
+      "caught": false,
+      "matchers": [
+        "raw"
+      ],
+      "ms": 0.34369999999989886
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p2|decimal char codes",
+      "split": "test",
+      "group": "payload 3",
+      "transform": "decimal char codes",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.5516000000000076
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p2|base64 split across two properties",
+      "split": "dev",
+      "group": "payload 3",
+      "transform": "base64 split across two properties",
+      "claimed": false,
+      "caught": true,
+      "matchers": [
+        "decoded:base64"
+      ],
+      "ms": 1.4611999999999625
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p3|none (baseline)",
+      "split": "test",
+      "group": "payload 4",
+      "transform": "none (baseline)",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw"
+      ],
+      "ms": 0.6946000000000367
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p3|homoglyphs",
+      "split": "test",
+      "group": "payload 4",
+      "transform": "homoglyphs",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw",
+        "folded"
+      ],
+      "ms": 0.6576999999999771
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p3|fullwidth",
+      "split": "test",
+      "group": "payload 4",
+      "transform": "fullwidth",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "folded",
+        "raw"
+      ],
+      "ms": 1.309500000000071
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p3|zero-width inserted",
+      "split": "test",
+      "group": "payload 4",
+      "transform": "zero-width inserted",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw",
+        "folded"
+      ],
+      "ms": 2.070899999999938
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p3|base64",
+      "split": "dev",
+      "group": "payload 4",
+      "transform": "base64",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:base64",
+        "raw"
+      ],
+      "ms": 0.8306999999999789
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p3|hex",
+      "split": "test",
+      "group": "payload 4",
+      "transform": "hex",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:hex",
+        "raw"
+      ],
+      "ms": 0.7621999999998934
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p3|URL-encoding",
+      "split": "dev",
+      "group": "payload 4",
+      "transform": "URL-encoding",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:url",
+        "raw"
+      ],
+      "ms": 1.463799999999992
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p3|HTML entities",
+      "split": "test",
+      "group": "payload 4",
+      "transform": "HTML entities",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:html",
+        "raw"
+      ],
+      "ms": 1.5350000000000819
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p3|rot13",
+      "split": "dev",
+      "group": "payload 4",
+      "transform": "rot13",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:rot13",
+        "raw"
+      ],
+      "ms": 1.150899999999865
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p3|reversed",
+      "split": "test",
+      "group": "payload 4",
+      "transform": "reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:reverse",
+        "raw"
+      ],
+      "ms": 1.190499999999929
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p3|letter-spaced",
+      "split": "test",
+      "group": "payload 4",
+      "transform": "letter-spaced",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "letter-spacing",
+        "raw"
+      ],
+      "ms": 1.17450000000008
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p3|homoglyphs + letter-spaced",
+      "split": "test",
+      "group": "payload 4",
+      "transform": "homoglyphs + letter-spaced",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "letter-spacing",
+        "raw"
+      ],
+      "ms": 0.9075000000000273
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p3|base64 of reversed",
+      "split": "dev",
+      "group": "payload 4",
+      "transform": "base64 of reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:base64>reverse",
+        "raw"
+      ],
+      "ms": 0.6893000000000029
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p3|base64 in a nested property description",
+      "split": "dev",
+      "group": "payload 4",
+      "transform": "base64 in a nested property description",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:base64",
+        "raw"
+      ],
+      "ms": 1.2906000000000404
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p3|split across two property descriptions",
+      "split": "dev",
+      "group": "payload 4",
+      "transform": "split across two property descriptions",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw"
+      ],
+      "ms": 0.9970999999998185
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p3|filler words inserted",
+      "split": "test",
+      "group": "payload 4",
+      "transform": "filler words inserted",
+      "claimed": false,
+      "caught": true,
+      "matchers": [
+        "raw"
+      ],
+      "ms": 0.5569000000000415
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p3|leetspeak",
+      "split": "dev",
+      "group": "payload 4",
+      "transform": "leetspeak",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.105099999999993
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p3|translated (French)",
+      "split": "dev",
+      "group": "payload 4",
+      "transform": "translated (French)",
+      "claimed": false,
+      "caught": false,
+      "matchers": [
+        "raw"
+      ],
+      "ms": 0.7708999999999833
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p3|decimal char codes",
+      "split": "test",
+      "group": "payload 4",
+      "transform": "decimal char codes",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.5699999999999363
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p3|base64 split across two properties",
+      "split": "test",
+      "group": "payload 4",
+      "transform": "base64 split across two properties",
+      "claimed": false,
+      "caught": true,
+      "matchers": [
+        "decoded:base64",
+        "raw"
+      ],
+      "ms": 1.807800000000043
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p4|none (baseline)",
+      "split": "dev",
+      "group": "payload 5",
+      "transform": "none (baseline)",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw"
+      ],
+      "ms": 0.4922999999998865
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p4|homoglyphs",
+      "split": "test",
+      "group": "payload 5",
+      "transform": "homoglyphs",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw",
+        "folded"
+      ],
+      "ms": 0.5830000000000837
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p4|fullwidth",
+      "split": "test",
+      "group": "payload 5",
+      "transform": "fullwidth",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "folded"
+      ],
+      "ms": 0.5858000000000629
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p4|zero-width inserted",
+      "split": "test",
+      "group": "payload 5",
+      "transform": "zero-width inserted",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw",
+        "folded"
+      ],
+      "ms": 0.7278999999998632
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p4|base64",
+      "split": "dev",
+      "group": "payload 5",
+      "transform": "base64",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:base64"
+      ],
+      "ms": 0.7019999999999982
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p4|hex",
+      "split": "test",
+      "group": "payload 5",
+      "transform": "hex",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:hex"
+      ],
+      "ms": 1.7549999999998818
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p4|URL-encoding",
+      "split": "dev",
+      "group": "payload 5",
+      "transform": "URL-encoding",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:url"
+      ],
+      "ms": 0.8460000000000036
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p4|HTML entities",
+      "split": "dev",
+      "group": "payload 5",
+      "transform": "HTML entities",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:html"
+      ],
+      "ms": 0.9308000000000902
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p4|rot13",
+      "split": "dev",
+      "group": "payload 5",
+      "transform": "rot13",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:rot13"
+      ],
+      "ms": 0.600400000000036
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p4|reversed",
+      "split": "test",
+      "group": "payload 5",
+      "transform": "reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:reverse"
+      ],
+      "ms": 0.490099999999984
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p4|letter-spaced",
+      "split": "test",
+      "group": "payload 5",
+      "transform": "letter-spaced",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "letter-spacing"
+      ],
+      "ms": 0.7363000000000284
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p4|homoglyphs + letter-spaced",
+      "split": "test",
+      "group": "payload 5",
+      "transform": "homoglyphs + letter-spaced",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "letter-spacing"
+      ],
+      "ms": 0.7252000000000862
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p4|base64 of reversed",
+      "split": "dev",
+      "group": "payload 5",
+      "transform": "base64 of reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:base64>reverse"
+      ],
+      "ms": 0.6610999999998057
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p4|base64 in a nested property description",
+      "split": "test",
+      "group": "payload 5",
+      "transform": "base64 in a nested property description",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:base64"
+      ],
+      "ms": 1.3520000000000891
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p4|split across two property descriptions",
+      "split": "test",
+      "group": "payload 5",
+      "transform": "split across two property descriptions",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw"
+      ],
+      "ms": 5.264599999999973
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p4|filler words inserted",
+      "split": "dev",
+      "group": "payload 5",
+      "transform": "filler words inserted",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.9290000000000873
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p4|leetspeak",
+      "split": "test",
+      "group": "payload 5",
+      "transform": "leetspeak",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.9619999999999891
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p4|translated (French)",
+      "split": "dev",
+      "group": "payload 5",
+      "transform": "translated (French)",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 1.1372999999998683
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p4|decimal char codes",
+      "split": "dev",
+      "group": "payload 5",
+      "transform": "decimal char codes",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.7390000000000327
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p4|base64 split across two properties",
+      "split": "test",
+      "group": "payload 5",
+      "transform": "base64 split across two properties",
+      "claimed": false,
+      "caught": true,
+      "matchers": [
+        "decoded:base64"
+      ],
+      "ms": 2.574299999999994
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p5|none (baseline)",
+      "split": "dev",
+      "group": "payload 6",
+      "transform": "none (baseline)",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw"
+      ],
+      "ms": 0.8744000000001506
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p5|homoglyphs",
+      "split": "dev",
+      "group": "payload 6",
+      "transform": "homoglyphs",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw",
+        "folded"
+      ],
+      "ms": 0.8070000000000164
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p5|fullwidth",
+      "split": "test",
+      "group": "payload 6",
+      "transform": "fullwidth",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "folded"
+      ],
+      "ms": 0.7451999999998407
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p5|zero-width inserted",
+      "split": "test",
+      "group": "payload 6",
+      "transform": "zero-width inserted",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw",
+        "folded"
+      ],
+      "ms": 0.9420000000000073
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p5|base64",
+      "split": "test",
+      "group": "payload 6",
+      "transform": "base64",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:base64"
+      ],
+      "ms": 1.1123000000000047
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p5|hex",
+      "split": "dev",
+      "group": "payload 6",
+      "transform": "hex",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:hex"
+      ],
+      "ms": 1.4712000000001808
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p5|URL-encoding",
+      "split": "dev",
+      "group": "payload 6",
+      "transform": "URL-encoding",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:url"
+      ],
+      "ms": 1.082300000000032
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p5|HTML entities",
+      "split": "test",
+      "group": "payload 6",
+      "transform": "HTML entities",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:html"
+      ],
+      "ms": 1.5196999999998297
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p5|rot13",
+      "split": "dev",
+      "group": "payload 6",
+      "transform": "rot13",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:rot13"
+      ],
+      "ms": 0.5914999999999964
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p5|reversed",
+      "split": "dev",
+      "group": "payload 6",
+      "transform": "reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:reverse"
+      ],
+      "ms": 0.5885999999998148
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p5|letter-spaced",
+      "split": "test",
+      "group": "payload 6",
+      "transform": "letter-spaced",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "letter-spacing"
+      ],
+      "ms": 0.7083000000000084
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p5|homoglyphs + letter-spaced",
+      "split": "dev",
+      "group": "payload 6",
+      "transform": "homoglyphs + letter-spaced",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "letter-spacing"
+      ],
+      "ms": 0.6585999999999785
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p5|base64 of reversed",
+      "split": "test",
+      "group": "payload 6",
+      "transform": "base64 of reversed",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:base64>reverse"
+      ],
+      "ms": 2.256800000000112
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p5|base64 in a nested property description",
+      "split": "dev",
+      "group": "payload 6",
+      "transform": "base64 in a nested property description",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "decoded:base64"
+      ],
+      "ms": 1.2684999999999036
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p5|split across two property descriptions",
+      "split": "dev",
+      "group": "payload 6",
+      "transform": "split across two property descriptions",
+      "claimed": true,
+      "caught": true,
+      "matchers": [
+        "raw"
+      ],
+      "ms": 0.6068000000000211
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p5|filler words inserted",
+      "split": "test",
+      "group": "payload 6",
+      "transform": "filler words inserted",
+      "claimed": false,
+      "caught": false,
+      "matchers": [
+        "raw"
+      ],
+      "ms": 0.385300000000143
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p5|leetspeak",
+      "split": "dev",
+      "group": "payload 6",
+      "transform": "leetspeak",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.28769999999985885
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p5|translated (French)",
+      "split": "test",
+      "group": "payload 6",
+      "transform": "translated (French)",
+      "claimed": false,
+      "caught": false,
+      "matchers": [
+        "raw"
+      ],
+      "ms": 0.30719999999996617
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p5|decimal char codes",
+      "split": "dev",
+      "group": "payload 6",
+      "transform": "decimal char codes",
+      "claimed": false,
+      "caught": false,
+      "matchers": [],
+      "ms": 0.38000000000010914
+    },
+    {
+      "suite": "scanner",
+      "id": "scan|p5|base64 split across two properties",
+      "split": "test",
+      "group": "payload 6",
+      "transform": "base64 split across two properties",
+      "claimed": false,
+      "caught": true,
+      "matchers": [
+        "decoded:base64"
+      ],
+      "ms": 1.1474000000000615
+    }
+  ]
+}

@@ -51,11 +51,46 @@ export function normalize(s: string): string {
 }
 
 /**
- * Letter-spacing undone: a run of three or more single letters/digits, each separated by exactly one
- * separator character (space, `-`, `_`, `.`, `·`, `•`, `|`, `/`, `,`, `*`), is joined. A wider gap
- * (two spaces) ends the run, so "i g n o r e  a l l" → "ignore  all". Multi-character separators
- * (", " or " - ") are not undone — documented in the evasion benchmark.
+ * Letter-spacing / separator spelling undone: a run of three or more single characters, each separated
+ * by the same one-character separator, is joined — "i g n o r e", "g-h-p-_-x-y", "h.t.t.p.s.:./././".
+ * An element is any non-whitespace character other than the separator, so punctuation inside a token,
+ * URL or address survives. A wider gap (two spaces) ends a run: "i g n o r e  a l l" → "ignore  all".
+ * Two-letter words in letter-spaced text ("d o  n o t") are joined only next to such a word gap, so
+ * ordinary prose ("use a b test", "e.g.") is left alone. Multi-character separators (", ", " - ") and
+ * mixed separators are not undone — published in the evasion benchmark.
  */
 export function despace(s: string): string {
-  return s.replace(/(?<![\p{L}\p{N}])[\p{L}\p{N}](?:[ \-_.·•|/,*][\p{L}\p{N}]){2,}(?![\p{L}\p{N}])/gu, (run) => run.replace(/[ \-_.·•|/,*]/g, ''));
+  let out = s;
+  // A whitespace-bounded run is parsed by parity first, so the separator may itself be an element
+  // ("a-t-t-a-c-k-e-r---b-e-n-c-h": the spelled value contains a hyphen).
+  for (const re of PARITY_RUNS) out = out.replace(re, (run) => joinRun(run));
+  for (const re of SEPARATOR_RUNS) out = out.replace(re, (run) => joinRun(run));
+  return out.replace(SPACED_PAIR, (run) => run.replace(' ', ''));
+}
+
+const SEPARATORS = [' ', '-', '_', '.', '·', '•', '|', '/', ',', '*', ':', '+', '~'];
+
+const SEPARATOR_RUNS: readonly RegExp[] = SEPARATORS.map((sep) => {
+  // Escaped differently inside a character class (where `-` is special) and outside (where `.*+|/` are).
+  const inClass = sep.replace(/[\\\]^-]/g, '\\$&');
+  const outside = sep.replace(/[.*+?|/\\()[\]{}^$]/g, '\\$&');
+  const el = `[^\\s${inClass}]`;
+  return new RegExp(`(?<!${el})(?:${el}${outside}){2,}${el}(?!${el})`, 'gu');
+});
+
+/** Whitespace-bounded runs where every other character is the separator (any non-space elements). */
+const PARITY_RUNS: readonly RegExp[] = SEPARATORS.filter((sep) => sep !== ' ').map((sep) => {
+  const outside = sep.replace(/[.*+?|/\\()[\]{}^$]/g, '\\$&');
+  return new RegExp(`(?<!\\S)(?:\\S${outside}){2,}\\S(?!\\S)`, 'gu');
+});
+
+/** Exactly two single characters separated by one space, next to a two-space word gap or an edge. */
+const SPACED_PAIR = /(?:(?<=^|\s\s)\S \S(?!\S))|(?:(?<!\S)\S \S(?=\s\s|$))/gu;
+
+/** Removes the separator of a run: every other character, starting with the second. */
+function joinRun(run: string): string {
+  const chars = Array.from(run);
+  let out = '';
+  for (let i = 0; i < chars.length; i += 2) out += chars[i] ?? '';
+  return out;
 }

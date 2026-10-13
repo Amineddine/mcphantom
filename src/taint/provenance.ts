@@ -217,9 +217,12 @@ export class ProvenanceIndex {
     };
     /** Normalized hashes of identifiers this call already matched leaf by leaf. */
     const matched = new Set<string>();
+    // Argument side: every identifier kind under every decoder — arguments are small, and a token sent
+    // reversed or rot13'd is a real evasion. The output side skips random tokens under those two
+    // transforms to keep Tier B small; a token the output carries reversed is still found, because the
+    // raw reversed token is indexed and the argument's reversal reproduces it.
     const lookup = (leafPath: string, text: string, isRaw: boolean, chain?: Decoder[]): void => {
-      const tokens = !chain?.some((d) => d === 'rot13' || d === 'reverse');
-      for (const id of extractIdentifiers(text, { tokens })) {
+      for (const id of extractIdentifiers(text)) {
         const exact = isRaw ? this.tierB.get(`r:${id.rawHash}`) : undefined;
         const hit = exact ?? this.tierB.get(`n:${id.normHash}`);
         if (!hit) continue;
@@ -340,8 +343,7 @@ export class ProvenanceIndex {
     if (text.length === 0) return out;
     for (const id of extractIdentifiers(fold(text))) if (!out.has(id.normHash)) out.set(id.normHash, undefined);
     for (const v of decodeVariants(text, ARG_DECODE_LIMITS).variants) {
-      const tokens = !v.chain.some((d) => d === 'rot13' || d === 'reverse');
-      for (const id of extractIdentifiers(fold(v.text), { tokens })) if (!out.has(id.normHash)) out.set(id.normHash, v.chain);
+      for (const id of extractIdentifiers(fold(v.text))) if (!out.has(id.normHash)) out.set(id.normHash, v.chain);
     }
     return out;
   }
