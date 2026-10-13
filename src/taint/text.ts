@@ -1,23 +1,8 @@
 import crypto from 'node:crypto';
 import { findSecrets } from '../secrets/detectors.js';
+import { normalize } from '../text/normalize.js';
 
-/**
- * Canonical form for matching: Unicode compatibility folding (fullwidth → ASCII, ligatures, ...),
- * format characters removed (zero-width, bidi controls, soft hyphen, tag characters), case-folded,
- * whitespace collapsed. Homoglyph folding across scripts (Cyrillic "а" vs Latin "a") is *not* done
- * yet — a documented gap until the confusables table lands (Phase 6).
- */
-export function normalize(s: string): string {
-  return fold(s)
-    .toLowerCase()
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-/** NFKC + format characters removed, case preserved (so case-sensitive detectors still apply). */
-export function fold(s: string): string {
-  return s.normalize('NFKC').replace(/[\p{Cf}͏ᅟᅠㅤﾠ]/gu, '');
-}
+export { fold, normalize } from '../text/normalize.js';
 
 export type IdentifierKind = 'secret' | 'url' | 'email' | 'token';
 
