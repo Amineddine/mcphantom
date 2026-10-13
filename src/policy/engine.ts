@@ -2,7 +2,7 @@ import type { CelInput } from '@bufbuild/cel';
 import type { Config } from '../config/schema.js';
 import type { Label } from '../taint/labels.js';
 import { leaves } from '../taint/text.js';
-import { compile, evaluate, CelError, type CompiledExpr } from './cel.js';
+import { CelError, CelEvaluator, compile, type CompiledExpr } from './cel.js';
 import { buildFunctions, type PolicyContext } from './functions.js';
 
 export type PolicyEffect = 'deny' | 'ask' | 'allow';
@@ -49,7 +49,9 @@ export interface EvalInputs {
  *  call is denied with a clear reason before any rule runs. */
 const MAX_ARG_BYTES = 256 * 1024;
 const MAX_ARG_LEAVES = 4096;
-const EVAL_BUDGET_MS = 50;
+/** Wall-clock budget for one call's whole policy evaluation (every rule, every declassify condition,
+ *  every custom predicate). Exceeding it denies the call. */
+export const EVAL_BUDGET_MS = 50;
 
 const PRECEDENCE: Record<PolicyEffect, number> = { allow: 0, ask: 1, deny: 2 };
 
@@ -64,6 +66,11 @@ const PRECEDENCE: Record<PolicyEffect, number> = { allow: 0, ask: 1, deny: 2 };
 export class PolicyEngine {
   private readonly rules = new Map<string, CompiledRule[]>();
   private readonly declassify: CompiledDeclassify[] = [];
+  /** The predicates close over this object; `evaluate` sets it for each call (evaluation is synchronous). */
+  private readonly ctx: PolicyContext = { provenanceOf: () => new Set(), deadline: 0 };
+  private readonly cel = new CelEvaluator(buildFunctions(this.ctx));
+  /** Clock, injectable for tests of the deadline. */
+  now: () => number = () => performance.now();
 
   constructor(private readonly config: Config) {
     for (const [serverId, server] of Object.entries(config.servers)) {
@@ -112,8 +119,10 @@ export class PolicyEngine {
       outcome.effect = 'deny';
       return outcome;
     }
-    const ctx: PolicyContext = { provenanceOf: inputs.provenanceOf, deadline: Date.now() + EVAL_BUDGET_MS };
-    const funcs = buildFunctions(ctx);
+    const start = this.now();
+    this.ctx.provenanceOf = inputs.provenanceOf;
+    this.ctx.deadline = start + EVAL_BUDGET_MS;
+    this.ctx.now = this.now;
     const bindings: Record<string, CelInput> = { arg: toCel(argObj), context: { integrity: inputs.context.integrity, confidentiality: inputs.context.confidentiality } };
 
     if (bytes > MAX_ARG_BYTES) {
@@ -122,7 +131,20 @@ export class PolicyEngine {
       return outcome;
     }
 
+    // The deadline covers the whole evaluation. Custom predicates check it as they run; it is checked
+    // again before and after every expression, so time spent inside CEL itself also counts. A single
+    // CEL run cannot be pre-empted (evaluation is synchronous), but its cost is bounded by the AST and
+    // argument caps, and an evaluation that overran is denied rather than trusted.
+    const overBudget = (): boolean => this.now() > this.ctx.deadline;
+    const budgetError = (): PolicyOutcome => {
+      outcome.errors.push({ origin: exposed, message: `policy evaluation exceeded its time budget (${Math.round(this.now() - start)} ms > ${EVAL_BUDGET_MS} ms)` });
+      outcome.effect = 'deny';
+      outcome.declassified = undefined;
+      return outcome;
+    };
+
     for (const rule of rules) {
+      if (overBudget()) return budgetError();
       const missing = [...rule.expr.argRefs].filter((a) => !present.has(a));
       if (missing.length > 0) {
         // A rule that names an argument the call did not supply fails closed (note #1).
@@ -131,7 +153,7 @@ export class PolicyEngine {
         continue;
       }
       try {
-        if (evaluate(rule.expr, bindings, funcs)) {
+        if (this.cel.evaluate(rule.expr, bindings)) {
           outcome.matches.push({ effect: rule.effect, origin: rule.origin });
           if (outcome.effect === undefined || PRECEDENCE[rule.effect] > PRECEDENCE[outcome.effect]) outcome.effect = rule.effect;
         }
@@ -142,15 +164,16 @@ export class PolicyEngine {
     }
 
     for (const d of declass) {
+      if (overBudget()) return budgetError();
       const missing = [...d.when.argRefs].filter((a) => !present.has(a));
       if (missing.length > 0) continue; // a declassify that cannot apply simply does not lift the invariant
       try {
-        if (evaluate(d.when, bindings, funcs)) outcome.declassified = { id: d.id, reason: d.reason };
+        if (this.cel.evaluate(d.when, bindings)) outcome.declassified = { id: d.id, reason: d.reason };
       } catch {
         // A failing declassify never lifts the invariant; it just does not apply.
       }
     }
-    return outcome;
+    return overBudget() ? budgetError() : outcome;
   }
 }
 

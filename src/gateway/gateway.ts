@@ -250,7 +250,7 @@ export class Gateway {
           // Only an explicit approval from the user lets an `ask` through; every other outcome
           // (no elicitation support, decline, cancel, timeout, malformed reply) is a deny.
           const approved = await this.askUser(decision, route.serverId, req.params.arguments ?? {}, extra);
-          this.record({ kind: 'decision', server: route.serverId, name: exposed, method: 'tools/call', outcome: approved ? 'approved' : 'denied', payload: { id: decision.id, ask: approved ? 'approved' : 'refused' } });
+          this.audit({ kind: 'decision', server: route.serverId, name: exposed, method: 'tools/call', outcome: approved ? 'approved' : 'denied', payload: { id: decision.id, ask: approved ? 'approved' : 'refused' } });
           if (!approved) {
             meta.outcome = 'denied';
             return blockedResult(decision);
@@ -424,7 +424,7 @@ export class Gateway {
     const t0 = performance.now();
     try {
       const result = await fn(meta);
-      this.record({
+      this.audit({
         kind: 'request', method, name: initial.name, server: meta.server, outcome: meta.outcome ?? 'ok',
         durationMs: performance.now() - t0,
         payload: { params, result: summarize ? summarize(result) : result },
@@ -623,8 +623,13 @@ export class Gateway {
     }
     if (candidates.size === 1) return [...candidates][0] as string;
     if (candidates.size > 1) throw new McpError(ErrorCode.InvalidParams, `resource URI matches templates of several servers (${[...candidates].join(', ')}): ${uri}`);
-    const withResources = this.readyUpstreams().filter((u) => u.capabilities.resources);
-    if (withResources.length === 1 && withResources[0]) return withResources[0].id;
+    // An unlisted, untemplated URI is refused by default: guessing a route sends the request (and any
+    // credentials or paths in the URI) to a server that never claimed it. Opt-in for servers that hand
+    // out resource links they do not list.
+    if (this.opts.config.resources.unrouted === 'sole-server') {
+      const withResources = this.readyUpstreams().filter((u) => u.capabilities.resources);
+      if (withResources.length === 1 && withResources[0]) return withResources[0].id;
+    }
     throw new McpError(ErrorCode.InvalidParams, `no server provides resource: ${uri}`);
   }
 
@@ -663,7 +668,7 @@ export class Gateway {
     if (!this.server.getClientCapabilities()?.roots) {
       throw new McpError(ErrorCode.MethodNotFound, 'the MCP client does not support roots');
     }
-    this.record({ kind: 'request', server: serverId, method: 'roots/list', outcome: 'relayed' });
+    this.audit({ kind: 'request', server: serverId, method: 'roots/list', outcome: 'relayed' });
     return this.server.listRoots(undefined, { timeout: this.opts.config.timeouts.request_ms });
   }
 
@@ -671,7 +676,7 @@ export class Gateway {
     if (!this.server.getClientCapabilities()?.elicitation) {
       throw new McpError(ErrorCode.MethodNotFound, 'the MCP client does not support elicitation');
     }
-    this.record({ kind: 'request', server: serverId, method: 'elicitation/create', outcome: 'relayed', payload: params });
+    this.audit({ kind: 'request', server: serverId, method: 'elicitation/create', outcome: 'relayed', payload: params });
     // Elicitation waits on a human; use the long timeout.
     return this.server.request({ method: 'elicitation/create', params: params as never }, ElicitResultSchema, { timeout: this.opts.config.timeouts.tool_call_ms });
   }
@@ -680,7 +685,7 @@ export class Gateway {
     if (!this.server.getClientCapabilities()?.sampling) {
       throw new McpError(ErrorCode.MethodNotFound, 'the MCP client does not support sampling');
     }
-    this.record({ kind: 'request', server: serverId, method: 'sampling/createMessage', outcome: 'relayed', payload: params });
+    this.audit({ kind: 'request', server: serverId, method: 'sampling/createMessage', outcome: 'relayed', payload: params });
     return this.server.createMessage(params, { timeout: this.opts.config.timeouts.tool_call_ms });
   }
 
@@ -736,7 +741,7 @@ export class Gateway {
   }
 
   private recordDecision(d: Decision): void {
-    this.record({
+    this.audit({
       kind: 'decision', server: d.server, name: d.tool, method: 'tools/call',
       outcome: d.verdict === 'deny' ? 'denied' : d.verdict === 'ask' ? 'ask' : d.rule ? 'flagged' : 'allowed',
       payload: d,
@@ -768,25 +773,38 @@ export class Gateway {
   }
 
   private recordIngest(r: IngestResult): void {
-    this.record({
+    this.audit({
       kind: 'taint', server: r.ref.server, name: r.ref.source, method: r.ref.kind,
       payload: { output: r.ref, secretsDetected: r.secretsDetected, identifiers: r.identifiers, contextBefore: r.contextBefore, contextAfter: r.contextAfter },
     });
     for (const e of r.evictions) {
-      this.record({ kind: 'eviction', server: e.output.server, name: e.output.source, payload: { output: e.output, bytes: e.bytes, stats: this.taint.indexStats } });
+      this.audit({ kind: 'eviction', server: e.output.server, name: e.output.source, payload: { output: e.output, bytes: e.bytes, stats: this.taint.indexStats } });
     }
   }
 
-  private record(e: Omit<EventInput, 'sessionId'>): void {
-    this.append({ ...e, sessionId: this.opts.sessionId });
+  /** Best-effort event (warnings, notifications): a write failure is reported, never fatal. */
+  private record(e: Omit<EventInput, 'sessionId'>): boolean {
+    return this.append({ ...e, sessionId: this.opts.sessionId });
   }
 
-  /** The event log is an audit trail, not a control: a write failure is reported, not fatal. */
-  private append(e: EventInput): void {
+  /**
+   * An event that audits a request crossing the gateway (a call decision, a relayed request, a result
+   * entering the model's context). With `logging.on_failure: deny` a failed write throws, so the
+   * request is refused or its result withheld — nothing passes unaudited. With `warn` (default) it is
+   * reported once and the request continues, as for any other event.
+   */
+  private audit(e: Omit<EventInput, 'sessionId'>): void {
+    if (this.record(e) || this.opts.config.logging.on_failure !== 'deny') return;
+    throw new McpError(ErrorCode.InternalError, 'MCPhantom: the audit log could not be written, so this request was refused (logging.on_failure: deny)');
+  }
+
+  private append(e: EventInput): boolean {
     try {
       this.opts.store.append(e);
+      return true;
     } catch (err) {
       this.warnStore(err);
+      return false;
     }
   }
 

@@ -76,8 +76,12 @@ export const ConfigSchema = z.strictObject({
       /** Bytes of serialized payload kept per event (after redaction). */
       max_payload_bytes: z.number().int().min(256).max(1_048_576).default(65_536),
       level: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+      /** What happens when an event cannot be written to the audit log. `warn`: report it once and keep
+       *  serving (the log is an audit trail). `deny`: fail closed — a request whose decision or
+       *  result cannot be audited is refused, and its result is withheld from the client. */
+      on_failure: z.enum(['warn', 'deny']).default('warn'),
     })
-    .default({ payloads: 'redacted', max_payload_bytes: 65_536, level: 'info' }),
+    .default({ payloads: 'redacted', max_payload_bytes: 65_536, level: 'info', on_failure: 'warn' }),
   retention: z
     .strictObject({
       days: z.number().positive().max(3650).default(14),
@@ -136,6 +140,14 @@ export const ConfigSchema = z.strictObject({
       }),
     )
     .default([]),
+  resources: z
+    .strictObject({
+      /** Routing of a resource URI that no server listed and no template matches. `deny` (default):
+       *  refuse it. `sole-server`: send it to the only resource-capable server, if there is exactly one
+       *  (useful for servers that hand out resource links they do not list). */
+      unrouted: z.enum(['deny', 'sole-server']).default('deny'),
+    })
+    .default({ unrouted: 'deny' }),
   /** Pass upstream servers' `instructions` to the client (concatenated, one section per server). */
   forward_instructions: z.boolean().default(true),
   /** Override the event-database directory. */

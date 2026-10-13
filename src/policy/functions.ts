@@ -11,12 +11,13 @@ import type { CelFuncDef } from './cel.js';
 export interface PolicyContext {
   /** Returns the integrity levels attributed to a string value by the provenance index. */
   provenanceOf(value: string): Set<'trusted' | 'untrusted'>;
-  /** Deadline for the whole evaluation; custom predicates throw if it passes (cost budget). */
+  /** Deadline for the whole evaluation, on the `now` clock; predicates throw if it has passed. */
   deadline: number;
+  now?: () => number;
 }
 
 function checkDeadline(ctx: PolicyContext): void {
-  if (Date.now() > ctx.deadline) throw new Error('policy evaluation exceeded its time budget');
+  if ((ctx.now ? ctx.now() : performance.now()) > ctx.deadline) throw new Error('policy evaluation exceeded its time budget');
 }
 
 /**

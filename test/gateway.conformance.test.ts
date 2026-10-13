@@ -12,7 +12,9 @@ let gw: GatewayHarness;
 beforeAll(async () => {
   [direct, gw] = await Promise.all([
     connectDirect('everything'),
-    startGateway({ fx: fixtureServer('everything') }),
+    // `sole-server` lets an unknown URI reach the upstream, so the JSON-RPC error test below compares
+    // the server's own error; the default (deny) refuses it in the gateway (fail-closed.test.ts).
+    startGateway({ fx: fixtureServer('everything') }, { config: { resources: { unrouted: 'sole-server' } } }),
   ]);
 });
 

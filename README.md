@@ -66,6 +66,8 @@ Security-relevant defaults:
 | `env_inherit` | `minimal` | Servers get the SDK's small environment allowlist plus their `env`, never the gateway's full environment. |
 | `allow_sampling` | `false` | `sampling/createMessage` lets a server inject text into the model. |
 | `logging.payloads` | `redacted` | Credentials are removed *before* anything is written to disk. |
+| `logging.on_failure` | `warn` | If the event log cannot be written, report it and keep serving. `deny` makes the log a control: a call whose decision or result cannot be audited is refused, or its result withheld. |
+| `resources.unrouted` | `deny` | A resource URI that no server listed and no template matches is refused. `sole-server` sends it to the only resource-capable server, for servers that hand out links they do not list. |
 | `security.insecure_permissions` | `fix` | Config, profiles and the event DB are restricted to your user (POSIX `0600`/`0700`; Windows ACL with a single entry for your SID). |
 
 ## Measured so far

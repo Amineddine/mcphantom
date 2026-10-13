@@ -1,4 +1,4 @@
-import { parse, run, type CelInput } from '@bufbuild/cel';
+import { celEnv, isCelError, parse, plan, type CelInput } from '@bufbuild/cel';
 
 /**
  * Thin wrapper over @bufbuild/cel. A `CompiledExpr` is parsed once (so we can also walk it for the
@@ -7,7 +7,10 @@ import { parse, run, type CelInput } from '@bufbuild/cel';
  *
  * CEL has no loops or recursion, so evaluation time is bounded by the AST size and by our own custom
  * functions. We additionally cap AST node count at compile and argument size at eval (see engine.ts),
- * and custom predicates check a deadline — that is the per-evaluation cost budget.
+ * and a deadline covers the whole evaluation (see engine.ts) — that is the per-evaluation cost budget.
+ *
+ * Expressions are planned once per `CelEvaluator` (one environment, one set of functions) instead of
+ * re-parsed and re-planned on every call, which is what `run()` does.
  */
 export interface CompiledExpr {
   source: string;
@@ -17,6 +20,7 @@ export interface CompiledExpr {
   /** Every `arg.<field>` referenced, guarded or not — what the linter checks against the schema. */
   allArgRefs: Set<string>;
   nodeCount: number;
+  parsed: ReturnType<typeof parse>;
 }
 
 export class CelError extends Error {}
@@ -39,20 +43,38 @@ export function compile(source: string): CompiledExpr {
   const nodeCount = walk((ast as { expr?: unknown }).expr, refs);
   if (nodeCount > MAX_NODES) throw new CelError(`expression too large (${nodeCount} nodes > ${MAX_NODES})`);
   const argRefs = new Set([...refs.all].filter((a) => !refs.guarded.has(a)));
-  return { source, argRefs, allArgRefs: refs.all, nodeCount };
+  return { source, argRefs, allArgRefs: refs.all, nodeCount, parsed: ast };
 }
 
 export type CelFuncDef = ReturnType<typeof import('@bufbuild/cel').celFunc>;
 
-export function evaluate(expr: CompiledExpr, bindings: Record<string, CelInput>, funcs: CelFuncDef[]): boolean {
-  let result: unknown;
-  try {
-    result = run(expr.source, bindings, { funcs });
-  } catch (err) {
-    throw new CelError(err instanceof Error ? err.message : String(err));
+type Program = (bindings: Record<string, CelInput>) => unknown;
+
+/** Evaluates compiled expressions in one environment; each expression is planned once and cached. */
+export class CelEvaluator {
+  private readonly env: ReturnType<typeof celEnv>;
+  private readonly programs = new WeakMap<CompiledExpr, Program>();
+
+  constructor(funcs: CelFuncDef[]) {
+    this.env = celEnv({ funcs });
   }
-  if (typeof result !== 'boolean') throw new CelError(`expression must evaluate to a boolean, got ${typeof result}`);
-  return result;
+
+  evaluate(expr: CompiledExpr, bindings: Record<string, CelInput>): boolean {
+    let result: unknown;
+    try {
+      let program = this.programs.get(expr);
+      if (!program) {
+        program = plan(this.env, expr.parsed);
+        this.programs.set(expr, program);
+      }
+      result = program(bindings);
+    } catch (err) {
+      throw new CelError(err instanceof Error ? err.message : String(err));
+    }
+    if (isCelError(result)) throw new CelError(result.message);
+    if (typeof result !== 'boolean') throw new CelError(`expression must evaluate to a boolean, got ${typeof result}`);
+    return result;
+  }
 }
 
 /**
