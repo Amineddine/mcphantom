@@ -296,13 +296,19 @@ reassembly) matchers; scanner on the same pipeline (B1/B3/B4 closed, `unscannabl
 `bench:evasion` in CI (attribution claimed 143/143, scanner claimed 90/90, false attribution 0/36, every
 bypass published). `from()` on the allow side (allow rules, declassify) counts only deterministic
 evidence. Measured cost: decision p50 0.35 → 1.6 ms (small), 29 → 86 ms (128 KB body). Local
-`npm run check` 331/331 on Windows; **CI for 6a not yet run — nothing pushed yet** (owner confirms
-pushes).
+`npm run check` 331/331 on Windows; pushed 2026-10-13 (`96d7327..337eaba`), CI green on all six
+OS/Node jobs and the gitleaks job.
 
-**Next, in order:**
-1. **v0.1 public release** (Phase 6.5 in §5) — polished README with a "Related work" section, scripted
-   demo GIF, repo made public **only with the owner's explicit confirmation**.
-2. **6b** (fresh session), below.
+**Phase 6.5 (v0.1 release) — in progress.** README rewrite (limitations, related work, how it was
+built), scripted demo GIF (`docs/demo/`), SECURITY/CONTRIBUTING/issue templates, publish-safety audit,
+`v0.1.0` tag (local). **Owner decisions (2026-10-13):** vulnerability reports through private GitHub
+advisories only; npm publish waits for v1 (tarball attached to the GitHub release instead); the SDK
+issue drafts were moved out of the tree — the owner files the issue upstream before the repo goes
+public, then the drafts are re-added linking to it; secret scanning, push protection and branch
+protection (require CI) are enabled at the moment the repo goes public. Nothing is pushed (except the
+GIF-render branch) or made public without the owner's explicit confirmation.
+
+**Next:** **6b** (fresh session), below.
 
 **6b** (fresh session):
 1. Entropy-based secret detection. **Owner constraint:** entropy-only hits (no known format, no
@@ -317,8 +323,8 @@ pushes).
 (2026-10-13): for v0.1 an `ask` on a client without elicitation is a deny; a minimal approval queue moves
 into the v1 trace view (Phase 8)**; the MCP SDK final-progress race (AUD-10b) — issue drafted and
 ready, PR draft **not ready**: verified against SDK `v1.x`, the naive fix passes its own test but breaks
-two existing task-progress tests (details in `docs/upstream/sdk-progress-race/PR.md`); nothing filed
-(owner submits from their account); repo security settings
+two existing task-progress tests; nothing filed (owner submits from their account; the drafts are
+kept outside the repository until the issue is filed, then re-added linking to it); repo security settings
 (secret scanning, push protection, branch protection) once GitHub Pro is active.
 
 **Process guardrails (mechanical, not memory):** `npm install` installs a versioned pre-push hook
