@@ -282,37 +282,26 @@ moving to `node:sqlite` once it is stable is a contained change. CI installs on 
 
 ## Current state and resume point (updated 2026-10-13)
 
-**Done and committed, CI green on Linux/macOS/Windows × Node 22/24:** Phases 1–5 — gateway core,
-taint + trifecta (incl. write-outside-workspace as egress), static scanner + list-time hiding,
-rug-pull pinning (tools, prompts, instructions), CEL policy (deny/ask/allow, declassify, `ask` via
-elicitation else deny, fail-closed on absent arguments), plus the Phase 2–5 audit (AUD-1..10).
-Reviews: `docs/reviews/phase-1.md` … `phase-5.md`.
+**Done and committed:** Phases 1–5 — gateway core, taint + trifecta (incl. write-outside-workspace as
+egress), static scanner + list-time hiding, rug-pull pinning (tools, prompts, instructions), CEL policy
+(deny/ask/allow, declassify, `ask` via elicitation else deny, fail-closed on absent arguments), plus the
+Phase 2–5 audit (AUD-1..10) — CI green on Linux/macOS/Windows × Node 22/24.
 
-**Next: Phase 6 — taint deepening, split by the owner into 6a and 6b (separate sessions).**
+**Phase 6a — done (2026-10-13), commits `0906b4c`..`6ef51ac`; review `docs/reviews/phase-6a.md`.**
+Carried fail-closed fixes (`logging.on_failure: deny`, whole-evaluation policy deadline,
+`resources.unrouted: deny`); shared text pipeline `src/text/` (Unicode confusables 16.0.0 folding,
+`despace`, bounded decoders); Layer-2 `decoded`, `fuzzy` (winnowing) and `cumulative` (per-sink
+reassembly) matchers; scanner on the same pipeline (B1/B3/B4 closed, `unscannable` bound);
+`bench:evasion` in CI (attribution claimed 143/143, scanner claimed 90/90, false attribution 0/36, every
+bypass published). `from()` on the allow side (allow rules, declassify) counts only deterministic
+evidence. Measured cost: decision p50 0.35 → 1.6 ms (small), 29 → 86 ms (128 KB body). Local
+`npm run check` 331/331 on Windows; **CI for 6a not yet run — nothing pushed yet** (owner confirms
+pushes).
 
-Done before 6a (commit `0906b4c`): `logging.on_failure: deny` option (default `warn`); the policy
-deadline covers the whole evaluation; `resources.unrouted` defaults to `deny`.
-
-**6a** (owner-approved plan, 2026-10-13), in order, each step with tests + `npm run check` + commit:
-0. Shared text pipeline `src/text/`: `normalize.ts` (fold/normalize moved from `taint/text.ts`,
-   confusables folding from a table generated from Unicode `confusables.txt`, vendored with a NOTICE
-   entry; `despace()`), and `decode.ts` (bounded variant generator: base64 std/url, hex, URL, HTML
-   entities, `\u`/`\x` escapes, rot13, reversal, separator spelling; depth 3, ~32 variants, shared
-   byte budget with the AUD-8 caps; overflow sets `attributionDegraded`).
-1. `decoded` matcher with decode chain on evidence; outputs decoded too (within budgets) into Tier B;
-   `containsSecret` sees decoded variants. KNOWN-GAP test in `test/taint.test.ts` flips.
-2. `fuzzy` matcher: winnowing k-gram fingerprints on Tier A, thresholds tuned on dev split only.
-3. `cumulative` matcher: per (session, sink) ordered reassembly buffer + intra-call leaf join; only the
-   completing call is attributed (documented); unordered splitting is a published bypass.
-4. Scanner over derived spans (confusables-folded, despaced, decoded segments), findings tagged `via`
-   and added only if the raw span did not fire; mixed-script word = low finding. B1/B3/B4 MISS tests
-   flip; FP guards for genuine Cyrillic/Greek text and benign base64; bench FPR must stay 0%.
-5. `bench:evasion`: generated evasion variants, frozen dev/test split, attribution rate per matcher,
-   every surviving evasion listed; decoder ReDoS timing on 1 MB inputs; per-call latency.
-**Decisions:** fuzzy and cumulative (like all Layer 2) evidence never grounds an allow — explanation,
-`from()`, deny-side predicates only. 6a ends with: commit, this section updated, memory updated, stop.
-
-**After 6a: v0.1 public release** (Phase 6.5 in §5) — README with "Related work", scripted demo GIF, repo made public only on the owner's confirmation. Then 6b.
+**Next, in order:**
+1. **v0.1 public release** (Phase 6.5 in §5) — polished README with a "Related work" section, scripted
+   demo GIF, repo made public **only with the owner's explicit confirmation**.
+2. **6b** (fresh session), below.
 
 **6b** (fresh session):
 1. Entropy-based secret detection. **Owner constraint:** entropy-only hits (no known format, no
@@ -441,6 +430,12 @@ across conversations; image/audio content is labeled by source but not inspected
 ---
 
 ## Change log
+
+- 2026-10-13 — Phase 6a done: carried fail-closed fixes; shared normalize/decode pipeline (Unicode
+  confusables 16.0.0, Unicode License v3 in NOTICE); decoded / fuzzy / cumulative Layer-2 matchers;
+  scanner through the pipeline (B1/B3/B4 closed); `bench:evasion` in CI; allow-side `from()` restricted
+  to deterministic evidence (owner decision); disguise scanning bounded per definition. See
+  `docs/reviews/phase-6a.md`.
 
 - 2026-10-13 — Owner plan updates: semantic-embeddings layer dropped from v1; v1 dashboard = taint-trace view
   only (full Blacklight after v1); v0.1 public-release milestone right after 6a (README + Related work,

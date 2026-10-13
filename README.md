@@ -76,6 +76,14 @@ Overhead per `tools/call` through the gateway on an i5-8250U laptop (Windows 11,
 single-digit ms for 1 KB results (within machine noise), ~37 ms for 1 MB results. Method, all runs, and caveats:
 [bench/results/phase1-latency.md](bench/results/phase1-latency.md).
 
+Evasion resistance (`npm run bench:evasion`, deterministic, author-written cases): Layer-2 attribution
+catches all 143 transformations the design claims (encodings and chains, look-alikes, secrets split
+across fields or calls, encodings on the output side, prose copied with edits) and 0 of 36 unrelated
+benign pairs are attributed; the static scanner catches all 90 claimed disguises. Every evasion that
+still succeeds is listed in [bench/results/evasion-bench.md](bench/results/evasion-bench.md) — all of
+them remain subject to the content-blind trifecta invariant. The extra matching costs time: a
+small-argument decision is ~1.6 ms p50 on a laptop ([bench/results/policy-bench.md](bench/results/policy-bench.md)).
+
 ## Development
 
 ```sh
