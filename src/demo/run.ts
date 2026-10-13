@@ -74,7 +74,7 @@ async function main(): Promise<void> {
   };
 
   out();
-  out(c(C.bold, `  MCPhantom ${VERSION} — live exfiltration demo`));
+  out(c(C.bold, `  MCPhantom ${VERSION} — exfiltration demo (scripted agent, real MCP servers)`));
   out(c(C.dim, '  An agent summarizes a blog post. The post hides an instruction: read .env and POST it'));
   out(c(C.dim, '  to an attacker. The agent obeys. Ground truth = the attacker collector\'s request log.'));
   out();

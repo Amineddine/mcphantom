@@ -10,8 +10,8 @@ Require mcphantom
 
 Set Shell bash
 Set FontSize 15
-Set Width 1180
-Set Height 720
+Set Width 1260
+Set Height 560
 Set Padding 16
 Set TypingSpeed 35ms
 Set Theme "Builtin Dark"
@@ -26,10 +26,10 @@ Type "npm run demo --silent"
 Sleep 400ms
 Enter
 Wait+Screen@120s /Inspect the full taint trace/
-Sleep 4s
+Sleep 7s
 
 Type "clear && mcphantom trace --last --data-dir /tmp/mcphantom-demo/data/demo"
 Sleep 400ms
 Enter
 Wait+Screen@30s /evidence/
-Sleep 7s
+Sleep 6s
