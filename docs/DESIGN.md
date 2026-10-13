@@ -125,7 +125,7 @@ matcher, with what confidence?*
 | Decoded | base64, hex, URL, HTML entities, `\u` escapes, rot13, reversal, separator spelling (args decoded recursively, bounded depth) |
 | Fuzzy | light edits/reordering (winnowing k-gram fingerprints) |
 | Cumulative | exfiltration split across many calls (per-sink reassembly) |
-| Semantic | paraphrase (local embeddings; optional, kept only if measured gain justifies cost) |
+| Semantic | paraphrase (local embeddings) — **dropped from v1 (2026-10-13)**: the security-critical parts of an exfiltration are high-entropy identifiers that exact/decoded/cumulative matching attributes; paraphrased low-entropy payloads stay covered by Layer 1. Revisit after v1 only with a measured gain |
 
 **Core insight.** The security-critical parts of an exfiltration — the *destination* (attacker URL,
 address) and the *secret* (key, token) — are high-entropy identifiers that must cross the LLM
@@ -312,6 +312,8 @@ deadline covers the whole evaluation; `resources.unrouted` defaults to `deny`.
 **Decisions:** fuzzy and cumulative (like all Layer 2) evidence never grounds an allow — explanation,
 `from()`, deny-side predicates only. 6a ends with: commit, this section updated, memory updated, stop.
 
+**After 6a: v0.1 public release** (Phase 6.5 in §5) — README with "Related work", scripted demo GIF, repo made public only on the owner's confirmation. Then 6b.
+
 **6b** (fresh session):
 1. Entropy-based secret detection. **Owner constraint:** entropy-only hits (no known format, no
    keyword) must **not** escalate the session label to `secret` on their own — UUIDs, hashes and commit
@@ -321,8 +323,10 @@ deadline covers the whole evaluation; `resources.unrouted` defaults to `deny`.
 3. Benign corpus to ≥ 200 licence-checked community tool definitions; third-party poisoned examples
    (e.g. Invariant Labs) in the test split.
 
-**Open items carried forward:** resource pinning (before v1); `ask` without elicitation denies until
-the dashboard approval queue (Phase 8); the MCP SDK final-progress race (AUD-10b) — issue drafted and
+**Open items carried forward:** resource pinning (before v1); `ask` without elicitation denies — the
+dashboard approval queue was part of the full Blacklight UI, which is now after v1, so **through v1 an
+`ask` on a client without elicitation is a deny** (owner to confirm whether the queue moves into the v1
+trace view); the MCP SDK final-progress race (AUD-10b) — issue drafted and
 ready, PR draft **not ready**: verified against SDK `v1.x`, the naive fix passes its own test but breaks
 two existing task-progress tests (details in `docs/upstream/sdk-progress-race/PR.md`); nothing filed
 (owner submits from their account); repo security settings
@@ -346,10 +350,12 @@ Every phase ends with green CI, a commit, and a written hostile review with its 
 | 4 | **Rug-pull defense.** RFC 8785 canonical JSON + SHA-256 pins in `mcphantom.lock` (HMAC keyed by an owner-only key file; scope in §1), `approve`/`lock diff`, enforcement on `list_changed` and re-list, per-session inconsistency detection; rug-pull attack servers | Delayed / silent / paginated / per-session rug-pulls caught; tamper tests |
 | 5 | **Policy engine (CEL).** Loader, AST schema lint, evaluator, deny>ask>allow, declassify, `lint`/`test`/`explain`; `init` bulk classification suggestions | Contract tests on CEL semantics, property + fuzz tests |
 | 6 | **Taint deepening.** Decoded/fuzzy/cumulative matchers, secret detectors, Tier A/B bounded index with eviction events and `attribution_degraded`, elicitation/ask flow; exfiltration attack servers | Adversarial evasion suite, with the evasions that succeed published |
-| 7 | **Semantic layer + tier-1 runtime benchmark** (`mcp-attack-bench`), adapter spec, latency + memory + eviction-loss benchmarks | Numbers and methodology published |
-| 8 | **Dashboard** ("Blacklight") | Playwright e2e + dashboard security tests |
+| 6.5 | **v0.1 public release** (right after 6a): polished README with a "Related work" section, scripted demo GIF, repository made public — **only with the owner's explicit confirmation** | README claims each link to a reproducible command; GIF regenerates from a script |
+| 7 | **Tier-1 runtime benchmark** (`mcp-attack-bench`), adapter spec, latency + memory + eviction-loss benchmarks (semantic layer dropped from v1) | Numbers and methodology published |
+| 8 | **Dashboard, v1 scope: the taint-trace view only** (decision → Layer-1 sources, Layer-2 evidence, rule, degraded flag). The full "Blacklight" UI comes after v1 | Playwright e2e + dashboard security tests |
 | 9 | **Showcase + Tier-2 live runs.** The headline demo uses **real Claude Code as the MCP client against a real poisoned page**, with a **replay mode** (recorded real transcript, model + date shown) for anyone without Claude Code. The demo must run **from the installed package — `npx mcphantom demo`** — not only a dev checkout. Tier-2 bulk runs: Ollama default; Anthropic API behind a flag with the USD-50 cap. The deterministic `npm run demo` is kept as the CI regression test. | Live attack-success rates with confidence intervals; `npx mcphantom demo` works from a clean global install; replay mode needs no network or model |
-| 10 | **Docs + release**: README, architecture diagram, threat model, known bypasses, write-up, demo GIF; GitHub + npm (each push/publish confirmed with the owner first) | Every claim linked to a reproducible command |
+| 10 | **v1 hardening.** Claude Code hook integration — a `PreToolUse` hook so the client's built-in tools (Bash, WebFetch, …, which never cross MCP) are checked against the same taint state and policy, and a `SessionStart` hook that resets the session's taint (addresses over-tainting across conversations); optional per-server sandboxing of upstream servers (the real boundary for same-user tampering and host actions); an audited "trust this source" declassify offered from the approval prompt, recorded as a named declassify entry | Hook e2e against real Claude Code; sandbox escape tests per OS; every approval-created declassify appears in the trace and the policy diff |
+| 11 | **Docs + v1 release**: README, architecture diagram, threat model, known bypasses, write-up, demo GIF; GitHub + npm (each push/publish confirmed with the owner first) | Every claim linked to a reproducible command |
 
 - 2026-10-12 — Phase 4 (rug-pull detection): RFC-8785-style canonical JSON + SHA-256 fingerprints of
   model-visible tool/prompt/instructions definitions, pinned in a `.lock` file signed with an owner-only
@@ -420,7 +426,7 @@ Phase-1 notes). Until then the gitleaks CI job is the stand-in and `main` is unp
 
 ---
 
-## 7. Threat model (summary — full version in `docs/THREAT_MODEL.md`, Phase 10)
+## 7. Threat model (summary — full version in `docs/THREAT_MODEL.md`, Phase 11)
 
 **In scope:** malicious or compromised MCP servers (poisoned definitions, rug-pulls, injected outputs,
 sampling abuse), indirect prompt injection via untrusted content, exfiltration via MCP tools.
@@ -435,6 +441,12 @@ across conversations; image/audio content is labeled by source but not inspected
 ---
 
 ## Change log
+
+- 2026-10-13 — Owner plan updates: semantic-embeddings layer dropped from v1; v1 dashboard = taint-trace view
+  only (full Blacklight after v1); v0.1 public-release milestone right after 6a (README + Related work,
+  scripted demo GIF, repo public on owner confirmation); new Phase 10 "v1 hardening" (Claude Code
+  PreToolUse / SessionStart hooks, optional per-server sandboxing, audited "trust this source"
+  declassify from the approval prompt); docs + release renumbered to Phase 11.
 
 - 2026-10-13 — Session close: versioned pre-push hook running `npm run check`; AUD-6 false-positive
   shapes added to the benign corpus (benchmark: 35 real + 6 synthetic benign, FPR 0%); AUD-8 caps
