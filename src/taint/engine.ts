@@ -131,7 +131,7 @@ export class TaintEngine {
     // `..` escape) is exfiltration in disguise, so it is treated as `egress` for the invariant.
     const effect: Effect = cls.effect === 'write' && hasOutsideTarget(args, cls.workspace, cls.pathArgs) ? 'egress' : cls.effect;
     const upgraded = effect !== cls.effect;
-    const policy = this.policy?.evaluate({ serverId, toolName, args, context: this.context, provenanceOf: (v) => this.provenanceOf(v) });
+    const policy = this.policy?.evaluate({ serverId, toolName, args, context: this.context, provenanceOf: (v, deterministic) => this.provenanceOf(v, deterministic) });
     const base = {
       id, server: serverId, tool, effect, context: { ...this.context },
       untrustedSources: [...this.untrustedSources], secretSources: [...this.secretSources],
@@ -188,9 +188,12 @@ export class TaintEngine {
   now: () => number = () => Date.now();
 
   /** Integrity levels the provenance index attributes to a value — for the policy `from()` predicate. */
-  provenanceOf(value: string): Set<'trusted' | 'untrusted'> {
+  provenanceOf(value: string, deterministic = false): Set<'trusted' | 'untrusted'> {
     const out = new Set<'trusted' | 'untrusted'>();
-    for (const e of this.index.attribute({ v: value })) out.add(e.output.label.integrity);
+    for (const e of this.index.attribute({ v: value })) {
+      if (deterministic && (e.matcher === 'fuzzy' || e.matcher === 'cumulative')) continue;
+      out.add(e.output.label.integrity);
+    }
     return out;
   }
 

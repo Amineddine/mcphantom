@@ -53,6 +53,11 @@ function runDetectors(spans: TextSpan[], ownName: string): Finding[] {
 /** Decoding bounds for definitions. Rot13 and reversal apply to the whole text: an instruction is a
  *  sentence, not a token. */
 const SCAN_DECODE: DecodeLimits = { maxDepth: 2, maxVariants: 16, maxChars: 256 * 1024 };
+/** Characters of model-visible text per definition that are examined in disguise-undone form. Real
+ *  definitions are a few KB; a hostile one stuffed with encoded text would otherwise make list-time
+ *  scanning slow (measured: ~3.5 s for 2 MB in 2000 property descriptions). Past this the definition is
+ *  reported `unscannable` (medium: hidden by default) — what cannot be inspected is not shown. */
+export const MAX_DERIVED_SCAN_CHARS = 64 * 1024;
 
 /**
  * Disguise-undone forms of a span (Phase-3 review B1/B3/B4, closed through the shared pipeline used by
@@ -90,6 +95,10 @@ function disguised(spans: TextSpan[], ownName: string, raw: Finding[]): Finding[
     const severity = f.category === 'embedded-instruction' && SEVERITY_ORDER[f.severity] < SEVERITY_ORDER.medium ? 'medium' : f.severity;
     out.push({ ...f, severity, via });
   };
+  const total = spans.reduce((n, s) => n + s.text.length, 0);
+  if (total > MAX_DERIVED_SCAN_CHARS) {
+    return [{ category: 'unscannable', severity: 'medium', where: 'definition', evidence: `${total} characters of model-visible text`, detail: `definition too large to inspect for disguised text (> ${MAX_DERIVED_SCAN_CHARS} characters)` }];
+  }
   for (const span of spans) for (const d of derivedSpans(span)) for (const f of contentDetectors(d.span, ownName)) consider(f, d.via);
   const combined = combinedDescriptions(spans);
   if (combined) for (const d of derivedSpans(combined)) for (const f of detectEmbeddedInstruction(d.span)) consider(f, d.via);

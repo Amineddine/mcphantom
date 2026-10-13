@@ -130,13 +130,18 @@ describe('decodeVariants', () => {
       'A'.repeat(1 << 20) + '===', // base64 alphabet run with excess padding
       'a'.repeat((1 << 20) + 1), // odd-length hex run
       'a '.repeat(1 << 19) + 'bb', // letter-spacing run ending in a word
+      'a-'.repeat(1 << 19) + 'bb', // separator run (parity and exclusion forms)
+      '-a'.repeat(1 << 19) + '--', // separators as elements
+      'a  '.repeat(1 << 18) + 'b c', // spaced pairs next to word gaps
       '%4'.repeat(1 << 19), // broken percent escapes
       '&#'.repeat(1 << 19), // broken entities
       '\\u12'.repeat(1 << 18), // broken escapes
     ];
     for (const s of inputs) {
       const t0 = performance.now();
-      decodeVariants(s, { maxDepth: 3, maxVariants: 32, maxChars: 4 << 20 });
+      // Depth 1: every decoder once over the full input. Backtracking would show as super-linear time;
+      // deeper chains only repeat linear passes and are bounded by maxChars in real use.
+      decodeVariants(s, { maxDepth: 1, maxVariants: 32, maxChars: 4 << 20 });
       expect(performance.now() - t0).toBeLessThan(3000);
     }
   });

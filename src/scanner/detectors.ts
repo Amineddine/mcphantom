@@ -7,7 +7,9 @@ export type Category =
   | 'exfiltration-hint'
   | 'tool-shadowing'
   | 'data-access-hint'
-  | 'excessive-permission';
+  | 'excessive-permission'
+  /** The definition is too large to inspect fully for disguised text; hidden by default (fail-closed). */
+  | 'unscannable';
 
 export interface Finding {
   category: Category;

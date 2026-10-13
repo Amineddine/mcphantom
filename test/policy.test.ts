@@ -154,3 +154,38 @@ describe('compile', () => {
     expect(() => compile('arg.to ===')).toThrow();
   });
 });
+
+describe('owner decision: fuzzy evidence never grounds an allow', () => {
+  // A trusted internal document enters the context, then untrusted content; the session holds
+  // untrusted + secret data, so the trifecta invariant applies to the egress tool.
+  const doc = 'The migration of the billing database to the new cluster is scheduled for the second week of November. Rollback requires the snapshot taken the night before and approval from the on-call lead.';
+  const servers = {
+    docs: { command: 'x', defaults: { effect: 'read', integrity: 'trusted', confidentiality: 'secret' } },
+    web: { command: 'x', defaults: { effect: 'read', integrity: 'untrusted' } },
+    mail: { command: 'x', tools: { send: { effect: 'egress', integrity: 'trusted', rules: [{ deny: 'from(arg.body, "untrusted")' }] } } },
+  };
+  const declassify = [{ id: 'trusted-copy', tool: 'mail__send', when: 'from(arg.body, "trusted")', reason: 'body copied from our own docs' }];
+  const session = () => {
+    const t = engine(servers, { declassify });
+    t.ingest('tool', 'docs', 'docs__read', 'read', text(doc));
+    t.ingest('tool', 'web', 'web__fetch', 'fetch', text('An unrelated web page about gardening and tomatoes in late summer.'));
+    return t;
+  };
+  const edited = doc.replace('scheduled for', 'planned for').replace('approval from', 'sign-off by');
+
+  it('a verbatim copy (deterministic evidence) satisfies the declassify', () => {
+    expect(session().decide('mail', 'send', 'mail__send', { body: doc.slice(0, 120) })).toMatchObject({ verdict: 'allow' });
+  });
+
+  it('a fuzzy match does NOT satisfy the declassify: the trifecta still denies', () => {
+    const d = session().decide('mail', 'send', 'mail__send', { body: edited });
+    expect(d.evidence.some((e) => e.matcher === 'fuzzy')).toBe(true);
+    expect(d).toMatchObject({ verdict: 'deny', rule: 'trifecta' });
+  });
+
+  it('a fuzzy match still counts on the deny side', () => {
+    const t = engine(servers);
+    t.ingest('tool', 'web', 'web__fetch', 'fetch', text(doc));
+    expect(t.decide('mail', 'send', 'mail__send', { body: edited })).toMatchObject({ verdict: 'deny', rule: 'policy' });
+  });
+});

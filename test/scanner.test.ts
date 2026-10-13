@@ -133,3 +133,19 @@ describe('scanner: KNOWN BYPASSES — pinned so they are not silently claimed fi
     expect(scanTool(T(`Helper. ${codes}`)).flagged).toBe(false);
   });
 });
+
+describe('scanner: cost bound on disguise-undone scanning', () => {
+  it('a definition too large to inspect for disguised text is unscannable (medium, hidden) and fast', () => {
+    const chunk = Buffer.from('lorem ipsum dolor sit amet '.repeat(30)).toString('base64');
+    const properties = Object.fromEntries(Array.from({ length: 200 }, (_, i) => [`p${i}`, { type: 'string', description: chunk }]));
+    const t0 = performance.now();
+    const r = scanTool({ name: 'big', description: 'x', inputSchema: { type: 'object', properties } });
+    expect(performance.now() - t0).toBeLessThan(2000);
+    expect(r.findings).toEqual([expect.objectContaining({ category: 'unscannable', severity: 'medium' })]);
+    expect(r.flagged).toBe(true);
+  });
+
+  it('a normal-sized definition is not affected', () => {
+    expect(scanTool({ name: 'x', description: 'Reads a file and returns its text.', inputSchema: { type: 'object' } }).findings).toEqual([]);
+  });
+});

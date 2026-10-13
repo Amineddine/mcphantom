@@ -11,8 +11,12 @@ import type { CelFuncDef } from './cel.js';
  * so the policy layer does not import the taint internals directly.
  */
 export interface PolicyContext {
-  /** Returns the integrity levels attributed to a string value by the provenance index. */
-  provenanceOf(value: string): Set<'trusted' | 'untrusted'>;
+  /** Returns the integrity levels attributed to a string value by the provenance index. With
+   *  `deterministic`, only exact / normalized / decoded evidence counts (no fuzzy similarity). */
+  provenanceOf(value: string, deterministic: boolean): Set<'trusted' | 'untrusted'>;
+  /** True while an `allow` rule or a declassify condition is evaluated: evidence that can ground an
+   *  allow must be deterministic (owner decision: fuzzy and cumulative evidence never grounds one). */
+  allowSide?: boolean;
   /** Deadline for the whole evaluation, on the `now` clock; predicates throw if it has passed. */
   deadline: number;
   now?: () => number;
@@ -53,7 +57,7 @@ export function buildFunctions(ctx: PolicyContext): CelFuncDef[] {
     celFunc('from', [CelScalar.STRING, CelScalar.STRING], CelScalar.BOOL, (value: string, level: string) => {
       checkDeadline(ctx);
       if (level !== 'trusted' && level !== 'untrusted') throw new Error(`from(): unknown integrity level "${level}"`);
-      return ctx.provenanceOf(value).has(level);
+      return ctx.provenanceOf(value, ctx.allowSide === true).has(level);
     }),
   ];
 }

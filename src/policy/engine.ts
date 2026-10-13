@@ -41,7 +41,7 @@ export interface EvalInputs {
   toolName: string;
   args: unknown;
   context: Label;
-  provenanceOf: (value: string) => Set<'trusted' | 'untrusted'>;
+  provenanceOf: (value: string, deterministic: boolean) => Set<'trusted' | 'untrusted'>;
 }
 
 /** Argument-size caps that bound policy evaluation cost (owner note #2): total string bytes and the
@@ -153,6 +153,7 @@ export class PolicyEngine {
         continue;
       }
       try {
+        this.ctx.allowSide = rule.effect === 'allow';
         if (this.cel.evaluate(rule.expr, bindings)) {
           outcome.matches.push({ effect: rule.effect, origin: rule.origin });
           if (outcome.effect === undefined || PRECEDENCE[rule.effect] > PRECEDENCE[outcome.effect]) outcome.effect = rule.effect;
@@ -168,6 +169,7 @@ export class PolicyEngine {
       const missing = [...d.when.argRefs].filter((a) => !present.has(a));
       if (missing.length > 0) continue; // a declassify that cannot apply simply does not lift the invariant
       try {
+        this.ctx.allowSide = true; // a declassify lifts the invariant: it is allow-side
         if (this.cel.evaluate(d.when, bindings)) outcome.declassified = { id: d.id, reason: d.reason };
       } catch {
         // A failing declassify never lifts the invariant; it just does not apply.
