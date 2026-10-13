@@ -1,0 +1,35 @@
+name: Bug report
+description: Something does not work as documented (not a security bypass — see SECURITY.md).
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        If this lets an attack through that MCPhantom claims to stop, please **report it privately** instead:
+        https://github.com/Amineddine/mcphantom/security/advisories/new
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Config/policy (remove real secrets and hostnames), commands, MCP client used.
+    validations:
+      required: true
+  - type: textarea
+    id: output
+    attributes:
+      label: Relevant output
+      description: Error messages, `mcphantom doctor` and `mcphantom trace` output (redact anything private).
+      render: text
+  - type: input
+    id: version
+    attributes:
+      label: Version / OS / Node
+      placeholder: "mcphantom 0.1.0, Windows 11, Node 22.19"
+    validations:
+      required: true

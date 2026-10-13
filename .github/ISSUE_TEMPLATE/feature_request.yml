@@ -1,0 +1,20 @@
+name: Feature request
+description: Suggest a capability or an improvement.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem or threat does this address?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Check docs/DESIGN.md first — it may already be planned, or deliberately out of scope.
+  - type: textarea
+    id: measure
+    attributes:
+      label: How would we know it works?
+      description: The test or benchmark that would show the benefit (and its false-positive cost).

@@ -1,0 +1,33 @@
+name: Known-class bypass or false positive
+description: A case of an already-published limitation, or a benign tool/call wrongly blocked.
+labels: [detection]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for false positives and for instances of bypasses **already listed** in the README's
+        "Known limitations and bypasses" or in bench/results/evasion-bench.md.
+        A **new** bypass of a claimed protection goes to private reporting:
+        https://github.com/Amineddine/mcphantom/security/advisories/new
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - False positive (benign definition hidden or benign call denied)
+        - Instance of a published bypass
+    validations:
+      required: true
+  - type: textarea
+    id: case
+    attributes:
+      label: The case
+      description: The tool definition or call arguments (synthetic secrets only), and the decision or finding you got.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it matters
+      description: For a false positive, where the definition comes from (server, version, licence) so it can join the benign corpus.
