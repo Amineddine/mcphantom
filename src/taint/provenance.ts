@@ -1,6 +1,7 @@
 import type { Label } from './labels.js';
 import { extractIdentifiers, fold, leaves, normalize, type IdentifierKind } from './text.js';
 import { decodeVariants, type DecodeLimits, type Decoder } from '../text/decode.js';
+import { containment, fingerprints, reduce } from './fuzzy.js';
 
 /** One piece of content that entered the model's context. */
 export interface OutputRef {
@@ -16,9 +17,10 @@ export interface OutputRef {
 /**
  * How the argument was tied to the output: `exact`/`normalized` (verbatim, or after folding case,
  * width, invisible characters and look-alikes), `decoded` (after undoing an encoding on either side —
- * `chain`/`outputChain` say which).
+ * `chain`/`outputChain` say which), `fuzzy` (text copied with light edits or reordering: winnowing
+ * fingerprints, `score` = fraction of the argument's fingerprints found in the output).
  */
-export type Matcher = 'exact' | 'normalized' | 'decoded';
+export type Matcher = 'exact' | 'normalized' | 'decoded' | 'fuzzy';
 
 /** Layer-2 evidence that an argument value came from an earlier output. */
 export interface Evidence {
@@ -34,6 +36,8 @@ export interface Evidence {
   chain?: Decoder[];
   /** Decoders applied to the output before indexing, when the identifier was encoded there. */
   outputChain?: Decoder[];
+  /** `fuzzy` only: fraction of the argument's fingerprints present in the output (0–1). */
+  score?: number;
 }
 
 export interface Attribution {
@@ -52,6 +56,8 @@ interface TierA {
   ref: OutputRef;
   raw: string;
   norm: string;
+  /** Winnowing fingerprints for the fuzzy matcher, sorted. */
+  fp: Uint32Array;
   bytes: number;
 }
 
@@ -75,6 +81,17 @@ export const MAX_ATTRIBUTED_LEAVES = 512;
 export const MAX_ATTRIBUTED_TOTAL = 1024 * 1024;
 /** Cap on characters of a single leaf that are attributed (identifier scan + copy match). */
 export const MAX_ATTRIBUTED_CHARS = 64 * 1024;
+
+/** Fuzzy matching: a leaf needs this many reduced characters (letters/digits) to be compared — the
+ *  winnowing guarantee is W + K - 1 = 27 — and a match needs both a minimum number of shared
+ *  fingerprints and a minimum fraction of the leaf's fingerprints. Set from first principles and the
+ *  dev split of bench:evasion; the test split is held out. */
+const MIN_FUZZY_REDUCED = 40;
+const FUZZY_MIN_SHARED = 3;
+export const FUZZY_MIN_SCORE = 0.5;
+/** Characters of one leaf, and of all leaves of a call, compared by the fuzzy matcher. */
+export const MAX_FUZZY_PER_LEAF = 8 * 1024;
+export const MAX_FUZZY_PER_CALL = 32 * 1024;
 
 /** Leaves shorter than this are not decoded: no identifier we track fits in fewer characters. */
 const MIN_DECODE_LEN = 8;
@@ -123,7 +140,10 @@ export class ProvenanceIndex {
     const secrets = new Set<string>();
     let identifiers = 0;
     const index = (text: string, chain?: Decoder[]): void => {
-      for (const id of extractIdentifiers(text)) {
+      // Under rot13/reversal a random token is just another random token: indexing it would only fill
+      // Tier B. Those variants contribute secrets, URLs and e-mail addresses.
+      const tokens = !chain?.some((d) => d === 'rot13' || d === 'reverse');
+      for (const id of extractIdentifiers(text, { tokens })) {
         identifiers++;
         if (id.kind === 'secret' && id.rule && (!chain || chain.every((d) => SECRET_BEARING.has(d)))) secrets.add(id.rule);
         for (const h of new Set([`r:${id.rawHash}`, `n:${id.normHash}`])) {
@@ -144,8 +164,9 @@ export class ProvenanceIndex {
     for (const v of decoded.variants) index(fold(v.text), v.chain);
     const decodeTruncated = decoded.truncated || raw.length > MAX_DECODED_PER_OUTPUT;
 
-    const bytes = raw.length + norm.length;
-    this.tierA.push({ ref, raw, norm, bytes });
+    const fp = fingerprints(norm, true);
+    const bytes = raw.length + norm.length + fp.byteLength;
+    this.tierA.push({ ref, raw, norm, fp, bytes });
     this.tierABytes += bytes;
     const evictions: EvictionNotice[] = [];
     while (this.tierABytes > this.maxTierABytes && this.tierA.length > 0) {
@@ -176,7 +197,8 @@ export class ProvenanceIndex {
       }
     };
     const lookup = (leafPath: string, text: string, isRaw: boolean, chain?: Decoder[]): void => {
-      for (const id of extractIdentifiers(text)) {
+      const tokens = !chain?.some((d) => d === 'rot13' || d === 'reverse');
+      for (const id of extractIdentifiers(text, { tokens })) {
         const exact = isRaw ? this.tierB.get(`r:${id.rawHash}`) : undefined;
         const hit = exact ?? this.tierB.get(`n:${id.normHash}`);
         if (!hit) continue;
@@ -197,6 +219,7 @@ export class ProvenanceIndex {
     if (allLeaves.length > MAX_ATTRIBUTED_LEAVES) degraded = true;
     let budget = MAX_ATTRIBUTED_TOTAL;
     let decodeBudget = MAX_DECODED_PER_CALL;
+    let fuzzyBudget = MAX_FUZZY_PER_CALL;
     const decodeQueue: { path: string; value: string }[] = [];
     for (const full of allLeaves.slice(0, MAX_ATTRIBUTED_LEAVES)) {
       if (budget <= 0) {
@@ -219,6 +242,22 @@ export class ProvenanceIndex {
         for (const a of this.tierA) {
           if (a.raw.includes(leaf.value)) push({ argPath: leaf.path, output: a.ref, kind: 'copy', matcher: 'exact' });
           else if (a.norm.includes(n)) push({ argPath: leaf.path, output: a.ref, kind: 'copy', matcher: 'normalized' });
+        }
+      }
+      // Fuzzy: text copied with light edits or reordering. Runs after the exact/normalized copy check,
+      // so an output already matched verbatim keeps the stronger evidence (same de-duplication key).
+      if (reduce(leaf.value.slice(0, MAX_FUZZY_PER_LEAF)).length >= MIN_FUZZY_REDUCED) {
+        const piece = leaf.value.slice(0, Math.min(MAX_FUZZY_PER_LEAF, fuzzyBudget));
+        if (piece.length < leaf.value.length) degraded = true;
+        fuzzyBudget -= piece.length;
+        const needle = fingerprints(piece);
+        if (needle.length > 0) {
+          for (const a of this.tierA) {
+            const { shared, score } = containment(needle, a.fp);
+            if (shared >= FUZZY_MIN_SHARED && score >= FUZZY_MIN_SCORE) {
+              push({ argPath: leaf.path, output: a.ref, kind: 'copy', matcher: 'fuzzy', score: Math.round(score * 100) / 100 });
+            }
+          }
         }
       }
       if (leaf.value.length >= MIN_DECODE_LEN) decodeQueue.push(leaf);

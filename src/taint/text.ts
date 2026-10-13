@@ -51,12 +51,12 @@ function isHighEntropyToken(t: string): boolean {
  * High-entropy identifiers in a text: the things an exfiltration must reproduce exactly (DESIGN.md §2,
  * "core insight") — secrets, destinations (URLs, e-mail addresses) and long random tokens.
  */
-export function extractIdentifiers(text: string): Identifier[] {
+export function extractIdentifiers(text: string, opts: { tokens?: boolean } = {}): Identifier[] {
   const out: Identifier[] = [];
   for (const m of findSecrets(text)) out.push(ident('secret', text.slice(m.start, m.end), m.rule));
   for (const m of text.matchAll(URL_RE)) out.push(ident('url', m[0].replace(/[.,;:!?]+$/, '')));
   for (const m of text.matchAll(EMAIL_RE)) out.push(ident('email', m[0]));
-  for (const m of text.matchAll(TOKEN_RE)) if (isHighEntropyToken(m[0])) out.push(ident('token', m[0]));
+  if (opts.tokens !== false) for (const m of text.matchAll(TOKEN_RE)) if (isHighEntropyToken(m[0])) out.push(ident('token', m[0]));
   return out;
 }
 
