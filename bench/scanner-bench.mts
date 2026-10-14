@@ -43,11 +43,14 @@ const items: Item[] = [
   // Phase 6b: real first-party definitions (bench/corpus/import-benign-thirdparty.mjs; licences in NOTICE).
   ...load('benign-github.json'),
   ...load('benign-playwright.json'),
+  // Round 5t: author-written DEV-split tuning examples (bench/corpus/build-tuning-dev.mjs).
+  ...load('benign-dev-tuning.json'),
   // Benign shapes that once caused false positives (AUD-6); kept so the regression stays measured.
   ...load('benign-regressions.json'),
   ...load('malicious.json'),
   // Phase 6b: rewritten from published third-party research, held-out TEST split only (never tuned on).
   ...load('malicious-thirdparty.json'),
+  ...load('malicious-schema-dev.json'),
 ].map((it) => ({ ...it, split: it.split ?? stableSplit(`${it.source ?? ''}|${it.tool.name}|${it.tool.description ?? ''}`) }));
 
 interface Counts {
@@ -96,8 +99,16 @@ const pct = (x: number) => (Number.isNaN(x) ? 'n/a' : `${(x * 100).toFixed(1)}%`
 
 const testSet = items.filter((i) => i.split === 'test');
 const devSet = items.filter((i) => i.split === 'dev');
-const test = tally(testSet);
 const dev = tally(devSet);
+// `--dev`: the only view used while tuning — the held-out split is not even evaluated.
+if (process.argv.includes('--dev')) {
+  const d = rates(dev.counts);
+  process.stdout.write(`dev split: ${dev.counts.tp + dev.counts.fn} malicious, ${dev.counts.fp + dev.counts.tn} benign; TPR ${pct(d.tpr)}, FPR ${pct(d.fpr)}\n`);
+  for (const s of dev.falseNegatives) process.stdout.write(`  FN ${s}\n`);
+  for (const s of dev.falsePositives) process.stdout.write(`  FP ${s}\n`);
+  process.exit(0);
+}
+const test = tally(testSet);
 const all = tally(items);
 
 const benignTotal = items.filter((i) => i.label === 'benign').length;
@@ -124,6 +135,16 @@ const lines = [
   r('test (held-out)', test),
   r('dev', dev),
   r('all', all),
+  '',
+  '**Tuning round 5t (Phase 6b), before → after, held-out split:** TPR 91.7% (11/12) → 100% (12/12);',
+  'FPR 0.8% (1/132) → 0% (0/132). Dev split: TPR 60.0% → 100%, FPR 3.1% → 0% (after adding 8 malicious',
+  'full-schema-poisoning and 6 benign tool-routing examples, written before the change). Changes: every',
+  'model-visible schema field is scanned (parameter names, `required`, unknown keywords, nested defaults),',
+  'hints in structural fields count as medium, and "call this tool" is not read as a redirect to another',
+  'tool. **The held-out split had already been observed before this round** (the full-schema-poisoning',
+  'miss was seen in PR #5), so the after number is weaker evidence than the first held-out run. One rule',
+  'was refined after that held-out run (values of unknown keywords count as structural), prompted by a new',
+  'unit test, not by held-out data; the held-out numbers were unchanged by it.',
   '',
   '## Detection by category (all items)',
   '',

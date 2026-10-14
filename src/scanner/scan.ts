@@ -8,6 +8,8 @@ import {
   detectHiddenUnicode,
   detectMixedScript,
   detectShadowing,
+  detectStructuralDataRequest,
+  isStructuralField,
   SEVERITY_ORDER,
   type Category,
   type Finding,
@@ -35,7 +37,14 @@ export const DEFAULT_SCAN_OPTIONS: ScanOptions = { block: 'medium' };
 /** The content detectors: everything except the invisible-character ones, which only mean something
  *  on the raw text. */
 function contentDetectors(span: TextSpan, ownName: string): Finding[] {
-  return [...detectEmbeddedInstruction(span), ...detectExfiltrationHint(span), ...detectDataAccessHint(span), ...detectShadowing(span, ownName)];
+  const found = [...detectEmbeddedInstruction(span), ...detectExfiltrationHint(span), ...detectDataAccessHint(span), ...detectShadowing(span, ownName), ...detectStructuralDataRequest(span)];
+  if (!isStructuralField(span.where)) return found;
+  // A hint in a structural schema field (not prose) is raised to medium (round 5t, full-schema poisoning).
+  return found.map((f) =>
+    (f.category === 'data-access-hint' || f.category === 'exfiltration-hint') && f.severity === 'low'
+      ? { ...f, severity: 'medium' as const, detail: `${f.detail} (in a schema field, not prose)` }
+      : f,
+  );
 }
 
 function runDetectors(spans: TextSpan[], ownName: string): Finding[] {

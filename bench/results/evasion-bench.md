@@ -1,6 +1,6 @@
 # Adversarial-evasion benchmark (Phase 6a)
 
-Generated 2026-10-13T04:16:52.383Z · Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz · Node v22.19.0. Regenerate: `npm run bench:evasion`.
+Generated 2026-10-14T03:37:20.285Z · Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz · Node v22.19.0. Regenerate: `npm run bench:evasion`.
 
 Deterministic and model-free. "Claimed" = the design says it is caught; unclaimed rows are expected
 bypasses, published so they are not mistaken for coverage. Every bypass here still faces Layer 1 (the
@@ -56,7 +56,7 @@ tuned on either split.
 | first half copied | yes | 4/4 (100.0%) | exact |
 | paraphrased | no | 0/4 (0.0%) | — |
 
-Time per case: p50 0.92 ms, p95 2.78 ms, max 10.52 ms.
+Time per case: p50 0.80 ms, p95 2.54 ms, max 6.88 ms.
 
 ## Static scanner (list-time hiding)
 
@@ -89,7 +89,7 @@ Time per case: p50 0.92 ms, p95 2.78 ms, max 10.52 ms.
 | decimal char codes | no | 0/6 (0.0%) | — |
 | base64 split across two properties | no | 5/6 (83.3%) | decoded:base64, raw |
 
-Time per case: p50 0.62 ms, p95 1.92 ms, max 18.15 ms.
+Time per case: p50 0.64 ms, p95 2.46 ms, max 19.21 ms.
 
 ## False attribution (benign)
 

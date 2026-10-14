@@ -20,6 +20,11 @@
   definitions rewritten from published attacks (Invariant Labs, CyberArk, Trail of Bits), all in the
   held-out split. Held-out TPR 91.7%, FPR 0.8%; the miss (a payload in a parameter name) and both false
   positives are listed in `bench/results/scanner-bench.md`.
+- **Scanner reads the whole schema.** Parameter names, `required` entries, unknown keywords and strings
+  nested in defaults are scanned as well as descriptions (full-schema poisoning); hints found in those
+  structural fields hide the tool, and a field that asks for sensitive data is flagged. "Always call
+  this tool" is no longer read as an instruction to call another tool (it hid two GitHub tools).
+  Held-out: TPR 91.7% → 100%, FPR 0.8% → 0% — on a split already observed before tuning.
 - **PostHog API keys** (`phx_`, `phs_`, `pha_`, `phr_`, `phh_`) are detected as secrets. Project tokens
   (`phc_`) are public by design and are not.
 

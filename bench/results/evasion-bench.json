@@ -2,7 +2,7 @@
   "env": {
     "node": "v22.19.0",
     "cpu": "Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz",
-    "date": "2026-10-13T04:16:52.391Z"
+    "date": "2026-10-14T03:37:20.295Z"
   },
   "results": [
     {
@@ -16,7 +16,7 @@
       "matchers": [
         "exact"
       ],
-      "ms": 3.774400000000014
+      "ms": 4.432999999999993
     },
     {
       "suite": "attribution",
@@ -29,7 +29,7 @@
       "matchers": [
         "normalized"
       ],
-      "ms": 10.521000000000072
+      "ms": 6.878100000000018
     },
     {
       "suite": "attribution",
@@ -42,7 +42,7 @@
       "matchers": [
         "normalized"
       ],
-      "ms": 1.4009999999999536
+      "ms": 0.7614000000000942
     },
     {
       "suite": "attribution",
@@ -55,7 +55,7 @@
       "matchers": [
         "normalized"
       ],
-      "ms": 1.100999999999999
+      "ms": 0.7622000000000071
     },
     {
       "suite": "attribution",
@@ -68,7 +68,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 4.704999999999927
+      "ms": 3.638300000000072
     },
     {
       "suite": "attribution",
@@ -81,7 +81,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 3.0639999999999645
+      "ms": 1.8457999999999402
     },
     {
       "suite": "attribution",
@@ -94,7 +94,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 3.7537999999999556
+      "ms": 3.1468000000000984
     },
     {
       "suite": "attribution",
@@ -107,7 +107,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.6615000000000464
+      "ms": 1.0079000000000633
     },
     {
       "suite": "attribution",
@@ -120,7 +120,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.5172999999999774
+      "ms": 1.3782999999999674
     },
     {
       "suite": "attribution",
@@ -133,7 +133,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.1913000000000693
+      "ms": 0.7477999999999838
     },
     {
       "suite": "attribution",
@@ -146,7 +146,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.8286000000000513
+      "ms": 0.70799999999997
     },
     {
       "suite": "attribution",
@@ -159,7 +159,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.416400000000067
+      "ms": 0.7980999999999767
     },
     {
       "suite": "attribution",
@@ -172,7 +172,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.8574000000000979
+      "ms": 0.44400000000007367
     },
     {
       "suite": "attribution",
@@ -185,7 +185,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.251800000000003
+      "ms": 0.9027999999999565
     },
     {
       "suite": "attribution",
@@ -198,7 +198,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.5836000000000467
+      "ms": 0.6907999999999674
     },
     {
       "suite": "attribution",
@@ -211,7 +211,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.824799999999982
+      "ms": 0.7680000000000291
     },
     {
       "suite": "attribution",
@@ -224,7 +224,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 2.6539999999999964
+      "ms": 1.1750000000000682
     },
     {
       "suite": "attribution",
@@ -237,7 +237,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.336999999999989
+      "ms": 1.5576999999999543
     },
     {
       "suite": "attribution",
@@ -250,7 +250,7 @@
       "matchers": [
         "cumulative"
       ],
-      "ms": 1.0074999999999363
+      "ms": 1.5289999999999964
     },
     {
       "suite": "attribution",
@@ -263,7 +263,7 @@
       "matchers": [
         "cumulative"
       ],
-      "ms": 2.1924000000000206
+      "ms": 0.9954999999999927
     },
     {
       "suite": "attribution",
@@ -276,7 +276,7 @@
       "matchers": [
         "cumulative"
       ],
-      "ms": 2.1445999999999685
+      "ms": 2.5369000000000597
     },
     {
       "suite": "attribution",
@@ -289,7 +289,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.5557999999999765
+      "ms": 0.5536999999999352
     },
     {
       "suite": "attribution",
@@ -302,7 +302,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.5031999999999925
+      "ms": 0.46260000000006585
     },
     {
       "suite": "attribution",
@@ -315,7 +315,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.0078999999999496
+      "ms": 0.5315000000000509
     },
     {
       "suite": "attribution",
@@ -326,7 +326,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.5956999999999653
+      "ms": 0.2982000000000653
     },
     {
       "suite": "attribution",
@@ -337,7 +337,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.8913000000000011
+      "ms": 0.4920999999999367
     },
     {
       "suite": "attribution",
@@ -348,7 +348,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.16229999999995925
+      "ms": 0.1613999999999578
     },
     {
       "suite": "attribution",
@@ -359,7 +359,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 1.2980999999999767
+      "ms": 0.595299999999952
     },
     {
       "suite": "attribution",
@@ -370,7 +370,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.4823000000000093
+      "ms": 0.4459000000000515
     },
     {
       "suite": "attribution",
@@ -381,7 +381,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.9303999999999633
+      "ms": 1.115199999999959
     },
     {
       "suite": "attribution",
@@ -392,7 +392,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.48730000000000473
+      "ms": 0.5140999999999849
     },
     {
       "suite": "attribution",
@@ -405,7 +405,7 @@
       "matchers": [
         "exact"
       ],
-      "ms": 1.5253999999999905
+      "ms": 0.7346000000000004
     },
     {
       "suite": "attribution",
@@ -418,7 +418,7 @@
       "matchers": [
         "normalized"
       ],
-      "ms": 0.9007000000000289
+      "ms": 0.6753000000001066
     },
     {
       "suite": "attribution",
@@ -431,7 +431,7 @@
       "matchers": [
         "normalized"
       ],
-      "ms": 1.2234000000000833
+      "ms": 1.730199999999968
     },
     {
       "suite": "attribution",
@@ -444,7 +444,7 @@
       "matchers": [
         "normalized"
       ],
-      "ms": 1.9254999999999427
+      "ms": 0.7649000000000115
     },
     {
       "suite": "attribution",
@@ -457,7 +457,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 2.695500000000038
+      "ms": 1.2005999999998949
     },
     {
       "suite": "attribution",
@@ -470,7 +470,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 2.0625
+      "ms": 1.2737000000000762
     },
     {
       "suite": "attribution",
@@ -483,7 +483,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.2706000000000586
+      "ms": 2.2185000000000628
     },
     {
       "suite": "attribution",
@@ -496,7 +496,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 4.565600000000018
+      "ms": 3.134300000000053
     },
     {
       "suite": "attribution",
@@ -509,7 +509,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 2.2113999999999123
+      "ms": 2.12480000000005
     },
     {
       "suite": "attribution",
@@ -522,7 +522,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.2580000000000382
+      "ms": 1.2122000000000526
     },
     {
       "suite": "attribution",
@@ -535,7 +535,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.1252999999999247
+      "ms": 1.2433000000000902
     },
     {
       "suite": "attribution",
@@ -548,7 +548,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.7758999999999787
+      "ms": 0.7028000000000247
     },
     {
       "suite": "attribution",
@@ -561,7 +561,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.7649999999999864
+      "ms": 0.6917999999999438
     },
     {
       "suite": "attribution",
@@ -574,7 +574,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.4781999999999016
+      "ms": 1.8086999999999307
     },
     {
       "suite": "attribution",
@@ -587,7 +587,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.2244999999999209
+      "ms": 1.0960000000000036
     },
     {
       "suite": "attribution",
@@ -600,7 +600,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.164600000000064
+      "ms": 1.4371999999999616
     },
     {
       "suite": "attribution",
@@ -613,7 +613,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 2.5194999999999936
+      "ms": 2.598700000000008
     },
     {
       "suite": "attribution",
@@ -626,7 +626,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 3.515199999999936
+      "ms": 2.273800000000051
     },
     {
       "suite": "attribution",
@@ -640,7 +640,7 @@
         "exact",
         "cumulative"
       ],
-      "ms": 1.9338000000000193
+      "ms": 1.471300000000042
     },
     {
       "suite": "attribution",
@@ -653,7 +653,7 @@
       "matchers": [
         "cumulative"
       ],
-      "ms": 1.266300000000001
+      "ms": 1.4776999999999134
     },
     {
       "suite": "attribution",
@@ -666,7 +666,7 @@
       "matchers": [
         "cumulative"
       ],
-      "ms": 2.9984000000000606
+      "ms": 3.1073000000000093
     },
     {
       "suite": "attribution",
@@ -679,7 +679,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.2730999999999995
+      "ms": 0.7537999999999556
     },
     {
       "suite": "attribution",
@@ -692,7 +692,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.6556000000000495
+      "ms": 0.8544000000000551
     },
     {
       "suite": "attribution",
@@ -705,7 +705,7 @@
       "matchers": [
         "exact"
       ],
-      "ms": 3.3139999999999645
+      "ms": 2.1656000000000404
     },
     {
       "suite": "attribution",
@@ -718,7 +718,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.7422000000000253
+      "ms": 0.7725000000000364
     },
     {
       "suite": "attribution",
@@ -729,7 +729,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.4053000000000111
+      "ms": 0.7259999999999991
     },
     {
       "suite": "attribution",
@@ -740,7 +740,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.9750000000000227
+      "ms": 1.4437000000000353
     },
     {
       "suite": "attribution",
@@ -751,7 +751,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.5298999999999978
+      "ms": 0.28739999999993415
     },
     {
       "suite": "attribution",
@@ -762,7 +762,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.7400000000000091
+      "ms": 0.7532999999999674
     },
     {
       "suite": "attribution",
@@ -773,7 +773,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.8716000000000577
+      "ms": 0.6235999999998967
     },
     {
       "suite": "attribution",
@@ -784,7 +784,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 1.2735999999999876
+      "ms": 0.904100000000085
     },
     {
       "suite": "attribution",
@@ -795,7 +795,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.607900000000086
+      "ms": 0.7258000000000493
     },
     {
       "suite": "attribution",
@@ -808,7 +808,7 @@
       "matchers": [
         "exact"
       ],
-      "ms": 1.289700000000039
+      "ms": 1.558400000000006
     },
     {
       "suite": "attribution",
@@ -821,7 +821,7 @@
       "matchers": [
         "normalized"
       ],
-      "ms": 0.7443000000000666
+      "ms": 0.6630000000000109
     },
     {
       "suite": "attribution",
@@ -834,7 +834,7 @@
       "matchers": [
         "normalized"
       ],
-      "ms": 0.6015999999999622
+      "ms": 0.498299999999972
     },
     {
       "suite": "attribution",
@@ -847,7 +847,7 @@
       "matchers": [
         "normalized"
       ],
-      "ms": 0.6974999999999909
+      "ms": 0.8267999999999347
     },
     {
       "suite": "attribution",
@@ -860,7 +860,7 @@
       "matchers": [
         "normalized"
       ],
-      "ms": 0.5880999999999403
+      "ms": 0.6485000000000127
     },
     {
       "suite": "attribution",
@@ -873,7 +873,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.8931999999999789
+      "ms": 1.892099999999914
     },
     {
       "suite": "attribution",
@@ -886,7 +886,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 2.282100000000014
+      "ms": 1.1790000000000873
     },
     {
       "suite": "attribution",
@@ -899,7 +899,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.9478000000000293
+      "ms": 1.2060000000000173
     },
     {
       "suite": "attribution",
@@ -912,7 +912,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.955699999999979
+      "ms": 1.333699999999908
     },
     {
       "suite": "attribution",
@@ -925,7 +925,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 2.2817000000000007
+      "ms": 1.730099999999993
     },
     {
       "suite": "attribution",
@@ -938,7 +938,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.0575000000000045
+      "ms": 0.8895999999999731
     },
     {
       "suite": "attribution",
@@ -951,7 +951,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.1487999999999374
+      "ms": 1.1598000000000184
     },
     {
       "suite": "attribution",
@@ -964,7 +964,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.7671000000000276
+      "ms": 1.3711000000000695
     },
     {
       "suite": "attribution",
@@ -977,7 +977,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.9192000000000462
+      "ms": 0.9974999999999454
     },
     {
       "suite": "attribution",
@@ -990,7 +990,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.3611000000000786
+      "ms": 1.6773000000000593
     },
     {
       "suite": "attribution",
@@ -1003,7 +1003,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.8740999999999985
+      "ms": 0.6660000000000537
     },
     {
       "suite": "attribution",
@@ -1016,7 +1016,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.9803000000000566
+      "ms": 1.213899999999967
     },
     {
       "suite": "attribution",
@@ -1029,7 +1029,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 2.0395999999999503
+      "ms": 1.5428999999999178
     },
     {
       "suite": "attribution",
@@ -1042,7 +1042,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.3164000000000442
+      "ms": 2.4070999999999003
     },
     {
       "suite": "attribution",
@@ -1056,7 +1056,7 @@
         "exact",
         "cumulative"
       ],
-      "ms": 1.0124999999999318
+      "ms": 1.2547000000000708
     },
     {
       "suite": "attribution",
@@ -1069,7 +1069,7 @@
       "matchers": [
         "cumulative"
       ],
-      "ms": 1.1391999999999598
+      "ms": 1.011700000000019
     },
     {
       "suite": "attribution",
@@ -1082,7 +1082,7 @@
       "matchers": [
         "cumulative"
       ],
-      "ms": 2.1948999999999614
+      "ms": 4.073799999999892
     },
     {
       "suite": "attribution",
@@ -1095,7 +1095,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.197499999999991
+      "ms": 0.7589000000000397
     },
     {
       "suite": "attribution",
@@ -1108,7 +1108,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.6866999999999734
+      "ms": 0.7298999999999296
     },
     {
       "suite": "attribution",
@@ -1121,7 +1121,7 @@
       "matchers": [
         "exact"
       ],
-      "ms": 2.6435000000000173
+      "ms": 1.2509000000000015
     },
     {
       "suite": "attribution",
@@ -1134,7 +1134,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.015800000000013
+      "ms": 0.6884000000000015
     },
     {
       "suite": "attribution",
@@ -1145,7 +1145,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.28120000000001255
+      "ms": 0.2796000000000731
     },
     {
       "suite": "attribution",
@@ -1156,7 +1156,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.3061000000000149
+      "ms": 0.38810000000000855
     },
     {
       "suite": "attribution",
@@ -1167,7 +1167,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.21490000000005693
+      "ms": 0.1550999999999476
     },
     {
       "suite": "attribution",
@@ -1178,7 +1178,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.6870000000000118
+      "ms": 0.7807999999999993
     },
     {
       "suite": "attribution",
@@ -1189,7 +1189,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.5475999999999885
+      "ms": 0.7006000000000085
     },
     {
       "suite": "attribution",
@@ -1200,7 +1200,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 1.4734999999999445
+      "ms": 1.185100000000034
     },
     {
       "suite": "attribution",
@@ -1211,7 +1211,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.8517000000000507
+      "ms": 0.6430000000000291
     },
     {
       "suite": "attribution",
@@ -1224,7 +1224,7 @@
       "matchers": [
         "exact"
       ],
-      "ms": 0.7386000000000195
+      "ms": 0.8007000000000062
     },
     {
       "suite": "attribution",
@@ -1237,7 +1237,7 @@
       "matchers": [
         "exact"
       ],
-      "ms": 0.7633999999999332
+      "ms": 0.6510999999999285
     },
     {
       "suite": "attribution",
@@ -1250,7 +1250,7 @@
       "matchers": [
         "normalized"
       ],
-      "ms": 0.4981000000000222
+      "ms": 0.3713999999999942
     },
     {
       "suite": "attribution",
@@ -1263,7 +1263,7 @@
       "matchers": [
         "normalized"
       ],
-      "ms": 0.7065999999999804
+      "ms": 0.4823000000000093
     },
     {
       "suite": "attribution",
@@ -1276,7 +1276,7 @@
       "matchers": [
         "normalized"
       ],
-      "ms": 0.9837999999999738
+      "ms": 0.5459999999999354
     },
     {
       "suite": "attribution",
@@ -1289,7 +1289,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.7450000000000045
+      "ms": 1.297900000000027
     },
     {
       "suite": "attribution",
@@ -1302,7 +1302,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.0751999999999953
+      "ms": 0.9479000000000042
     },
     {
       "suite": "attribution",
@@ -1315,7 +1315,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 2.765500000000088
+      "ms": 0.851099999999974
     },
     {
       "suite": "attribution",
@@ -1328,7 +1328,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.3858999999999924
+      "ms": 1.0617999999999483
     },
     {
       "suite": "attribution",
@@ -1341,7 +1341,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.474399999999946
+      "ms": 0.9007000000000289
     },
     {
       "suite": "attribution",
@@ -1354,7 +1354,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.6636000000000877
+      "ms": 0.7503000000000384
     },
     {
       "suite": "attribution",
@@ -1367,7 +1367,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.0769000000000233
+      "ms": 1.5801999999999907
     },
     {
       "suite": "attribution",
@@ -1380,7 +1380,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.4774999999999636
+      "ms": 0.9528999999999996
     },
     {
       "suite": "attribution",
@@ -1393,7 +1393,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.43219999999996617
+      "ms": 0.4601999999999862
     },
     {
       "suite": "attribution",
@@ -1406,7 +1406,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.9316000000000031
+      "ms": 0.7608000000000175
     },
     {
       "suite": "attribution",
@@ -1419,7 +1419,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.7565999999999349
+      "ms": 0.5887000000000171
     },
     {
       "suite": "attribution",
@@ -1432,7 +1432,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.88900000000001
+      "ms": 1.3137000000000398
     },
     {
       "suite": "attribution",
@@ -1445,7 +1445,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.3350000000000364
+      "ms": 2.5710000000000264
     },
     {
       "suite": "attribution",
@@ -1458,7 +1458,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.1066999999999325
+      "ms": 1.5725999999999658
     },
     {
       "suite": "attribution",
@@ -1472,7 +1472,7 @@
         "exact",
         "cumulative"
       ],
-      "ms": 0.769800000000032
+      "ms": 0.8550999999999931
     },
     {
       "suite": "attribution",
@@ -1486,7 +1486,7 @@
         "exact",
         "cumulative"
       ],
-      "ms": 0.7980000000000018
+      "ms": 1.0623999999999114
     },
     {
       "suite": "attribution",
@@ -1499,7 +1499,7 @@
       "matchers": [
         "cumulative"
       ],
-      "ms": 1.8254000000000588
+      "ms": 2.2784000000000333
     },
     {
       "suite": "attribution",
@@ -1512,7 +1512,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.47680000000002565
+      "ms": 0.7214000000000169
     },
     {
       "suite": "attribution",
@@ -1525,7 +1525,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.47050000000001546
+      "ms": 0.6399999999999864
     },
     {
       "suite": "attribution",
@@ -1538,7 +1538,7 @@
       "matchers": [
         "exact"
       ],
-      "ms": 1.0644999999999527
+      "ms": 1.598600000000033
     },
     {
       "suite": "attribution",
@@ -1551,7 +1551,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.8372999999999138
+      "ms": 0.6876000000000886
     },
     {
       "suite": "attribution",
@@ -1562,7 +1562,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.41039999999998145
+      "ms": 0.32749999999998636
     },
     {
       "suite": "attribution",
@@ -1573,7 +1573,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.7757000000000289
+      "ms": 0.621599999999944
     },
     {
       "suite": "attribution",
@@ -1584,7 +1584,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 1.2990000000000919
+      "ms": 0.2945000000000846
     },
     {
       "suite": "attribution",
@@ -1595,7 +1595,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.5817999999999302
+      "ms": 0.9634999999999536
     },
     {
       "suite": "attribution",
@@ -1606,7 +1606,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.41229999999995925
+      "ms": 0.5734999999999673
     },
     {
       "suite": "attribution",
@@ -1617,7 +1617,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.9043000000000347
+      "ms": 1.0104000000000042
     },
     {
       "suite": "attribution",
@@ -1628,7 +1628,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.322400000000016
+      "ms": 0.34570000000007894
     },
     {
       "suite": "attribution",
@@ -1641,7 +1641,7 @@
       "matchers": [
         "exact"
       ],
-      "ms": 0.5797000000000025
+      "ms": 1.4189999999999827
     },
     {
       "suite": "attribution",
@@ -1654,7 +1654,7 @@
       "matchers": [
         "exact"
       ],
-      "ms": 1.9431999999999334
+      "ms": 0.9396000000000413
     },
     {
       "suite": "attribution",
@@ -1667,7 +1667,7 @@
       "matchers": [
         "normalized"
       ],
-      "ms": 0.40269999999998163
+      "ms": 0.4514000000000351
     },
     {
       "suite": "attribution",
@@ -1680,7 +1680,7 @@
       "matchers": [
         "normalized"
       ],
-      "ms": 0.4635999999999285
+      "ms": 0.5813000000000557
     },
     {
       "suite": "attribution",
@@ -1693,7 +1693,7 @@
       "matchers": [
         "normalized"
       ],
-      "ms": 0.4902000000000726
+      "ms": 0.5827999999999065
     },
     {
       "suite": "attribution",
@@ -1706,7 +1706,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.8555000000000064
+      "ms": 1.143100000000004
     },
     {
       "suite": "attribution",
@@ -1719,7 +1719,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.9149999999999636
+      "ms": 1.2078000000000202
     },
     {
       "suite": "attribution",
@@ -1732,7 +1732,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.6452000000000453
+      "ms": 1.1176000000000386
     },
     {
       "suite": "attribution",
@@ -1745,7 +1745,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.2590000000000146
+      "ms": 1.3659000000000106
     },
     {
       "suite": "attribution",
@@ -1758,7 +1758,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.028099999999995
+      "ms": 1.2737999999999374
     },
     {
       "suite": "attribution",
@@ -1771,7 +1771,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.6625999999999976
+      "ms": 0.8717000000000326
     },
     {
       "suite": "attribution",
@@ -1784,7 +1784,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.7504999999999882
+      "ms": 0.97950000000003
     },
     {
       "suite": "attribution",
@@ -1797,7 +1797,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.8717000000000326
+      "ms": 0.6329000000000633
     },
     {
       "suite": "attribution",
@@ -1810,7 +1810,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.6483999999999241
+      "ms": 0.6609999999999445
     },
     {
       "suite": "attribution",
@@ -1823,7 +1823,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.1533999999999196
+      "ms": 1.1707999999999856
     },
     {
       "suite": "attribution",
@@ -1836,7 +1836,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.7451999999999543
+      "ms": 0.6559999999999491
     },
     {
       "suite": "attribution",
@@ -1849,7 +1849,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.9147000000001526
+      "ms": 1.1159000000000106
     },
     {
       "suite": "attribution",
@@ -1862,7 +1862,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.4003999999999905
+      "ms": 1.366800000000012
     },
     {
       "suite": "attribution",
@@ -1875,7 +1875,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 1.4084000000000287
+      "ms": 1.258100000000013
     },
     {
       "suite": "attribution",
@@ -1889,7 +1889,7 @@
         "exact",
         "cumulative"
       ],
-      "ms": 0.9650000000001455
+      "ms": 0.7314999999999827
     },
     {
       "suite": "attribution",
@@ -1902,7 +1902,7 @@
       "matchers": [
         "cumulative"
       ],
-      "ms": 0.6736000000000786
+      "ms": 0.6450999999999567
     },
     {
       "suite": "attribution",
@@ -1915,7 +1915,7 @@
       "matchers": [
         "cumulative"
       ],
-      "ms": 1.5842999999999847
+      "ms": 1.8385000000000673
     },
     {
       "suite": "attribution",
@@ -1928,7 +1928,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.9445000000000618
+      "ms": 0.4420999999999822
     },
     {
       "suite": "attribution",
@@ -1941,7 +1941,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.6542999999999211
+      "ms": 0.42840000000001055
     },
     {
       "suite": "attribution",
@@ -1954,7 +1954,7 @@
       "matchers": [
         "exact"
       ],
-      "ms": 0.46050000000013824
+      "ms": 0.3785000000000309
     },
     {
       "suite": "attribution",
@@ -1967,7 +1967,7 @@
       "matchers": [
         "decoded"
       ],
-      "ms": 0.713799999999992
+      "ms": 0.6464999999999463
     },
     {
       "suite": "attribution",
@@ -1978,7 +1978,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.2260999999998603
+      "ms": 0.1972000000000662
     },
     {
       "suite": "attribution",
@@ -1989,7 +1989,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.671100000000024
+      "ms": 0.7626000000000204
     },
     {
       "suite": "attribution",
@@ -2000,7 +2000,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.1854000000000724
+      "ms": 0.20429999999998927
     },
     {
       "suite": "attribution",
@@ -2011,7 +2011,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.9291000000000622
+      "ms": 2.117800000000102
     },
     {
       "suite": "attribution",
@@ -2022,7 +2022,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.8213000000000648
+      "ms": 0.4678000000000111
     },
     {
       "suite": "attribution",
@@ -2033,7 +2033,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.4578000000001339
+      "ms": 0.4319000000000415
     },
     {
       "suite": "attribution",
@@ -2044,7 +2044,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.589200000000119
+      "ms": 0.4630000000000791
     },
     {
       "suite": "attribution",
@@ -2057,7 +2057,7 @@
       "matchers": [
         "fuzzy"
       ],
-      "ms": 2.261299999999892
+      "ms": 1.0516000000000076
     },
     {
       "suite": "attribution",
@@ -2070,7 +2070,7 @@
       "matchers": [
         "fuzzy"
       ],
-      "ms": 0.8096000000000458
+      "ms": 0.8924999999999272
     },
     {
       "suite": "attribution",
@@ -2083,7 +2083,7 @@
       "matchers": [
         "normalized"
       ],
-      "ms": 0.6657999999999902
+      "ms": 0.6797000000000253
     },
     {
       "suite": "attribution",
@@ -2096,7 +2096,7 @@
       "matchers": [
         "exact"
       ],
-      "ms": 0.3488999999999578
+      "ms": 0.356899999999996
     },
     {
       "suite": "attribution",
@@ -2107,7 +2107,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.5219999999999345
+      "ms": 0.5140999999999849
     },
     {
       "suite": "attribution",
@@ -2120,7 +2120,7 @@
       "matchers": [
         "fuzzy"
       ],
-      "ms": 0.5778999999999996
+      "ms": 0.6942000000000235
     },
     {
       "suite": "attribution",
@@ -2133,7 +2133,7 @@
       "matchers": [
         "fuzzy"
       ],
-      "ms": 1.0883000000001175
+      "ms": 0.7460999999999558
     },
     {
       "suite": "attribution",
@@ -2146,7 +2146,7 @@
       "matchers": [
         "fuzzy"
       ],
-      "ms": 0.7859000000000833
+      "ms": 0.5937999999999874
     },
     {
       "suite": "attribution",
@@ -2159,7 +2159,7 @@
       "matchers": [
         "exact"
       ],
-      "ms": 0.28500000000008185
+      "ms": 0.34800000000007003
     },
     {
       "suite": "attribution",
@@ -2170,7 +2170,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 2.7807999999999993
+      "ms": 2.2987000000000535
     },
     {
       "suite": "attribution",
@@ -2183,7 +2183,7 @@
       "matchers": [
         "fuzzy"
       ],
-      "ms": 0.49510000000009313
+      "ms": 0.516399999999976
     },
     {
       "suite": "attribution",
@@ -2196,7 +2196,7 @@
       "matchers": [
         "fuzzy"
       ],
-      "ms": 1.0317000000000007
+      "ms": 0.5917000000000598
     },
     {
       "suite": "attribution",
@@ -2209,7 +2209,7 @@
       "matchers": [
         "normalized"
       ],
-      "ms": 0.6055999999998676
+      "ms": 0.6393999999999096
     },
     {
       "suite": "attribution",
@@ -2222,7 +2222,7 @@
       "matchers": [
         "exact"
       ],
-      "ms": 0.36220000000002983
+      "ms": 0.5181999999999789
     },
     {
       "suite": "attribution",
@@ -2233,7 +2233,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.407399999999825
+      "ms": 0.4994000000000369
     },
     {
       "suite": "attribution",
@@ -2246,7 +2246,7 @@
       "matchers": [
         "fuzzy"
       ],
-      "ms": 0.4896000000001095
+      "ms": 0.47109999999997854
     },
     {
       "suite": "attribution",
@@ -2259,7 +2259,7 @@
       "matchers": [
         "fuzzy"
       ],
-      "ms": 0.45860000000016043
+      "ms": 0.49739999999997053
     },
     {
       "suite": "attribution",
@@ -2272,7 +2272,7 @@
       "matchers": [
         "fuzzy"
       ],
-      "ms": 0.6822999999999411
+      "ms": 0.505100000000084
     },
     {
       "suite": "attribution",
@@ -2285,7 +2285,7 @@
       "matchers": [
         "exact"
       ],
-      "ms": 0.51949999999988
+      "ms": 0.6798999999999751
     },
     {
       "suite": "attribution",
@@ -2296,7 +2296,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 1.5044000000000324
+      "ms": 1.2382000000000062
     },
     {
       "suite": "attribution",
@@ -2307,7 +2307,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.7908999999999651
+      "ms": 0.5457999999999856
     },
     {
       "suite": "attribution",
@@ -2318,7 +2318,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.5233000000000629
+      "ms": 0.3509999999999991
     },
     {
       "suite": "attribution",
@@ -2329,7 +2329,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.5986000000000331
+      "ms": 0.3048999999999751
     },
     {
       "suite": "attribution",
@@ -2340,7 +2340,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.3507999999999356
+      "ms": 0.8365999999999758
     },
     {
       "suite": "attribution",
@@ -2351,7 +2351,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.6667999999999665
+      "ms": 0.2908999999999651
     },
     {
       "suite": "attribution",
@@ -2362,7 +2362,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.8440999999997985
+      "ms": 0.4714000000000169
     },
     {
       "suite": "attribution",
@@ -2373,7 +2373,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.5869999999999891
+      "ms": 0.5295999999999594
     },
     {
       "suite": "attribution",
@@ -2384,7 +2384,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.5543999999999869
+      "ms": 0.5471000000000004
     },
     {
       "suite": "attribution",
@@ -2395,7 +2395,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.559099999999944
+      "ms": 0.6009000000000242
     },
     {
       "suite": "attribution",
@@ -2406,7 +2406,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.5751000000000204
+      "ms": 0.32159999999998945
     },
     {
       "suite": "attribution",
@@ -2417,7 +2417,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.6216000000001713
+      "ms": 0.48830000000009477
     },
     {
       "suite": "attribution",
@@ -2428,7 +2428,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.4580000000000837
+      "ms": 0.650000000000091
     },
     {
       "suite": "attribution",
@@ -2439,7 +2439,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.5230999999998858
+      "ms": 0.6118000000000166
     },
     {
       "suite": "attribution",
@@ -2450,7 +2450,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.2863999999999578
+      "ms": 0.28750000000002274
     },
     {
       "suite": "attribution",
@@ -2461,7 +2461,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.41039999999998145
+      "ms": 0.2866000000000213
     },
     {
       "suite": "attribution",
@@ -2472,7 +2472,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.26840000000015607
+      "ms": 0.2802000000000362
     },
     {
       "suite": "attribution",
@@ -2483,7 +2483,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.2380999999998039
+      "ms": 0.5376999999999725
     },
     {
       "suite": "attribution",
@@ -2494,7 +2494,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.4030999999999949
+      "ms": 0.61749999999995
     },
     {
       "suite": "attribution",
@@ -2505,7 +2505,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.8856000000000677
+      "ms": 0.4011000000000422
     },
     {
       "suite": "attribution",
@@ -2516,7 +2516,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.5381999999999607
+      "ms": 0.3068999999999278
     },
     {
       "suite": "attribution",
@@ -2527,7 +2527,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.5104000000001179
+      "ms": 0.2748999999998887
     },
     {
       "suite": "attribution",
@@ -2538,7 +2538,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.6290999999998803
+      "ms": 0.314200000000028
     },
     {
       "suite": "attribution",
@@ -2549,7 +2549,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.29909999999995307
+      "ms": 0.248299999999972
     },
     {
       "suite": "attribution",
@@ -2560,7 +2560,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.3926000000001295
+      "ms": 1.298599999999965
     },
     {
       "suite": "attribution",
@@ -2571,7 +2571,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.38990000000012515
+      "ms": 0.5229000000000497
     },
     {
       "suite": "attribution",
@@ -2582,7 +2582,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.2556000000001859
+      "ms": 0.280399999999986
     },
     {
       "suite": "attribution",
@@ -2593,7 +2593,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.5687000000000353
+      "ms": 0.286200000000008
     },
     {
       "suite": "attribution",
@@ -2604,7 +2604,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 1.0763999999999214
+      "ms": 0.3044999999999618
     },
     {
       "suite": "attribution",
@@ -2615,7 +2615,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.2803999999998723
+      "ms": 0.2585000000000264
     },
     {
       "suite": "attribution",
@@ -2626,7 +2626,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.391399999999976
+      "ms": 0.35389999999995325
     },
     {
       "suite": "attribution",
@@ -2637,7 +2637,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.45319999999992433
+      "ms": 0.4174999999999045
     },
     {
       "suite": "attribution",
@@ -2648,7 +2648,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.2585999999998876
+      "ms": 0.27290000000004966
     },
     {
       "suite": "attribution",
@@ -2659,7 +2659,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.29539999999997235
+      "ms": 0.28340000000002874
     },
     {
       "suite": "attribution",
@@ -2670,7 +2670,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.879799999999932
+      "ms": 0.3607000000000653
     },
     {
       "suite": "attribution",
@@ -2681,7 +2681,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.44399999999996
+      "ms": 0.2983000000000402
     },
     {
       "suite": "attribution",
@@ -2692,7 +2692,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.5981999999999061
+      "ms": 0.35569999999995616
     },
     {
       "suite": "scanner",
@@ -2705,7 +2705,7 @@
       "matchers": [
         "raw"
       ],
-      "ms": 18.148500000000013
+      "ms": 19.208600000000047
     },
     {
       "suite": "scanner",
@@ -2719,7 +2719,7 @@
         "raw",
         "folded"
       ],
-      "ms": 7.4676999999999225
+      "ms": 7.769199999999955
     },
     {
       "suite": "scanner",
@@ -2732,7 +2732,7 @@
       "matchers": [
         "folded"
       ],
-      "ms": 1.3482000000001335
+      "ms": 1.4057999999999993
     },
     {
       "suite": "scanner",
@@ -2746,7 +2746,7 @@
         "raw",
         "folded"
       ],
-      "ms": 1.3964000000000851
+      "ms": 1.6037000000000035
     },
     {
       "suite": "scanner",
@@ -2759,7 +2759,7 @@
       "matchers": [
         "decoded:base64"
       ],
-      "ms": 0.6825999999998658
+      "ms": 0.9279000000000224
     },
     {
       "suite": "scanner",
@@ -2772,7 +2772,7 @@
       "matchers": [
         "decoded:hex"
       ],
-      "ms": 1.4680000000000746
+      "ms": 1.0109999999999673
     },
     {
       "suite": "scanner",
@@ -2785,7 +2785,7 @@
       "matchers": [
         "decoded:url"
       ],
-      "ms": 1.1189999999999145
+      "ms": 0.8614000000000033
     },
     {
       "suite": "scanner",
@@ -2798,7 +2798,7 @@
       "matchers": [
         "decoded:html"
       ],
-      "ms": 1.0126000000000204
+      "ms": 1.0317999999999756
     },
     {
       "suite": "scanner",
@@ -2811,7 +2811,7 @@
       "matchers": [
         "decoded:rot13"
       ],
-      "ms": 0.8900999999998476
+      "ms": 0.9479999999999791
     },
     {
       "suite": "scanner",
@@ -2824,7 +2824,7 @@
       "matchers": [
         "decoded:reverse"
       ],
-      "ms": 0.894399999999905
+      "ms": 0.7378999999999678
     },
     {
       "suite": "scanner",
@@ -2837,7 +2837,7 @@
       "matchers": [
         "letter-spacing"
       ],
-      "ms": 0.6828000000000429
+      "ms": 0.8486000000000331
     },
     {
       "suite": "scanner",
@@ -2850,7 +2850,7 @@
       "matchers": [
         "letter-spacing"
       ],
-      "ms": 0.7137000000000171
+      "ms": 0.981200000000058
     },
     {
       "suite": "scanner",
@@ -2863,7 +2863,7 @@
       "matchers": [
         "decoded:base64>reverse"
       ],
-      "ms": 0.5878999999999905
+      "ms": 1.1529999999999063
     },
     {
       "suite": "scanner",
@@ -2876,7 +2876,7 @@
       "matchers": [
         "decoded:base64"
       ],
-      "ms": 2.6370999999999185
+      "ms": 3.6819000000000415
     },
     {
       "suite": "scanner",
@@ -2889,7 +2889,7 @@
       "matchers": [
         "raw"
       ],
-      "ms": 2.15300000000002
+      "ms": 1.5641000000000531
     },
     {
       "suite": "scanner",
@@ -2900,7 +2900,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.9045000000000982
+      "ms": 0.7701999999999316
     },
     {
       "suite": "scanner",
@@ -2911,7 +2911,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.7672000000000025
+      "ms": 0.8234999999999673
     },
     {
       "suite": "scanner",
@@ -2922,7 +2922,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.4625999999998385
+      "ms": 0.5215999999999212
     },
     {
       "suite": "scanner",
@@ -2933,7 +2933,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.39000000000010004
+      "ms": 0.625400000000127
     },
     {
       "suite": "scanner",
@@ -2946,7 +2946,7 @@
       "matchers": [
         "decoded:base64"
       ],
-      "ms": 1.5722000000000662
+      "ms": 2.8181999999999334
     },
     {
       "suite": "scanner",
@@ -2959,7 +2959,7 @@
       "matchers": [
         "raw"
       ],
-      "ms": 0.4229000000000269
+      "ms": 0.38219999999978427
     },
     {
       "suite": "scanner",
@@ -2973,7 +2973,7 @@
         "raw",
         "folded"
       ],
-      "ms": 0.7718999999999596
+      "ms": 0.3848000000000411
     },
     {
       "suite": "scanner",
@@ -2986,7 +2986,7 @@
       "matchers": [
         "folded"
       ],
-      "ms": 0.5716999999999643
+      "ms": 0.340900000000147
     },
     {
       "suite": "scanner",
@@ -3000,7 +3000,7 @@
         "raw",
         "folded"
       ],
-      "ms": 0.6118000000001302
+      "ms": 0.601399999999785
     },
     {
       "suite": "scanner",
@@ -3013,7 +3013,7 @@
       "matchers": [
         "decoded:base64"
       ],
-      "ms": 0.5691000000001623
+      "ms": 0.5888999999999669
     },
     {
       "suite": "scanner",
@@ -3026,7 +3026,7 @@
       "matchers": [
         "decoded:hex"
       ],
-      "ms": 0.5400999999999385
+      "ms": 0.5680999999999585
     },
     {
       "suite": "scanner",
@@ -3039,7 +3039,7 @@
       "matchers": [
         "decoded:url"
       ],
-      "ms": 0.43089999999983775
+      "ms": 0.5021999999999025
     },
     {
       "suite": "scanner",
@@ -3052,7 +3052,7 @@
       "matchers": [
         "decoded:html"
       ],
-      "ms": 0.7382000000000062
+      "ms": 0.5218999999999596
     },
     {
       "suite": "scanner",
@@ -3065,7 +3065,7 @@
       "matchers": [
         "decoded:rot13"
       ],
-      "ms": 0.33540000000016335
+      "ms": 0.29149999999981446
     },
     {
       "suite": "scanner",
@@ -3078,7 +3078,7 @@
       "matchers": [
         "decoded:reverse"
       ],
-      "ms": 0.268100000000004
+      "ms": 0.28929999999991196
     },
     {
       "suite": "scanner",
@@ -3091,7 +3091,7 @@
       "matchers": [
         "letter-spacing"
       ],
-      "ms": 0.3912000000000262
+      "ms": 0.5600999999999203
     },
     {
       "suite": "scanner",
@@ -3104,7 +3104,7 @@
       "matchers": [
         "letter-spacing"
       ],
-      "ms": 0.6096999999999753
+      "ms": 0.9265000000000327
     },
     {
       "suite": "scanner",
@@ -3117,7 +3117,7 @@
       "matchers": [
         "decoded:base64>reverse"
       ],
-      "ms": 0.45019999999999527
+      "ms": 0.8677999999999884
     },
     {
       "suite": "scanner",
@@ -3130,7 +3130,7 @@
       "matchers": [
         "decoded:base64"
       ],
-      "ms": 1.0633000000000266
+      "ms": 1.3431000000000495
     },
     {
       "suite": "scanner",
@@ -3143,7 +3143,7 @@
       "matchers": [
         "raw"
       ],
-      "ms": 0.9933999999998377
+      "ms": 0.6610000000000582
     },
     {
       "suite": "scanner",
@@ -3154,7 +3154,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.5588000000000193
+      "ms": 0.47450000000003456
     },
     {
       "suite": "scanner",
@@ -3165,7 +3165,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.3749000000000251
+      "ms": 0.2945999999999458
     },
     {
       "suite": "scanner",
@@ -3176,7 +3176,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.36570000000006075
+      "ms": 0.3140000000000782
     },
     {
       "suite": "scanner",
@@ -3187,7 +3187,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.3147999999998774
+      "ms": 0.34580000000005384
     },
     {
       "suite": "scanner",
@@ -3198,7 +3198,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 1.1566000000000258
+      "ms": 2.461900000000014
     },
     {
       "suite": "scanner",
@@ -3211,7 +3211,7 @@
       "matchers": [
         "raw"
       ],
-      "ms": 0.6615000000001601
+      "ms": 0.587099999999964
     },
     {
       "suite": "scanner",
@@ -3225,7 +3225,7 @@
         "raw",
         "folded"
       ],
-      "ms": 0.3762000000001535
+      "ms": 0.4652000000000953
     },
     {
       "suite": "scanner",
@@ -3238,7 +3238,7 @@
       "matchers": [
         "folded"
       ],
-      "ms": 0.32359999999994216
+      "ms": 0.43250000000011823
     },
     {
       "suite": "scanner",
@@ -3252,7 +3252,7 @@
         "raw",
         "folded"
       ],
-      "ms": 0.43069999999988795
+      "ms": 0.5361000000000331
     },
     {
       "suite": "scanner",
@@ -3265,7 +3265,7 @@
       "matchers": [
         "decoded:base64"
       ],
-      "ms": 0.5169999999998254
+      "ms": 0.6242000000002008
     },
     {
       "suite": "scanner",
@@ -3278,7 +3278,7 @@
       "matchers": [
         "decoded:hex"
       ],
-      "ms": 0.5162000000000262
+      "ms": 0.6421000000000276
     },
     {
       "suite": "scanner",
@@ -3291,7 +3291,7 @@
       "matchers": [
         "decoded:url"
       ],
-      "ms": 0.4917000000000371
+      "ms": 0.7584999999999127
     },
     {
       "suite": "scanner",
@@ -3304,7 +3304,7 @@
       "matchers": [
         "decoded:html"
       ],
-      "ms": 1.2066999999999553
+      "ms": 0.8016999999999825
     },
     {
       "suite": "scanner",
@@ -3317,7 +3317,7 @@
       "matchers": [
         "decoded:rot13"
       ],
-      "ms": 1.9227000000000771
+      "ms": 0.4592000000000098
     },
     {
       "suite": "scanner",
@@ -3330,7 +3330,7 @@
       "matchers": [
         "decoded:reverse"
       ],
-      "ms": 0.47460000000000946
+      "ms": 0.5073999999999614
     },
     {
       "suite": "scanner",
@@ -3343,7 +3343,7 @@
       "matchers": [
         "letter-spacing"
       ],
-      "ms": 0.8964000000000851
+      "ms": 0.5902000000000953
     },
     {
       "suite": "scanner",
@@ -3356,7 +3356,7 @@
       "matchers": [
         "letter-spacing"
       ],
-      "ms": 0.7333999999998468
+      "ms": 1.0287999999998192
     },
     {
       "suite": "scanner",
@@ -3369,7 +3369,7 @@
       "matchers": [
         "decoded:base64>reverse"
       ],
-      "ms": 0.7737000000001899
+      "ms": 0.9375999999999749
     },
     {
       "suite": "scanner",
@@ -3382,7 +3382,7 @@
       "matchers": [
         "decoded:base64"
       ],
-      "ms": 1.108699999999999
+      "ms": 1.3922000000000025
     },
     {
       "suite": "scanner",
@@ -3395,7 +3395,7 @@
       "matchers": [
         "raw"
       ],
-      "ms": 0.4837999999999738
+      "ms": 0.7092999999999847
     },
     {
       "suite": "scanner",
@@ -3408,7 +3408,7 @@
       "matchers": [
         "raw"
       ],
-      "ms": 0.3262999999999465
+      "ms": 0.38580000000001746
     },
     {
       "suite": "scanner",
@@ -3419,7 +3419,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.44249999999988177
+      "ms": 0.31169999999997344
     },
     {
       "suite": "scanner",
@@ -3432,7 +3432,7 @@
       "matchers": [
         "raw"
       ],
-      "ms": 0.4612999999999374
+      "ms": 0.3136000000001786
     },
     {
       "suite": "scanner",
@@ -3443,7 +3443,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.9502999999999702
+      "ms": 0.41990000000009786
     },
     {
       "suite": "scanner",
@@ -3456,7 +3456,7 @@
       "matchers": [
         "decoded:base64"
       ],
-      "ms": 1.4814000000001215
+      "ms": 1.353900000000067
     },
     {
       "suite": "scanner",
@@ -3469,7 +3469,7 @@
       "matchers": [
         "raw"
       ],
-      "ms": 0.5190000000000055
+      "ms": 0.6591000000000804
     },
     {
       "suite": "scanner",
@@ -3483,7 +3483,7 @@
         "raw",
         "folded"
       ],
-      "ms": 0.4642999999998665
+      "ms": 0.5869999999999891
     },
     {
       "suite": "scanner",
@@ -3497,7 +3497,7 @@
         "folded",
         "raw"
       ],
-      "ms": 0.46879999999987376
+      "ms": 0.7613999999998668
     },
     {
       "suite": "scanner",
@@ -3511,7 +3511,7 @@
         "raw",
         "folded"
       ],
-      "ms": 0.8757000000000517
+      "ms": 1.1787999999999101
     },
     {
       "suite": "scanner",
@@ -3525,7 +3525,7 @@
         "decoded:base64",
         "raw"
       ],
-      "ms": 0.49749999999994543
+      "ms": 0.6434000000001561
     },
     {
       "suite": "scanner",
@@ -3539,7 +3539,7 @@
         "decoded:hex",
         "raw"
       ],
-      "ms": 0.5455999999999221
+      "ms": 0.779700000000048
     },
     {
       "suite": "scanner",
@@ -3553,7 +3553,7 @@
         "decoded:url",
         "raw"
       ],
-      "ms": 0.6608000000001084
+      "ms": 0.6734000000001288
     },
     {
       "suite": "scanner",
@@ -3567,7 +3567,7 @@
         "decoded:html",
         "raw"
       ],
-      "ms": 0.9583000000000084
+      "ms": 0.8478000000000065
     },
     {
       "suite": "scanner",
@@ -3581,7 +3581,7 @@
         "decoded:rot13",
         "raw"
       ],
-      "ms": 0.8789999999999054
+      "ms": 0.5117999999999938
     },
     {
       "suite": "scanner",
@@ -3595,7 +3595,7 @@
         "decoded:reverse",
         "raw"
       ],
-      "ms": 0.8785000000000309
+      "ms": 0.4704999999999018
     },
     {
       "suite": "scanner",
@@ -3609,7 +3609,7 @@
         "letter-spacing",
         "raw"
       ],
-      "ms": 0.9363000000000739
+      "ms": 0.6007999999999356
     },
     {
       "suite": "scanner",
@@ -3623,7 +3623,7 @@
         "letter-spacing",
         "raw"
       ],
-      "ms": 1.080900000000156
+      "ms": 0.8942999999999302
     },
     {
       "suite": "scanner",
@@ -3637,7 +3637,7 @@
         "decoded:base64>reverse",
         "raw"
       ],
-      "ms": 0.7110000000000127
+      "ms": 0.6730999999999767
     },
     {
       "suite": "scanner",
@@ -3651,7 +3651,7 @@
         "decoded:base64",
         "raw"
       ],
-      "ms": 0.9574000000000069
+      "ms": 1.981899999999996
     },
     {
       "suite": "scanner",
@@ -3664,7 +3664,7 @@
       "matchers": [
         "raw"
       ],
-      "ms": 0.7122000000001663
+      "ms": 1.7842000000000553
     },
     {
       "suite": "scanner",
@@ -3677,7 +3677,7 @@
       "matchers": [
         "raw"
       ],
-      "ms": 0.3886999999999716
+      "ms": 1.1224999999999454
     },
     {
       "suite": "scanner",
@@ -3688,7 +3688,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.3532999999999902
+      "ms": 0.587400000000116
     },
     {
       "suite": "scanner",
@@ -3701,7 +3701,7 @@
       "matchers": [
         "raw"
       ],
-      "ms": 0.3644000000001597
+      "ms": 0.4593999999999596
     },
     {
       "suite": "scanner",
@@ -3712,7 +3712,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.5563999999999396
+      "ms": 0.5498000000000047
     },
     {
       "suite": "scanner",
@@ -3726,7 +3726,7 @@
         "decoded:base64",
         "raw"
       ],
-      "ms": 2.1136999999998807
+      "ms": 1.5006000000000768
     },
     {
       "suite": "scanner",
@@ -3739,7 +3739,7 @@
       "matchers": [
         "raw"
       ],
-      "ms": 0.4272000000000844
+      "ms": 0.5519999999999072
     },
     {
       "suite": "scanner",
@@ -3753,7 +3753,7 @@
         "raw",
         "folded"
       ],
-      "ms": 0.6109000000001288
+      "ms": 0.5513999999998305
     },
     {
       "suite": "scanner",
@@ -3766,7 +3766,7 @@
       "matchers": [
         "folded"
       ],
-      "ms": 0.4411000000000058
+      "ms": 1.236699999999928
     },
     {
       "suite": "scanner",
@@ -3780,7 +3780,7 @@
         "raw",
         "folded"
       ],
-      "ms": 0.5769999999999982
+      "ms": 1.2525000000000546
     },
     {
       "suite": "scanner",
@@ -3793,7 +3793,7 @@
       "matchers": [
         "decoded:base64"
       ],
-      "ms": 0.6247000000000753
+      "ms": 0.8331000000000586
     },
     {
       "suite": "scanner",
@@ -3806,7 +3806,7 @@
       "matchers": [
         "decoded:hex"
       ],
-      "ms": 0.5757000000000971
+      "ms": 0.9447000000000116
     },
     {
       "suite": "scanner",
@@ -3819,7 +3819,7 @@
       "matchers": [
         "decoded:url"
       ],
-      "ms": 0.5415000000000418
+      "ms": 0.6891000000000531
     },
     {
       "suite": "scanner",
@@ -3832,7 +3832,7 @@
       "matchers": [
         "decoded:html"
       ],
-      "ms": 0.6586999999999534
+      "ms": 0.8335999999999331
     },
     {
       "suite": "scanner",
@@ -3845,7 +3845,7 @@
       "matchers": [
         "decoded:rot13"
       ],
-      "ms": 0.39160000000015316
+      "ms": 0.5059000000001106
     },
     {
       "suite": "scanner",
@@ -3858,7 +3858,7 @@
       "matchers": [
         "decoded:reverse"
       ],
-      "ms": 0.3805999999999585
+      "ms": 0.45280000000002474
     },
     {
       "suite": "scanner",
@@ -3871,7 +3871,7 @@
       "matchers": [
         "letter-spacing"
       ],
-      "ms": 1.0796000000000276
+      "ms": 1.1542000000001735
     },
     {
       "suite": "scanner",
@@ -3884,7 +3884,7 @@
       "matchers": [
         "letter-spacing"
       ],
-      "ms": 1.0212999999998829
+      "ms": 0.7450999999998658
     },
     {
       "suite": "scanner",
@@ -3897,7 +3897,7 @@
       "matchers": [
         "decoded:base64>reverse"
       ],
-      "ms": 1.2019999999999982
+      "ms": 0.613800000000083
     },
     {
       "suite": "scanner",
@@ -3910,7 +3910,7 @@
       "matchers": [
         "decoded:base64"
       ],
-      "ms": 1.2041999999999007
+      "ms": 1.1766000000000076
     },
     {
       "suite": "scanner",
@@ -3923,7 +3923,7 @@
       "matchers": [
         "raw"
       ],
-      "ms": 0.8704000000000178
+      "ms": 2.9779000000000906
     },
     {
       "suite": "scanner",
@@ -3934,7 +3934,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.4650000000001455
+      "ms": 0.7317000000000462
     },
     {
       "suite": "scanner",
@@ -3945,7 +3945,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.37629999999990105
+      "ms": 0.4692999999999756
     },
     {
       "suite": "scanner",
@@ -3956,7 +3956,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.36950000000001637
+      "ms": 0.27119999999990796
     },
     {
       "suite": "scanner",
@@ -3967,7 +3967,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.3081999999999425
+      "ms": 0.38769999999999527
     },
     {
       "suite": "scanner",
@@ -3980,7 +3980,7 @@
       "matchers": [
         "decoded:base64"
       ],
-      "ms": 0.8010000000001583
+      "ms": 1.143100000000004
     },
     {
       "suite": "scanner",
@@ -3993,7 +3993,7 @@
       "matchers": [
         "raw"
       ],
-      "ms": 0.2900999999999385
+      "ms": 0.29899999999997817
     },
     {
       "suite": "scanner",
@@ -4007,7 +4007,7 @@
         "raw",
         "folded"
       ],
-      "ms": 0.7085999999999331
+      "ms": 0.3725000000001728
     },
     {
       "suite": "scanner",
@@ -4020,7 +4020,7 @@
       "matchers": [
         "folded"
       ],
-      "ms": 0.5505000000000564
+      "ms": 0.35410000000001673
     },
     {
       "suite": "scanner",
@@ -4034,7 +4034,7 @@
         "raw",
         "folded"
       ],
-      "ms": 0.7966999999998734
+      "ms": 0.5191999999999553
     },
     {
       "suite": "scanner",
@@ -4047,7 +4047,7 @@
       "matchers": [
         "decoded:base64"
       ],
-      "ms": 0.8854000000001179
+      "ms": 0.5399999999999636
     },
     {
       "suite": "scanner",
@@ -4060,7 +4060,7 @@
       "matchers": [
         "decoded:hex"
       ],
-      "ms": 0.951799999999821
+      "ms": 0.6236999999998716
     },
     {
       "suite": "scanner",
@@ -4073,7 +4073,7 @@
       "matchers": [
         "decoded:url"
       ],
-      "ms": 0.8023000000000593
+      "ms": 0.5666000000001077
     },
     {
       "suite": "scanner",
@@ -4086,7 +4086,7 @@
       "matchers": [
         "decoded:html"
       ],
-      "ms": 0.779399999999896
+      "ms": 0.6514999999999418
     },
     {
       "suite": "scanner",
@@ -4099,7 +4099,7 @@
       "matchers": [
         "decoded:rot13"
       ],
-      "ms": 0.2556999999999334
+      "ms": 0.30209999999988213
     },
     {
       "suite": "scanner",
@@ -4112,7 +4112,7 @@
       "matchers": [
         "decoded:reverse"
       ],
-      "ms": 0.21519999999986794
+      "ms": 0.27450000000021646
     },
     {
       "suite": "scanner",
@@ -4125,7 +4125,7 @@
       "matchers": [
         "letter-spacing"
       ],
-      "ms": 0.4281999999998334
+      "ms": 0.45869999999990796
     },
     {
       "suite": "scanner",
@@ -4138,7 +4138,7 @@
       "matchers": [
         "letter-spacing"
       ],
-      "ms": 1.4401000000000295
+      "ms": 0.8581000000001495
     },
     {
       "suite": "scanner",
@@ -4151,7 +4151,7 @@
       "matchers": [
         "decoded:base64>reverse"
       ],
-      "ms": 0.8180999999999585
+      "ms": 0.5807000000002063
     },
     {
       "suite": "scanner",
@@ -4164,7 +4164,7 @@
       "matchers": [
         "decoded:base64"
       ],
-      "ms": 0.9769000000001142
+      "ms": 1.064200000000028
     },
     {
       "suite": "scanner",
@@ -4177,7 +4177,7 @@
       "matchers": [
         "raw"
       ],
-      "ms": 0.4592999999999847
+      "ms": 0.6702000000000226
     },
     {
       "suite": "scanner",
@@ -4190,7 +4190,7 @@
       "matchers": [
         "raw"
       ],
-      "ms": 0.2644999999999982
+      "ms": 0.3286999999997988
     },
     {
       "suite": "scanner",
@@ -4201,7 +4201,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.2237999999999829
+      "ms": 0.27490000000011605
     },
     {
       "suite": "scanner",
@@ -4214,7 +4214,7 @@
       "matchers": [
         "raw"
       ],
-      "ms": 0.22270000000003165
+      "ms": 0.31490000000007967
     },
     {
       "suite": "scanner",
@@ -4225,7 +4225,7 @@
       "claimed": false,
       "caught": false,
       "matchers": [],
-      "ms": 0.2964999999999236
+      "ms": 0.3546000000001186
     },
     {
       "suite": "scanner",
@@ -4238,7 +4238,7 @@
       "matchers": [
         "decoded:base64"
       ],
-      "ms": 0.7950000000000728
+      "ms": 1.036200000000008
     }
   ]
 }
