@@ -2,23 +2,45 @@
 # MCPhantom pre-push hook (versioned; installed by `npm install` via scripts/install-hooks.mjs).
 # Blocks the push unless `npm run check` (lint, typecheck, build, full test suite) passes on exactly
 # what is committed. Mechanical enforcement replaces "remember to run the full check".
+#
+# The full output of every run goes to <git-dir>/mcphantom-pre-push.log (overwritten each run), and
+# its path is printed on failure, so a failing check's output is never lost — however the push was
+# invoked (terminal, IDE, a tool that only keeps the last line).
 set -u
+
+LOG="$(git rev-parse --absolute-git-dir 2>/dev/null || echo .git)/mcphantom-pre-push.log"
+: >"$LOG" 2>/dev/null || LOG=/dev/null
+
+fail() {
+  echo "$1" >>"$LOG"
+  echo "$1" >&2
+  echo "pre-push: full output: $LOG" >&2
+  exit 1
+}
+
+{
+  echo "mcphantom pre-push: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "HEAD: $(git rev-parse HEAD 2>/dev/null)"
+} >>"$LOG"
 
 # The check must see what is being pushed, not a working tree that differs from it.
 if ! git diff --quiet || ! git diff --cached --quiet; then
-  echo "pre-push: uncommitted changes to tracked files — commit or stash them so the check runs on what you push." >&2
-  exit 1
+  fail "pre-push: uncommitted changes to tracked files — commit or stash them so the check runs on what you push."
 fi
 untracked=$(git ls-files --others --exclude-standard -- src test bench scripts .githooks)
 if [ -n "$untracked" ]; then
-  echo "pre-push: untracked files would change what the check sees — add or remove them first:" >&2
-  echo "$untracked" | sed 's/^/  /' >&2
-  exit 1
+  echo "$untracked" | sed 's/^/  /' >>"$LOG"
+  fail "pre-push: untracked files would change what the check sees — add or remove them first (listed in the log)."
 fi
 
-echo "pre-push: running npm run check (blocks the push on failure) ..." >&2
-if ! npm run check; then
-  echo "pre-push: npm run check FAILED — push blocked." >&2
-  exit 1
+echo "pre-push: running npm run check (blocks the push on failure; output in $LOG) ..." >&2
+npm run check >>"$LOG" 2>&1
+status=$?
+echo "exit status: $status" >>"$LOG"
+if [ "$status" -ne 0 ]; then
+  echo "pre-push: npm run check FAILED (exit $status) — push blocked. Last lines:" >&2
+  tail -n 40 "$LOG" >&2
+  fail "pre-push: npm run check FAILED — push blocked."
 fi
+grep -E "Tests +[0-9]+ passed" "$LOG" | tail -n 1 >&2
 echo "pre-push: check passed." >&2

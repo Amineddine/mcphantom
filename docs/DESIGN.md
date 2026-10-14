@@ -407,7 +407,9 @@ results. Nothing is tagged, released or published without the owner's confirmati
 
 **Process guardrails (mechanical, not memory):** `npm install` installs a versioned pre-push hook
 (`.githooks/pre-push` via `scripts/install-hooks.mjs`) that blocks a push unless `npm run check` passes
-on a clean tree. `.claude/settings.json` denies Claude Code `git push --no-verify` / `--force` / `-f`
+on a clean tree. Every run's full output goes to `.git/mcphantom-pre-push.log` (overwritten each run)
+and the path is printed on failure, so a failing check's output survives however the push was invoked
+(owner process fix after a lost failure in 6b; `test/pre-push-hook.test.ts`). `.claude/settings.json` denies Claude Code `git push --no-verify` / `--force` / `-f`
 (prefix and mid-command forms). Not covered: `+refspec` force pushes and a human running
 `--no-verify`; CI is the backstop.
 

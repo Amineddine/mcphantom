@@ -14,7 +14,7 @@ ground rules are mostly about evidence.
 Requires Node ≥ 22.13.
 
 ```sh
-npm install        # also installs the pre-push hook (.githooks/pre-push runs `npm run check`)
+npm install        # also installs the pre-push hook (.githooks/pre-push runs `npm run check`; full output in .git/mcphantom-pre-push.log)
 npm run check      # lint, typecheck, build, tests — must pass before every push
 npm run demo       # deterministic end-to-end demo
 ```
