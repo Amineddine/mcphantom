@@ -1,6 +1,6 @@
 /**
  * Entropy-based possible-secret detection (Phase 6b). Owner constraint: an entropy-only hit never
- * raises the label to `secret` unless `secrets.entropy.on_hit` says so; hash-shaped hits never do.
+ * raises the label to `secret` unless `secrets.entropy.on_hit` says so; identifier-shaped (id) hits never do.
  * Secret-shaped test values are generated at runtime so the repository carries none.
  */
 import { describe, expect, it } from 'vitest';
@@ -31,12 +31,12 @@ const UUID = '3f2b8c1e-9a4d-4e7b-b1c2-5d6e7f809a1b';
 
 describe('classifyToken', () => {
   it.each([
-    ['a UUID', UUID, 'hash'],
-    ['a commit SHA', '9fceb02d0ae598e95dc970b74767f19372d61af8', 'hash'],
-    ['a SHA-256 digest', 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'hash'],
-    ['a typed hex id', 'subnet-0a1b2c3d4e5f60718', 'hash'],
-    ['an SRI integrity value', 'sha512-' + rand(86, B62 + '+/', 3) + '==', 'hash'],
-    ['a long number (hex subset: recorded only)', '12345678901234567890123', 'hash'],
+    ['a UUID', UUID, 'id'],
+    ['a commit SHA', '9fceb02d0ae598e95dc970b74767f19372d61af8', 'id'],
+    ['a SHA-256 digest', 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'id'],
+    ['a typed hex id', 'subnet-0a1b2c3d4e5f60718', 'id'],
+    ['an SRI integrity value', 'sha512-' + rand(86, B62 + '+/', 3) + '==', 'id'],
+    ['a long number (hex subset: recorded only)', '12345678901234567890123', 'id'],
     ['random base62', RANDOM, 'random'],
     ['random base57 (PostHog key body)', rand(48, B57, 2), 'random'],
   ])('%s → %s', (_n, token, shape) => {
@@ -58,19 +58,51 @@ describe('classifyToken', () => {
 describe('findPossibleSecrets: tokenisation', () => {
   it('splits key=value and keeps base64 padding', () => {
     const b64 = Buffer.from(rand(30, B62, 5)).toString('base64');
-    const hits = findPossibleSecrets(`request_id=${RANDOM} blob ${b64}`);
+    const hits = findPossibleSecrets(`value=${RANDOM} blob ${b64}`);
     expect(hits.map((h) => h.shape)).toEqual(['random', 'random']);
-    expect(`request_id=${RANDOM}`.slice(hits[0]?.start, hits[0]?.end)).toBe(RANDOM);
+    expect(`value=${RANDOM}`.slice(hits[0]?.start, hits[0]?.end)).toBe(RANDOM);
   });
 
   it('splits paths and names at separators when a component is a word', () => {
-    expect(findPossibleSecrets(`exports/billing/${UUID}.parquet`)).toEqual([expect.objectContaining({ shape: 'hash' })]);
+    expect(findPossibleSecrets(`exports/billing/${UUID}.parquet`)).toEqual([expect.objectContaining({ shape: 'id' })]);
     expect(findPossibleSecrets('ReplicaSet/worker-3qcavhgym4 reports-oh5yspwmkg-kwlb7')).toEqual([]);
   });
 
   it('does not split random base64url that happens to contain separators', () => {
     const t = rand(20, B62, 9) + '-' + rand(22, B62, 10);
     expect(findPossibleSecrets(t)).toEqual([expect.objectContaining({ shape: 'random' })]);
+  });
+
+  // Tuning round 1 (dev split): context tells identifiers from secrets where the token cannot.
+  it.each([
+    ['a JSON "id" field', (t: string) => JSON.stringify({ id: t })],
+    ['a snake_case *_id field', (t: string) => JSON.stringify({ distinct_id: t })],
+    ['a camelCase *Id field', (t: string) => `VersionId: ${t}`],
+    ['a header *-id', (t: string) => `x-request-id: ${t}`],
+    ['key=value in a log line', (t: string) => `ts=1 request_id=${t} status=200`],
+    ['a signature key id with a scheme prefix', (t: string) => `"keyid":"SHA256:${t}"`],
+    ['an etag', (t: string) => `"etag": "${t}"`],
+  ])('a token under %s is identifier-shaped', (_n, wrap) => {
+    expect(findPossibleSecrets(wrap(RANDOM))).toEqual([expect.objectContaining({ shape: 'id' })]);
+  });
+
+  it.each([
+    ['secret_id', (t: string) => JSON.stringify({ secret_id: t })],
+    ['client_secret_id', (t: string) => JSON.stringify({ client_secret_id: t })],
+    ['auth_id', (t: string) => `auth_id=${t}`],
+    ['a neutral field', (t: string) => JSON.stringify({ value: t })],
+  ])('a field named %s keeps the token random (credential words win over "id")', (_n, wrap) => {
+    expect(findPossibleSecrets(wrap(RANDOM))).toEqual([expect.objectContaining({ shape: 'random' })]);
+  });
+
+  it('a single-case type prefix makes an object id; a mixed-case one does not', () => {
+    expect(findPossibleSecrets(`card_${rand(24, B62, 11)}`)).toEqual([expect.objectContaining({ shape: 'id' })]);
+    expect(findPossibleSecrets(`WFR_${rand(22, B62, 12)}`)).toEqual([expect.objectContaining({ shape: 'id' })]);
+    expect(findPossibleSecrets(`Ab_${rand(30, B62, 13)}`)).toEqual([expect.objectContaining({ shape: 'random' })]);
+  });
+
+  it('a data URI payload is content, not a token', () => {
+    expect(findPossibleSecrets(`data:image/png;base64,${rand(300, B62 + '+/', 14)}==`)).toEqual([]);
   });
 
   it('is linear on adversarial input (1 MB run, 1 MB of near-miss tokens)', () => {
@@ -90,11 +122,11 @@ describe('posthog-key rule', () => {
 });
 
 describe('Redactor: possible secrets', () => {
-  it('redacts random and hash-shaped tokens by default, keeps known rules named', () => {
+  it('redacts random and identifier-shaped tokens by default, keeps known rules named', () => {
     const r = new Redactor();
     const aws = ['AKIA', 'ENTROPYTESTKEY42'].join('');
     const out = r.redactString(`a ${RANDOM} b ${UUID} c ${aws}`);
-    expect(out).toBe('a [REDACTED:possible-secret] b [REDACTED:possible-hash] c [REDACTED:aws-access-key-id]');
+    expect(out).toBe('a [REDACTED:possible-secret] b [REDACTED:possible-id] c [REDACTED:aws-access-key-id]');
   });
 
   it('entropy: false leaves them', () => {
@@ -110,7 +142,7 @@ describe('TaintEngine: secrets.entropy.on_hit', () => {
   it('default record: counted, label unchanged (owner constraint)', () => {
     const e = engine();
     const r = e.ingest('tool', 'files', 'files__read', 'read', out(`value: ${RANDOM}\nid: ${UUID}`));
-    expect(r.possibleSecrets).toEqual({ random: 1, hash: 1 });
+    expect(r.possibleSecrets).toEqual({ random: 1, id: 1 });
     expect(r.secretsDetected).toEqual([]);
     expect(e.context.confidentiality).toBe('public');
   });
@@ -124,7 +156,7 @@ describe('TaintEngine: secrets.entropy.on_hit', () => {
     expect(s.context.confidentiality).toBe('secret');
   });
 
-  it('hash-shaped hits never raise the label, whatever on_hit says', () => {
+  it('identifier-shaped hits never raise the label, whatever on_hit says', () => {
     const e = engine({ on_hit: 'secret' });
     e.ingest('tool', 'files', 'files__read', 'read', out(`${UUID} 9fceb02d0ae598e95dc970b74767f19372d61af8`));
     expect(e.context.confidentiality).toBe('public');
@@ -134,11 +166,11 @@ describe('TaintEngine: secrets.entropy.on_hit', () => {
     const e = engine();
     const r = e.ingest('tool', 'files', 'files__read', 'read', out(`phx_${rand(48, B57, 6)}`));
     expect(r.secretsDetected).toEqual(['posthog-key']);
-    expect(r.possibleSecrets).toEqual({ random: 0, hash: 0 });
+    expect(r.possibleSecrets).toEqual({ random: 0, id: 0 });
   });
 
   it('enabled: false turns detection off', () => {
-    expect(engine({ enabled: false, on_hit: 'secret' }).ingest('tool', 'files', 'files__read', 'read', out(RANDOM)).possibleSecrets).toEqual({ random: 0, hash: 0 });
+    expect(engine({ enabled: false, on_hit: 'secret' }).ingest('tool', 'files', 'files__read', 'read', out(RANDOM)).possibleSecrets).toEqual({ random: 0, id: 0 });
   });
 });
 
@@ -150,7 +182,7 @@ describe('through the gateway', () => {
       await h.client.callTool({ name: 'fx__echo', arguments: { text: `here: ${RANDOM}` } });
       const taint = h.store.events({ kind: 'taint' });
       const payload = JSON.parse(taint[taint.length - 1]?.payload ?? '{}') as { possibleSecrets?: unknown };
-      expect(payload.possibleSecrets).toEqual({ random: 1, hash: 0 });
+      expect(payload.possibleSecrets).toEqual({ random: 1, id: 0 });
       const all = h.store.events({}).map((e) => `${e.payload ?? ''}${e.error ?? ''}`).join('\n');
       expect(all).not.toContain(RANDOM);
       expect(all).toContain('[REDACTED:possible-secret]');

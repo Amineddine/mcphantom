@@ -2,22 +2,24 @@
  * Entropy-based "possible secret" detection (DESIGN.md §2, Secrets; Phase 6b).
  *
  * The known-format rules in detectors.ts miss a random token with no prefix and no keyword next to it.
- * This finds such tokens by shape and entropy. It cannot tell a secret from a random identifier: UUIDs,
- * commit SHAs, digests, database ids and document ids look exactly like keys. So, by owner decision,
- * a hit here never raises the session label to `secret` on its own. Hits are redacted in logs and
- * recorded as "possible secret"; whether they raise the label is a configuration choice
- * (`secrets.entropy.on_hit`, default `record`). The false-positive rate is measured on benign tool
- * outputs by `npm run bench:entropy`.
+ * This finds such tokens by shape and entropy. It cannot tell a secret from a random identifier by the
+ * token alone: UUIDs, commit SHAs, digests, database ids and document ids look exactly like keys. So, by
+ * owner decision, a hit here never raises the session label to `secret` on its own. Hits are redacted in
+ * logs and recorded as "possible secret"; whether they raise the label is a configuration choice
+ * (`secrets.entropy.on_hit`, default `record`). Measured on benign tool outputs by `npm run bench:entropy`.
  *
  * Two shapes are distinguished:
- *  - `hash`: hex strings, UUIDs and SRI integrity values. Overwhelmingly identifiers and digests, so
- *    they are only ever recorded, whatever `on_hit` says. A hex-encoded secret is therefore missed by
- *    this detector (published in the benchmark).
+ *  - `id` (identifier-shaped): hex strings, UUIDs, SRI integrity values, type-prefixed ids (`card_…`,
+^ *    `WFR_…`), and any token whose field name says it is an identifier (`"id":`, `request_id=`,
+ *    `VersionId`, `etag`, `keyid`, …). Only ever recorded, whatever `on_hit` says. Published misses:
+ *    a hex-encoded secret, an unknown vendor's prefixed key, and a secret stored under an id-named field
+ *    (a field name that also says secret/token/password/credential/auth is never treated as an id).
  *  - `random`: everything else that passes the shape and entropy tests. Only these can escalate.
  *
- * Linear time: one character-class scan, then per-token work bounded by MAX_TOKEN.
+ * Linear time: one character-class scan, then per-token work bounded by MAX_TOKEN and a 64-character
+ * look-behind for the field name.
  */
-export type EntropyShape = 'random' | 'hash';
+export type EntropyShape = 'random' | 'id';
 
 export interface PossibleSecret {
   start: number;
@@ -33,6 +35,12 @@ const RUN_RE = /[A-Za-z0-9_\-+/=]+/g;
 const HEX_RE = /^[0-9a-fA-F]+$/;
 const UUID_RE = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
 const SRI_RE = /^sha(?:256|384|512)-[A-Za-z0-9+/]+=*$/;
+/** A typed hex id such as `ami-0abc…` or `subnet-0abc…`: a short lowercase word, a separator, hex. */
+const PREFIXED_HEX_RE = /^[a-z]{2,12}[-_][0-9a-fA-F]{8,}$/;
+/** A type-prefixed object id: `card_…`, `dpl_…`, GitHub node ids (`WFR_…`, `CS_…`, `REF_…`). Known
+ *  vendors' prefixed *secrets* (ghp_, sk_live_, xoxb-, npm_, phx_, …) are matched by detectors.ts
+ *  first and never reach this classification. */
+const PREFIXED_ID_RE = /^(?:[a-z]{2,8}|[A-Z]{1,5})_[A-Za-z0-9][A-Za-z0-9_-]{7,}$/;
 
 /** Shannon entropy in bits per character. */
 export function entropy(s: string): number {
@@ -51,20 +59,18 @@ export function entropyThreshold(n: number): number {
   return 0.8 * Math.log2(Math.min(n, 64));
 }
 
-/** A typed hex id such as `ami-0abc…` or `subnet-0abc…`: a short lowercase word, a separator, hex. */
-const PREFIXED_HEX_RE = /^[a-z]{2,12}[-_][0-9a-fA-F]{8,}$/;
-
+/** Shape of a token on its own (no context), or undefined if it is not a possible secret. */
 export function classifyToken(token: string): EntropyShape | undefined {
   if (token.length < MIN_TOKEN || token.length > MAX_TOKEN) return undefined;
-  if (UUID_RE.test(token) || SRI_RE.test(token)) return 'hash';
-  if (HEX_RE.test(token) || PREFIXED_HEX_RE.test(token)) return entropy(token) >= 3 ? 'hash' : undefined;
+  if (UUID_RE.test(token) || SRI_RE.test(token)) return 'id';
+  if (HEX_RE.test(token) || PREFIXED_HEX_RE.test(token)) return entropy(token) >= 3 ? 'id' : undefined;
   const t = token.replace(/=+$/, '');
   const lower = /[a-z]/.test(t);
   const upper = /[A-Z]/.test(t);
   const digit = /[0-9]/.test(t);
   if (!digit || !(lower || upper)) return undefined;
-  if (Number(lower) + Number(upper) + Number(digit) < 2) return undefined;
-  return entropy(t) >= entropyThreshold(t.length) ? 'random' : undefined;
+  if (entropy(t) < entropyThreshold(t.length)) return undefined;
+  return PREFIXED_ID_RE.test(token) ? 'id' : 'random';
 }
 
 /** A path or name component that is a word, not random: four or more letters with a vowel, lowercase,
@@ -75,9 +81,10 @@ const isWord = (s: string): boolean => WORD_RE.test(s) && VOWEL_RE.test(s);
 
 /**
  * Splits a character run into the tokens a human would see. `key=value` is split at an inner `=`
- * (base64 padding only ever trails). A run with `/`, `-` or `_` separators is split at them when one
- * of its components is a word (`exports/billing/<uuid>`, `reports-oh5yspwmkg-kwlb7`): random base64
- * also contains these characters, but its components are almost never words.
+ * (base64 padding only ever trails). A type-prefixed id is kept whole. Otherwise a run with `/`, `-` or
+ * `_` separators is split at them when one of its components is a word (`exports/billing/<uuid>`,
+ * `reports-oh5yspwmkg-kwlb7`): random base64 also contains these characters, but its components are
+ * almost never words.
  */
 function tokens(run: string, offset: number, out: { text: string; start: number }[], depth = 0): void {
   const inner = /=+(?=[^=])/.exec(run);
@@ -87,7 +94,7 @@ function tokens(run: string, offset: number, out: { text: string; start: number 
     tokens(run.slice(rest), offset + rest, out, depth);
     return;
   }
-  if (depth < 3) {
+  if (depth < 3 && !PREFIXED_ID_RE.test(run)) {
     for (const sep of ['/', '-', '_']) {
       if (!run.includes(sep)) continue;
       const parts = run.split(sep);
@@ -103,14 +110,35 @@ function tokens(run: string, offset: number, out: { text: string; start: number 
   if (run.length >= MIN_TOKEN) out.push({ text: run, start: offset });
 }
 
+/**
+ * The field name a value is assigned to, from the text just before it: `"id": "`, `request_id=`,
+ * `x-request-id: `, `VersionId: `, `"keyid":"SHA256:`. Undefined when there is none.
+ */
+const FIELD_BEFORE_RE = /([A-Za-z][A-Za-z0-9_.-]{0,40})["']?\s{0,4}[:=]\s{0,4}["'(]?(?:[A-Za-z0-9]{1,10}:)?$/;
+/** Field names that say "identifier": `id`, `*_id`, `*-id`, `*Id`, `uid`, `uuid`, `etag`, `sig`, ... */
+const ID_FIELD_RE = /(?:^|[_.-])(?:id|ids|uid|uuid|guid|etag|sig|digest|hash|sha\d*|checksum|integrity|cursor|slug|oid)$|^(?:id|uid|etag|sig|keyid)$|[a-z0-9](?:Id|ID|Ids|Uid|UID|Hash|Etag)$/i;
+/** A field name that also says the value is a credential is never treated as an identifier. */
+const SECRET_FIELD_RE = /secret|token|passw|pwd|credential|auth|private|api[_-]?key/i;
+
+function fieldBefore(text: string, start: number): string | undefined {
+  return FIELD_BEFORE_RE.exec(text.slice(Math.max(0, start - 64), start))?.[1];
+}
+
+export function isIdField(field: string | undefined): boolean {
+  return field !== undefined && ID_FIELD_RE.test(field) && !SECRET_FIELD_RE.test(field);
+}
+
 export function findPossibleSecrets(text: string): PossibleSecret[] {
   const out: PossibleSecret[] = [];
   for (const m of text.matchAll(RUN_RE)) {
     if (m[0].length < MIN_TOKEN) continue;
     const toks: { text: string; start: number }[] = [];
     tokens(m[0], m.index, toks);
+    // A data URI's payload (`data:image/png;base64,…`) is content, not a token.
+    if (text.slice(Math.max(0, m.index - 8), m.index) === ';base64,') continue;
     for (const t of toks) {
-      const shape = classifyToken(t.text);
+      let shape = classifyToken(t.text);
+      if (shape === 'random' && isIdField(fieldBefore(text, t.start))) shape = 'id';
       if (shape) out.push({ start: t.start, end: t.start + t.text.length, shape });
     }
   }

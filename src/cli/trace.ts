@@ -64,11 +64,11 @@ function parsePayload(e: StoredEvent): unknown {
 }
 
 function renderIngest(e: StoredEvent, out: (s: string) => void): void {
-  const p = parsePayload(e) as { contextAfter: { integrity: string; confidentiality: string }; secretsDetected: string[]; possibleSecrets?: { random: number; hash: number } } | undefined;
+  const p = parsePayload(e) as { contextAfter: { integrity: string; confidentiality: string }; secretsDetected: string[]; possibleSecrets?: { random: number; id: number } } | undefined;
   if (!p) return;
   const secrets = p.secretsDetected.length ? ` secrets:[${p.secretsDetected.join(',')}]` : '';
   const ps = p.possibleSecrets;
-  const possible = ps && ps.random + ps.hash > 0 ? ` possible secrets: ${ps.random} random, ${ps.hash} hash-shaped` : '';
+  const possible = ps && ps.random + ps.id > 0 ? ` possible secrets: ${ps.random} random, ${ps.id} id-shaped` : '';
   out(`  ⇩ ${e.name ?? '?'} → context ${p.contextAfter.integrity}/${p.contextAfter.confidentiality}${secrets}${possible}`);
 }
 

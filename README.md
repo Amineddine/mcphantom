@@ -134,7 +134,7 @@ Security-relevant defaults:
 |---|---|---|
 | `taint.trifecta` | `deny` | `log` is audit mode, which the unprotected half of the demo uses. |
 | `scan.block` / `scan.mode` | `medium` / `hide` | Flagged definitions never reach the model. |
-| `secrets.entropy.on_hit` | `record` | What a possible secret (random-looking, no known format) in a tool output does to the session label: `record` (log only), `internal`, or `secret`. Hash-shaped values (hex, UUIDs, digests) never raise it. |
+| `secrets.entropy.on_hit` | `record` | What a possible secret (random-looking, no known format) in a tool output does to the session label: `record` (log only), `internal`, or `secret`. Identifier-shaped values (hex, UUIDs, digests, type-prefixed ids, values of id-named fields) never raise it. ⚠ `internal`/`secret` cause false blocks: 9.2% of benign outputs are flagged (see Known limitations). |
 | `secrets.entropy.redact` | `true` | Redact possible secrets in the event log too. |
 | `servers.<id>.may_receive` | unset | The most confidential data this server may receive in tool-call arguments: `public`, `internal` or `secret`. |
 | `servers.<id>.may_receive_mode` | `evidence` | `evidence`: deny when an argument carries a credential or comes, per Layer 2, from data above the bound. `context`: also deny whenever the session holds such data (sound, blocks more). |
@@ -189,9 +189,16 @@ agent is safe.
 - **Secrets are detected by known formats and keywords**, plus policy-declared sources. A random value
   with no known format and no keyword is only a *possible* secret: an entropy detector redacts it in
   the log and records it, but by default it does not make the session `secret`, because it can't tell
-  a key from a random id. On benign tool outputs it flags 40% of them (held-out split,
-  `npm run bench:entropy`), so turning on `secrets.entropy.on_hit: secret` over-taints a lot. Hex
-  secrets, human-chosen passwords and other low-entropy secrets are not detected at all.
+  a key from a random id. Hex secrets, an unknown vendor's prefixed keys, a secret stored under an
+  id-named field, human-chosen passwords and other low-entropy secrets are not detected as random at
+  all (detection 78.0% of generated secrets, held-out split, `npm run bench:entropy`).
+- **⚠ `secrets.entropy.on_hit: internal` or `secret` will cause false blocks.** On benign tool outputs
+  the detector still flags **9.2%** of them (6 of 65, held-out split) — random user ids in log lines,
+  analytics result rows, e-mail local parts. With `on_hit: secret`, each such output makes the session
+  `secret`, so a later egress call trips the trifecta invariant on data that was never secret, and
+  servers with `may_receive` below `secret` in `context` mode start refusing calls; with `internal`,
+  `may_receive: public` servers in `context` mode and policy rules on `context.confidentiality` start
+  firing. Keep the default `record` unless you have measured the rate on your own tools' outputs.
 - **Over-tainting.** One untrusted page taints the rest of the connection. A client that reuses one
   connection across conversations stays tainted until MCPhantom restarts. A page that contains a
   fake-looking key makes the context `secret`.

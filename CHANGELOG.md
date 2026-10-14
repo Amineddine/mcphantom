@@ -7,9 +7,10 @@
 - **Entropy-based possible-secret detection.** Random-looking tokens with no known format are redacted
   in the event log and counted on each ingested output (`mcphantom trace` shows them). By default they
   do **not** change the session label, since they can't be told apart from random ids;
-  `secrets.entropy.on_hit: internal | secret` makes them escalate. Hex, UUIDs and digests are recorded
-  only. Measured with `npm run bench:entropy` (in CI): 40.0% of held-out benign outputs contain such a
-  token.
+  `secrets.entropy.on_hit: internal | secret` makes them escalate. Identifier-shaped values (hex,
+  UUIDs, digests, type-prefixed ids, values of id-named fields) are recorded only. Measured with
+  `npm run bench:entropy` (in CI, held-out split): 9.2% of benign outputs still contain such a token,
+  so escalating causes false blocks; detection 78.0% of generated secrets.
 - **Per-server `may_receive`.** Bounds the confidentiality of what a server may receive in tool-call
   arguments, for every tool (not only egress ones), so a server whose "read-only" tool keeps what it is
   sent is covered. `evidence` mode (default) blocks credentials and data Layer 2 attributes to more

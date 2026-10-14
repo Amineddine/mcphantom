@@ -180,9 +180,13 @@ demo and benchmark. The same detector feeds log redaction.
 Entropy hits (Phase 6b, `src/secrets/entropy.ts`) are only *possible* secrets: a random token with no
 known format cannot be told apart from a random identifier. They are redacted in the log and counted on
 the ingest event; their effect on the label is `secrets.entropy.on_hit` (`record` by default — no label
-change, owner constraint; `internal` or `secret` opt-in). Hash-shaped hits (hex, UUIDs, SRI digests)
-never raise the label. Measured on benign outputs by `bench:entropy`: 40.0% of held-out benign outputs
-contain a random-shaped hit, which is why escalation is opt-in.
+change, owner constraint; `internal` or `secret` opt-in). Identifier-shaped (`id`) hits — hex, UUIDs, SRI
+digests, single-case type-prefixed ids (`card_…`, `WFR_…`), and any value under an id-named field
+(`"id":`, `request_id=`, `VersionId:`; a field name that also says secret/token/password/credential/auth
+stays a possible secret) — never raise the label. Measured on benign outputs by `bench:entropy`
+(held-out split): 9.2% of benign outputs contain a `random` hit after one tuning round (40.0% before),
+detection 78.0% of generated secrets (87.9% before); escalation stays opt-in and the README warns that
+it causes false blocks at that rate.
 
 ### Ask decisions
 
@@ -341,13 +345,18 @@ before the fix:
   `completion/complete` reached the upstream before anything was audited (only the response was
   withheld). They are now audited before forwarding (a `request` event with outcome `forwarding`).
 
-**6b — PR 2 (entropy secrets).** Possible-secret detector with `hash`/`random` shapes; `secrets.entropy`
+**6b — PR 2 (entropy secrets).** Possible-secret detector with `id`/`random` shapes; `secrets.entropy`
 config (`enabled`, `on_hit: record|internal|secret`, default `record`, `redact`); redaction in the log
-(`[REDACTED:possible-secret]` / `possible-hash`); counts on the taint event and in `trace`;
+(`[REDACTED:possible-secret]` / `possible-id`); counts on the taint event and in `trace`;
 `posthog-key` rule (`phx_`/`phs_`/`pha_`/`phr_`/`phh_`; `phc_` is public by design and not matched).
-`bench:entropy` in CI over 124 benign outputs (31 real, 93 synthetic) and 128 generated random secrets,
-dev/test split fixed before tuning; held-out FPR 40.0% (26/65), detection 68/68, hex secrets 0% by
-design. Floor: FPR ≤ 50%, detection ≥ 95%.
+`bench:entropy` in CI over 124 benign outputs (31 real, 93 synthetic) and 176 generated secrets
+(including the kinds missed by design), dev/test split fixed before tuning. Owner asked for a tuning
+round (40% FPR too high): breakdown by output type and token shape, tuned on dev only (id-named field
+context, single-case type prefixes, data-URI payloads), held-out run once after freezing. Held-out
+before → after: FPR 40.0% → 9.2% (26/65 → 6/65); detection 87.9% → 78.0% (every miss is a by-design
+kind). Known defect seen on the held-out split and not fixed this round (e-mail local parts, 4 of the 6
+flagged outputs) — first item for a next round with a fresh split. Floor: FPR ≤ 15%, detection ≥ 70%.
+Results: `bench/results/entropy-bench.md`.
 
 **6b — PR 3 (`may_receive`).** Per-server bound with `evidence` (default) and opt-in `context` modes, as
 above; the credential check is shared with `containsSecret()` (`src/secrets/in-value.ts`). Attack fixture:

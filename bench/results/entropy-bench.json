@@ -1,0 +1,32 @@
+{
+  "dev": {
+    "outputs": 59,
+    "flagged": 8,
+    "fpr": 0.13559322033898305,
+    "randomHits": 40,
+    "idHits": 377,
+    "detected": 64,
+    "total": 85,
+    "tpr": 0.7529411764705882
+  },
+  "test": {
+    "outputs": 65,
+    "flagged": 6,
+    "fpr": 0.09230769230769231,
+    "randomHits": 40,
+    "idHits": 527,
+    "detected": 71,
+    "total": 91,
+    "tpr": 0.7802197802197802
+  },
+  "all": {
+    "outputs": 124,
+    "flagged": 14,
+    "fpr": 0.11290322580645161,
+    "randomHits": 80,
+    "idHits": 904,
+    "detected": 135,
+    "total": 176,
+    "tpr": 0.7670454545454546
+  }
+}
