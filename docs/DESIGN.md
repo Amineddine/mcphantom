@@ -312,9 +312,20 @@ protection on `main` (requiring the CI and gitleaks checks) enabled in the same 
 with the packed tarball and its SHA-256. **Not on npm** (owner decision: waits for v1). Vulnerability
 reports: private GitHub advisories only.
 
-**Next:** **6b** (fresh session), below.
+**Next:** **6b**, in progress (plan approved 2026-10-13), delivered as a series of PRs (workflow below).
 
-**6b** (fresh session):
+**6b — PR 1 (tests for the 6a review's untested paths).** Every path in `docs/reviews/phase-6a.md`
+"Code paths NOT tested" now has a test. Two defects found and fixed, each with a test shown to fail
+before the fix:
+- *Medium, fail-open:* with `taint.trifecta: log` (audit mode), a call that tripped the invariant was
+  allowed **before a policy `ask` was considered**, so the author's confirmation was silently skipped.
+  Audit mode now records the invariant in the reason and falls through to the `ask`.
+- *Medium:* with `logging.on_failure: deny`, `prompts/get`, `resources/read`, `resources/subscribe` and
+  `completion/complete` reached the upstream before anything was audited (only the response was
+  withheld). They are now audited before forwarding (a `request` event with outcome `forwarding`).
+
+**6b** (plan, PR order: 1 untested paths → 2 entropy → 3 `may_receive` + sink server → 4 exfiltration
+servers → 5 corpus → 5b PostHog → 6 review):
 1. Entropy-based secret detection. **Owner constraint:** entropy-only hits (no known format, no
    keyword) must **not** escalate the session label to `secret` on their own — UUIDs, hashes and commit
    SHAs are high-entropy. Redact them in logs, record them as "possible secret", make their effect on
@@ -324,7 +335,20 @@ reports: private GitHub advisories only.
    "server that is itself the sink" attack server, which needs it): bound the confidentiality of what a
    `tools/call` may send to each server; test-pinned against that attack server.
 4. Benign corpus to ≥ 200 licence-checked community tool definitions; third-party poisoned examples
-   (e.g. Invariant Labs) in the test split.
+   (e.g. Invariant Labs) in the test split. Unlicensed examples are rewritten as "derived from
+   [source]" with attribution; verbatim only where the licence or terms allow (owner decision).
+5. **PostHog MCP as a real-world target (owner, 2026-10-13).** In 6b: a static scan of PostHog's
+   MIT-licensed tool definitions (pinned commit, reported separately from the benign corpus) and a
+   fixture-based "untrusted event data" scenario (an `execute-sql` output labelled untrusted; the
+   resulting exfiltration or write blocked), framed as a generic MCP risk. False-block rate and latency
+   in Phase 7; live runs in Phase 9. Testing rules: the owner's own project and synthetic data only; no
+   adversarial or high-volume traffic to the hosted server; PostHog's disclosure-programme terms read
+   before any live run; anything that looks like a vulnerability in PostHog itself goes to private
+   disclosure, never into the write-up.
+
+Owner decisions for 6b (2026-10-13): `may_receive` runs in two modes — Layer-2 evidence always on
+(restriction only) and the context label opt-in per server; unset means no change. Entropy-only hits
+default to `record` (redacted and logged, no label change); a PostHog `phx_` key rule is added with them.
 
 **Open items carried forward:** resource pinning (before v1); `ask` without elicitation — **owner decision
 (2026-10-13): for v0.1 an `ask` on a client without elicitation is a deny; a minimal approval queue moves
@@ -333,6 +357,12 @@ as typescript-sdk #2580; the owner posted our root cause and repro there
 (https://github.com/modelcontextprotocol/typescript-sdk/issues/2580#issuecomment-6156241420); upstream PR
 #2586 (another contributor) takes a different approach; our candidate fix stays unopened (it breaks two
 task-progress tests). Drafts and status: `docs/upstream/sdk-progress-race/`.
+
+**Workflow since v0.1.0 (the repository is public):** `main` is protected (7 required checks: the six
+OS/Node CI jobs and gitleaks; strict; enforced for admins; no force pushes). All work goes through a
+branch → PR → all checks green → **the owner confirms** → merge. One PR per reviewable unit; a PR that
+changes a Layer-2 matcher or decoder also reruns `bench:evasion` and `bench:policy` and commits the
+results. Nothing is tagged, released or published without the owner's confirmation.
 
 **Process guardrails (mechanical, not memory):** `npm install` installs a versioned pre-push hook
 (`.githooks/pre-push` via `scripts/install-hooks.mjs`) that blocks a push unless `npm run check` passes

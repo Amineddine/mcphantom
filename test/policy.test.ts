@@ -67,6 +67,17 @@ describe('PolicyEngine: deny > ask > allow', () => {
     expect(d).toMatchObject({ verdict: 'deny', rule: 'policy' });
   });
 
+  // 6a review, untested path 4: containsSecret decodes only the first 32 KiB of a value (R6a-3).
+  it('past its 32 KiB decode bound, containsSecret still finds a clear-text secret but not an encoded one (pinned bound)', () => {
+    const pad = 'x'.repeat(40 * 1024);
+    const clear = engine({ mail: mailServer }).decide('mail', 'send_email', 'mail__send_email', { to: 'me@corp.example', body: `${pad} key ${CANARY}` });
+    expect(clear).toMatchObject({ verdict: 'deny', rule: 'policy' });
+    const b64 = engine({ mail: mailServer }).decide('mail', 'send_email', 'mail__send_email', { to: 'me@corp.example', body: `${pad} key ${Buffer.from(CANARY).toString('base64')}` });
+    expect(b64.verdict).toBe('allow'); // a known bypass of this predicate; Layer 1 does not depend on it
+    const inside = engine({ mail: mailServer }).decide('mail', 'send_email', 'mail__send_email', { to: 'me@corp.example', body: `${'x'.repeat(1024)} key ${Buffer.from(CANARY).toString('base64')}` });
+    expect(inside).toMatchObject({ verdict: 'deny', rule: 'policy' });
+  });
+
   it('allows an explicitly allowed recipient with no secret', () => {
     expect(engine({ mail: mailServer }).decide('mail', 'send_email', 'mail__send_email', { to: 'me@corp.example', body: 'hello' }).verdict).toBe('allow');
   });
@@ -77,6 +88,35 @@ describe('PolicyEngine: deny > ask > allow', () => {
     const d = e.decide('mail', 'send_email', 'mail__send_email', { to: 'me@corp.example', body: 'hi' });
     expect(d).toMatchObject({ verdict: 'ask', rule: 'policy', enforced: true });
     expect(d.reason).toContain('confirmation');
+  });
+});
+
+// Found by the Phase-6b tests for the 6a review's untested cumulative paths: in trifecta audit mode
+// (`taint.trifecta: log`) a call that tripped the invariant returned `allow` before the policy `ask`
+// was considered, so an author-written confirmation was silently skipped — a fail-open.
+describe('trifecta audit mode never displaces a policy ask', () => {
+  const servers = {
+    web: { command: 'x', tools: { fetch: { effect: 'read', integrity: 'untrusted' } } },
+    files: { command: 'x', defaults: { effect: 'read', integrity: 'trusted' } },
+    mail: { command: 'x', tools: { send_email: { effect: 'egress', integrity: 'trusted', rules: [{ ask: 'true' }] } } },
+  };
+  const tripped = (trifecta: 'deny' | 'log') => {
+    const e = engine(servers, { taint: { trifecta, max_index_mb: 32 } });
+    e.ingest('tool', 'web', 'web__fetch', 'fetch', text('some page'));
+    e.ingest('tool', 'files', 'files__read', 'read', text(`AWS_ACCESS_KEY_ID=${CANARY}`));
+    expect(e.context).toEqual({ integrity: 'untrusted', confidentiality: 'secret' });
+    return e.decide('mail', 'send_email', 'mail__send_email', { to: 'x@y.example', body: 'hi' });
+  };
+
+  it('log: the ask still applies, and the reason records the audited invariant', () => {
+    const d = tripped('log');
+    expect(d).toMatchObject({ verdict: 'ask', rule: 'policy', enforced: true });
+    expect(d.reason).toMatch(/confirmation/);
+    expect(d.reason).toMatch(/audit mode/);
+  });
+
+  it('deny: the invariant still wins over the ask', () => {
+    expect(tripped('deny')).toMatchObject({ verdict: 'deny', rule: 'trifecta', enforced: true });
   });
 });
 

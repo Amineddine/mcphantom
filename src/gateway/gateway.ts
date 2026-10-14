@@ -298,6 +298,7 @@ export class Gateway {
         const route = await this.resolvePrompt(req.params.name, extra.signal);
         meta.server = route.serverId;
         const u = this.requireReady(route.serverId);
+        this.auditForward('prompts/get', route.serverId, req.params.name, req.params);
         const result = await u.client.getPrompt(
           forUpstream(req.params, { name: route.name }),
           this.requestOptions(extra, req.params._meta, this.opts.config.timeouts.request_ms),
@@ -331,6 +332,7 @@ export class Gateway {
         const serverId = await this.resolveResource(req.params.uri, extra.signal);
         meta.server = serverId;
         const u = this.requireReady(serverId);
+        this.auditForward('resources/read', serverId, req.params.uri, req.params);
         const result = await u.client.readResource(
           forUpstream(req.params, {}),
           this.requestOptions(extra, req.params._meta, this.opts.config.timeouts.request_ms),
@@ -352,6 +354,7 @@ export class Gateway {
           if (!u.capabilities.resources?.subscribe) {
             throw new McpError(ErrorCode.MethodNotFound, `server '${serverId}' does not support resource subscriptions`);
           }
+          this.auditForward(method, serverId, req.params.uri, req.params);
           const opts = this.requestOptions(extra, undefined, this.opts.config.timeouts.request_ms);
           return method === 'resources/subscribe'
             ? u.client.subscribeResource({ uri: req.params.uri }, opts)
@@ -381,6 +384,7 @@ export class Gateway {
         if (!u.capabilities.completions) {
           throw new McpError(ErrorCode.MethodNotFound, `server '${serverId}' does not support completions`);
         }
+        this.auditForward('completion/complete', serverId, undefined, req.params);
         return u.client.complete(
           forUpstream(params, {}),
           this.requestOptions(extra, undefined, this.opts.config.timeouts.request_ms),
@@ -798,6 +802,16 @@ export class Gateway {
   private audit(e: Omit<EventInput, 'sessionId'>): void {
     if (this.record(e) || this.opts.config.logging.on_failure !== 'deny') return;
     throw new McpError(ErrorCode.InternalError, 'MCPhantom: the audit log could not be written, so this request was refused (logging.on_failure: deny)');
+  }
+
+  /**
+   * Audits a request before it is forwarded upstream. Prompt arguments, completion values and resource
+   * URIs all carry data to the server, so under `logging.on_failure: deny` a request whose forwarding
+   * cannot be recorded must not leave the gateway (the request event written after the response is too
+   * late for that). `tools/call` is covered by its decision event.
+   */
+  private auditForward(method: string, server: string, name: string | undefined, params: unknown): void {
+    this.audit({ kind: 'request', method, name, server, outcome: 'forwarding', payload: { params } });
   }
 
   private append(e: EventInput): boolean {

@@ -152,6 +152,34 @@ describe('TaintEngine: decoded outputs and attribution bounds', () => {
     expect(t.decide('hook', 'post_webhook', 'hook__post_webhook', { body: 'hello' }).attributionDegraded).toBe(true);
   });
 
+  // 6a review, untested path 4: truncation of a *trusted* output's decoding. Only labelled outputs
+  // (untrusted, or above public) degrade later decisions; a trusted public one carries nothing to lose.
+  it('a trusted but internal output too large to decode fully also marks later decisions degraded', () => {
+    const t = new TaintEngine(cfg(demoServers));
+    const r = t.ingest('tool', 'files', 'files__read_file', 'read_file', text('lorem ipsum '.repeat(20_000)));
+    expect(r.decodeTruncated).toBe(true);
+    expect(t.context).toEqual({ integrity: 'trusted', confidentiality: 'internal' });
+    expect(t.decide('hook', 'post_webhook', 'hook__post_webhook', { body: 'hello' }).attributionDegraded).toBe(true);
+  });
+
+  it('a trusted public output too large to decode does not degrade later decisions', () => {
+    const t = new TaintEngine(cfg({ ...demoServers, docs: { command: 'x', defaults: { effect: 'read', integrity: 'trusted', confidentiality: 'public' } } }));
+    const r = t.ingest('tool', 'docs', 'docs__get', 'get', text('lorem ipsum '.repeat(20_000)));
+    expect(r.decodeTruncated).toBe(true);
+    expect(t.decide('hook', 'post_webhook', 'hook__post_webhook', { body: 'hello' }).attributionDegraded).toBe(false);
+  });
+
+  it('past the output decode bound, a clear-text secret is still found; an encoded one is not (pinned bound)', () => {
+    const pad = 'lorem ipsum '.repeat(12_000); // > 128 KiB
+    const clear = new TaintEngine(cfg(demoServers));
+    expect(clear.ingest('tool', 'files', 'files__read_file', 'read_file', text(`${pad} key=${CANARY}`)).secretsDetected).toContain('aws-access-key-id');
+    expect(clear.context.confidentiality).toBe('secret');
+    const encoded = new TaintEngine(cfg(demoServers));
+    const r = encoded.ingest('tool', 'files', 'files__read_file', 'read_file', text(`${pad} ${Buffer.from(CANARY).toString('base64')}`));
+    expect(r.secretsDetected).toEqual([]);
+    expect(r.decodeTruncated).toBe(true); // ...and the decision says so, rather than silently missing it
+  });
+
   it('benign arguments produce no decoded evidence against benign outputs', () => {
     const t = new TaintEngine(cfg(demoServers));
     t.ingest('tool', 'web', 'web__fetch_url', 'fetch_url', text('Release notes: commit 9fceb02d0ae598e95dc970b74767f19372d61af8 fixed the parser. See https://example.org/notes for details.'));

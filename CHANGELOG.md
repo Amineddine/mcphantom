@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **A policy `ask` was skipped in trifecta audit mode.** With `taint.trifecta: log`, a call that tripped
+  the invariant was allowed without asking, even when a policy rule required confirmation. The `ask`
+  now applies; the decision's reason also records the audited invariant. The default
+  (`taint.trifecta: deny`) was not affected.
+- **`logging.on_failure: deny` now holds before forwarding.** `prompts/get`, `resources/read`,
+  `resources/subscribe` and `completion/complete` were sent upstream before anything was audited; only
+  the response was withheld. They are now recorded first (`request` event, outcome `forwarding`), and
+  not sent if that write fails. The default (`warn`) was not affected beyond the extra event.
+
 ## 0.1.0 (2026-10-13)
 
 First public release. Early software: read
