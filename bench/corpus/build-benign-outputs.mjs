@@ -47,7 +47,7 @@ function gen(r) {
 }
 
 const names = ['alice', 'bob', 'carol', 'dave', 'erin', 'frank', 'grace', 'heidi'];
-const words = ['billing', 'search', 'checkout', 'onboarding', 'reports', 'gateway', 'worker', 'scheduler', 'auth', 'notifications'];
+const words = ['billing', 'search', 'checkout', 'onboarding', 'reports', 'gateway', 'worker', 'scheduler', 'pricing', 'notifications'];
 
 const templates = {
   'aws-ec2-describe-instances': (g) => JSON.stringify({

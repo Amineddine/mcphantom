@@ -1,0 +1,8 @@
+# Verified false positives only: each entry names one finding by commit, file, rule and line.
+#
+# 9dc0ef1 bench/corpus/benign-outputs-synthetic.json:353 — synthetic benchmark data (seeded generator,
+# bench/corpus/build-benign-outputs.mjs). A Terraform-state template put the word "auth" (a resource
+# name) next to a random resource id, which generic-api-key matched. Not a credential; the generator
+# no longer uses that word (fixed in the following commit). The commit is on a PR branch, and this repo
+# does not force-push, so it stays in history.
+9dc0ef1743d5c6a1ef97a22b0d548fdb73b32b7b:bench/corpus/benign-outputs-synthetic.json:generic-api-key:353
