@@ -25,6 +25,11 @@
   structural fields hide the tool, and a field that asks for sensitive data is flagged. "Always call
   this tool" is no longer read as an instruction to call another tool (it hid two GitHub tools).
   Held-out: TPR 91.7% → 100%, FPR 0.8% → 0% — on a split already observed before tuning.
+- **PostHog MCP server as a reference target** (`docs/posthog.md`). Static scan of PostHog's
+  published tool catalog (`npm run bench:posthog`): 5 of 1,121 tools would be hidden, all MCPhantom
+  false positives. A fixture-based "untrusted event data" scenario in CI: `execute-sql` output is
+  labelled untrusted, a later exfiltration is blocked, and a write back into PostHog is stopped by a
+  policy rule. A generic MCP risk, not a PostHog vulnerability; no PostHog service was contacted.
 - **PostHog API keys** (`phx_`, `phs_`, `pha_`, `phr_`, `phh_`) are detected as secrets. Project tokens
   (`phc_`) are public by design and are not.
 

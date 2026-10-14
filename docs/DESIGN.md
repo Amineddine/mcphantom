@@ -411,6 +411,33 @@ servers → 5 corpus → 5b PostHog → 6 review):
    before any live run; anything that looks like a vulnerability in PostHog itself goes to private
    disclosure, never into the write-up.
 
+   **Disclosure programme (owner, 2026-10-14, from the Bugcrowd brief dated 2025-09-10):** in scope are
+   `us.posthog.com`, `posthog.com`, `github.com/PostHog/posthog` and `github.com/PostHog/posthog.com`;
+   `mcp.posthog.com` is **not** listed, so it is out of scope — no adversarial testing there. Testing
+   accounts must use a `@bugcrowdninja.com` address; reports must be the owner's own analysis (AI-generated
+   reports are rejected); public disclosure of a finding needs PostHog's explicit permission through the
+   submission; the SQL Editor is a focus area. **Owner decisions:** all adversarial and injection work runs
+   only on local fixtures (and, in Phase 7, the local MCP server built from the in-scope repository against
+   a **local mock of the PostHog API** — approved; the local server otherwise calls PostHog cloud); the
+   crafted-event-in-cloud option is dropped; the owner's cloud project gets normal, low-volume reads only;
+   anything touching access control around `execute-sql` / the SQL Editor stops work and goes to Bugcrowd
+   privately. The write-up is framed as a generic MCP risk with PostHog's mitigations credited.
+
+   **Done in 6b (PR 5b, option (b), owner):** `docs/posthog.md` (summary for PostHog, scenario, results).
+   Static scan (`npm run bench:posthog`, `bench/corpus/import-posthog.mjs`, PostHog/posthog @ 61a8655,
+   MIT; nothing under `ee/` read): coverage is all 1,121 tools' name/title/description/annotations and
+   the 43 published input-schema definitions (only `ExecuteSQLSchema` attached to its tool); 5 tools hidden
+   (0.4%), all MCPhantom false positives — three from the tool-shadowing rule reading "this tool" as
+   another tool (same self-reference flaw fixed in the redirect rule in 5t; fix in the next tuning round,
+   recorded as found on this scan, not tuned here). Scenario (`test/posthog-scenario.e2e.test.ts`): a
+   fixture with PostHog's exact `execute-sql` definition and generic-client response envelope; scripted
+   tool calls, inert placeholder marker; exfiltration blocked by the trifecta, a write back into PostHog
+   blocked by a policy `ask` (integrity-only attacks need a rule). `suggest` already maps `openWorldHint`
+   to untrusted output (server-claimed), pinned by a test on the real definition.
+
+   **Moved to Phase 7 (owner):** PostHog's real MCP server (sparse checkout, `pnpm` via corepack, a Redis)
+   against the local mock backend — each install step confirmed with the owner first.
+
 Owner decisions for 6b (2026-10-13): `may_receive` runs in two modes — Layer-2 evidence always on
 (restriction only) and the context label opt-in per server; unset means no change. Entropy-only hits
 default to `record` (redacted and logged, no label change); a PostHog `phx_` key rule is added with them.
@@ -450,7 +477,7 @@ Every phase ends with green CI, a commit, and a written hostile review with its 
 | 5 | **Policy engine (CEL).** Loader, AST schema lint, evaluator, deny>ask>allow, declassify, `lint`/`test`/`explain`; `init` bulk classification suggestions | Contract tests on CEL semantics, property + fuzz tests |
 | 6 | **Taint deepening.** Decoded/fuzzy/cumulative matchers, secret detectors, Tier A/B bounded index with eviction events and `attribution_degraded`, elicitation/ask flow; exfiltration attack servers | Adversarial evasion suite, with the evasions that succeed published |
 | 6.5 | **v0.1 public release** (right after 6a): polished README with a "Related work" section, scripted demo GIF, repository made public — **only with the owner's explicit confirmation** | README claims each link to a reproducible command; GIF regenerates from a script |
-| 7 | **Tier-1 runtime benchmark** (`mcp-attack-bench`), adapter spec, latency + memory + eviction-loss benchmarks (semantic layer dropped from v1) | Numbers and methodology published |
+| 7 | **Tier-1 runtime benchmark** (`mcp-attack-bench`), adapter spec, latency + memory + eviction-loss benchmarks (semantic layer dropped from v1). **Fresh held-out poisoned set** (owner, 2026-10-14): new third-party sources, frozen before running, replacing the scanner test split observed in 6b. **PostHog:** real server against the local mock backend; false-block rate on normal PostHog workflows; latency over the PostHog upstream | Numbers and methodology published |
 | 8 | **Dashboard, v1 scope: the taint-trace view only** (decision → Layer-1 sources, Layer-2 evidence, rule, degraded flag) **plus a minimal approval queue** for `ask` decisions on clients without elicitation (approve/deny one pending call, with a timeout that denies). The full "Blacklight" UI comes after v1 | Playwright e2e + dashboard security tests; queue approval/deny/timeout paths tested |
 | 9 | **Showcase + Tier-2 live runs.** The headline demo uses **real Claude Code as the MCP client against a real poisoned page**, with a **replay mode** (recorded real transcript, model + date shown) for anyone without Claude Code. The demo must run **from the installed package — `npx mcphantom demo`** — not only a dev checkout. Tier-2 bulk runs: Ollama default; Anthropic API behind a flag with the USD-50 cap. The deterministic `npm run demo` is kept as the CI regression test. | Live attack-success rates with confidence intervals; `npx mcphantom demo` works from a clean global install; replay mode needs no network or model |
 | 10 | **v1 hardening.** Claude Code hook integration — a `PreToolUse` hook so the client's built-in tools (Bash, WebFetch, …, which never cross MCP) are checked against the same taint state and policy, and a `SessionStart` hook that resets the session's taint (addresses over-tainting across conversations); optional per-server sandboxing of upstream servers (the real boundary for same-user tampering and host actions); an audited "trust this source" declassify offered from the approval prompt, recorded as a named declassify entry | Hook e2e against real Claude Code; sandbox escape tests per OS; every approval-created declassify appears in the trace and the policy diff |
