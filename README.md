@@ -134,6 +134,8 @@ Security-relevant defaults:
 |---|---|---|
 | `taint.trifecta` | `deny` | `log` is audit mode, which the unprotected half of the demo uses. |
 | `scan.block` / `scan.mode` | `medium` / `hide` | Flagged definitions never reach the model. |
+| `secrets.entropy.on_hit` | `record` | What a possible secret (random-looking, no known format) in a tool output does to the session label: `record` (log only), `internal`, or `secret`. Identifier-shaped values (hex, UUIDs, digests, type-prefixed ids, values of id-named fields) never raise it. ⚠ `internal`/`secret` cause false blocks: 9.2% of benign outputs are flagged (see Known limitations). |
+| `secrets.entropy.redact` | `true` | Redact possible secrets in the event log too. |
 | `rugpull.mode` / `on_bad_signature` | `enforce` / `refuse` | A tampered or malformed lockfile stops startup instead of disabling the check. |
 | `env_inherit` | `minimal` | Servers get the SDK's small environment allowlist plus their own `env`, never the gateway's full environment. |
 | `allow_sampling` | `false` | `sampling/createMessage` lets a server put text straight into the model. |
@@ -182,9 +184,18 @@ agent is safe.
 - **Layer 1 only guards data labelled `secret`.** Exfiltration of data that never got that label is not
   blocked by the invariant: `internal` files you didn't classify as secret, or a secret the detectors
   missed. You can still add per-tool rules for those cases.
-- **Secrets are detected by known formats and keywords**, plus policy-declared sources. A high-entropy
-  value with no known format and no keyword is not detected (entropy-based detection comes in the next
-  phase).
+- **Secrets are detected by known formats and keywords**, plus policy-declared sources. A random value
+  with no known format and no keyword is only a *possible* secret: an entropy detector redacts it in
+  the log and records it, but by default it does not make the session `secret`, because it can't tell
+  a key from a random id. Hex secrets, an unknown vendor's prefixed keys, a secret stored under an
+  id-named field, human-chosen passwords and other low-entropy secrets are not detected as random at
+  all (detection 78.0% of generated secrets, held-out split, `npm run bench:entropy`).
+- **⚠ `secrets.entropy.on_hit: internal` or `secret` will cause false blocks.** On benign tool outputs
+  the detector still flags **9.2%** of them (6 of 65, held-out split) — random user ids in log lines,
+  analytics result rows, e-mail local parts. With `on_hit: secret`, each such output makes the session
+  `secret`, so a later egress call trips the trifecta invariant on data that was never secret; with
+  `internal`, policy rules on `context.confidentiality` start firing. Keep the default `record` unless
+  you have measured the rate on your own tools' outputs.
 - **Over-tainting.** One untrusted page taints the rest of the connection. A client that reuses one
   connection across conversations stays tainted until MCPhantom restarts. A page that contains a
   fake-looking key makes the context `secret`.

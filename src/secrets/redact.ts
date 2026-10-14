@@ -1,4 +1,5 @@
-import { findSecrets, SENSITIVE_KEY_RE } from './detectors.js';
+import { findSecrets, SENSITIVE_KEY_RE, type SecretMatch } from './detectors.js';
+import { possibleSecretsBeyond } from './entropy.js';
 
 export interface RedactOptions {
   /** Exact values to redact wherever they occur (e.g. env values configured for upstream servers). */
@@ -6,6 +7,9 @@ export interface RedactOptions {
   /** Total characters of string content examined; anything past the budget is dropped, not logged. */
   budgetChars?: number;
   maxDepth?: number;
+  /** Also redact entropy-only possible secrets (`[REDACTED:possible-secret]`, or `possible-id` for
+   *  identifier shapes (hex, UUIDs, digests, ids)). Default true (owner decision, Phase 6b). */
+  entropy?: boolean;
 }
 
 const MIN_KNOWN_SECRET_LEN = 8;
@@ -24,6 +28,7 @@ export class Redactor {
   private readonly known: string[];
   private readonly budget: number;
   private readonly maxDepth: number;
+  private readonly entropy: boolean;
 
   constructor(opts: RedactOptions = {}) {
     const known = new Set<string>();
@@ -37,6 +42,7 @@ export class Redactor {
     this.known = [...known].sort((a, b) => b.length - a.length);
     this.budget = opts.budgetChars ?? DEFAULT_BUDGET;
     this.maxDepth = opts.maxDepth ?? DEFAULT_DEPTH;
+    this.entropy = opts.entropy ?? true;
   }
 
   redactString(text: string): string {
@@ -44,7 +50,10 @@ export class Redactor {
     for (const k of this.known) {
       if (s.includes(k)) s = s.split(k).join('[REDACTED:configured-secret]');
     }
-    const matches = findSecrets(s);
+    const matches: SecretMatch[] = findSecrets(s);
+    if (this.entropy) {
+      for (const p of possibleSecretsBeyond(s, matches)) matches.push({ rule: p.shape === 'id' ? 'possible-id' : 'possible-secret', start: p.start, end: p.end });
+    }
     if (matches.length === 0) return s;
     matches.sort((a, b) => a.start - b.start || b.end - a.end);
     let out = '';

@@ -60,6 +60,7 @@ export async function startGateway(
     retentionDays: config.retention.days,
     retentionMaxMb: config.retention.max_mb,
     knownSecrets: opts.knownSecrets ?? [],
+    redactEntropy: config.secrets.entropy.redact,
     insecurePermissions: 'fix',
     logger: silentLogger,
   });

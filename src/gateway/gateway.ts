@@ -781,7 +781,7 @@ export class Gateway {
   private recordIngest(r: IngestResult): void {
     this.audit({
       kind: 'taint', server: r.ref.server, name: r.ref.source, method: r.ref.kind,
-      payload: { output: r.ref, secretsDetected: r.secretsDetected, identifiers: r.identifiers, contextBefore: r.contextBefore, contextAfter: r.contextAfter },
+      payload: { output: r.ref, secretsDetected: r.secretsDetected, possibleSecrets: r.possibleSecrets, identifiers: r.identifiers, contextBefore: r.contextBefore, contextAfter: r.contextAfter },
     });
     for (const e of r.evictions) {
       this.audit({ kind: 'eviction', server: e.output.server, name: e.output.source, payload: { output: e.output, bytes: e.bytes, stats: this.taint.indexStats } });

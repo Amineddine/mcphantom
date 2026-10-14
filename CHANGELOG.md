@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+### Added
+
+- **Entropy-based possible-secret detection.** Random-looking tokens with no known format are redacted
+  in the event log and counted on each ingested output (`mcphantom trace` shows them). By default they
+  do **not** change the session label, since they can't be told apart from random ids;
+  `secrets.entropy.on_hit: internal | secret` makes them escalate. Identifier-shaped values (hex,
+  UUIDs, digests, type-prefixed ids, values of id-named fields) are recorded only. Measured with
+  `npm run bench:entropy` (in CI, held-out split): 9.2% of benign outputs still contain such a token,
+  so escalating causes false blocks; detection 78.0% of generated secrets.
+- **PostHog API keys** (`phx_`, `phs_`, `pha_`, `phr_`, `phh_`) are detected as secrets. Project tokens
+  (`phc_`) are public by design and are not.
+
 ### Fixed
 
 - **A policy `ask` was skipped in trifecta audit mode.** With `taint.trifecta: log`, a call that tripped
