@@ -44,8 +44,8 @@ export interface IngestResult {
   ref: OutputRef;
   secretsDetected: string[];
   /** Entropy-only "possible secrets" (no known format), by shape. Values are never recorded. Whether
-   *  `random` ones raised the label is `secrets.entropy.on_hit`; `hash` ones never do. */
-  possibleSecrets: { random: number; hash: number };
+   *  `random` ones raised the label is `secrets.entropy.on_hit`; `id` (identifier-shaped) ones never do. */
+  possibleSecrets: { random: number; id: number };
   identifiers: number;
   evictions: EvictionNotice[];
   /** Decoding of this output was cut short by a bound; encoded identifiers past it are not indexed. */
@@ -132,8 +132,8 @@ export class TaintEngine {
     };
   }
 
-  private possibleSecrets(texts: string[]): { random: number; hash: number } {
-    const out = { random: 0, hash: 0 };
+  private possibleSecrets(texts: string[]): { random: number; id: number } {
+    const out = { random: 0, id: 0 };
     if (!this.config.secrets.entropy.enabled) return out;
     const raw = texts.join('\n').slice(0, MAX_ENTROPY_SCAN);
     for (const p of possibleSecretsBeyond(raw, findSecrets(raw))) out[p.shape]++;

@@ -7,8 +7,8 @@ export interface RedactOptions {
   /** Total characters of string content examined; anything past the budget is dropped, not logged. */
   budgetChars?: number;
   maxDepth?: number;
-  /** Also redact entropy-only possible secrets (`[REDACTED:possible-secret]`, or `possible-hash` for
-   *  hex/UUID/digest shapes). Default true (owner decision, Phase 6b). */
+  /** Also redact entropy-only possible secrets (`[REDACTED:possible-secret]`, or `possible-id` for
+   *  identifier shapes (hex, UUIDs, digests, ids)). Default true (owner decision, Phase 6b). */
   entropy?: boolean;
 }
 
@@ -52,7 +52,7 @@ export class Redactor {
     }
     const matches: SecretMatch[] = findSecrets(s);
     if (this.entropy) {
-      for (const p of possibleSecretsBeyond(s, matches)) matches.push({ rule: p.shape === 'hash' ? 'possible-hash' : 'possible-secret', start: p.start, end: p.end });
+      for (const p of possibleSecretsBeyond(s, matches)) matches.push({ rule: p.shape === 'id' ? 'possible-id' : 'possible-secret', start: p.start, end: p.end });
     }
     if (matches.length === 0) return s;
     matches.sort((a, b) => a.start - b.start || b.end - a.end);
