@@ -1,7 +1,5 @@
 import { celFunc, CelScalar, listType } from '@bufbuild/cel';
-import { findSecrets } from '../secrets/detectors.js';
-import { decodeVariants, type DecodeLimits } from '../text/decode.js';
-import { fold } from '../text/normalize.js';
+import { secretRuleIn } from '../secrets/in-value.js';
 import { hasOutsideTarget } from '../taint/egress.js';
 import { globMatchAny } from './glob.js';
 import type { CelFuncDef } from './cel.js';
@@ -62,18 +60,10 @@ export function buildFunctions(ctx: PolicyContext): CelFuncDef[] {
   ];
 }
 
-const SECRET_DECODE_LIMITS: DecodeLimits = { maxDepth: 3, maxVariants: 32, maxChars: 256 * 1024, wholeOn: 'tokens' };
-/** Characters of a value searched in decoded form. The clear-text search always covers all of it; past
- *  this bound an encoded secret is left to Layer 1 and to attribution (which flags its own bounds). */
-const SECRET_DECODE_CHARS = 32 * 1024;
-
 function containsSecret(value: string, ctx: PolicyContext): boolean {
-  if (findSecrets(value).length > 0 || findSecrets(fold(value)).length > 0) return true;
-  for (const v of decodeVariants(value.slice(0, SECRET_DECODE_CHARS), SECRET_DECODE_LIMITS).variants) {
+  return secretRuleIn(value, () => {
     checkDeadline(ctx);
-    if (findSecrets(fold(v.text)).length > 0) return true;
-  }
-  return false;
+  }) !== undefined;
 }
 
 /** Names of the custom functions, for the linter to recognise. */

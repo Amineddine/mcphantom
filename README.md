@@ -136,6 +136,8 @@ Security-relevant defaults:
 | `scan.block` / `scan.mode` | `medium` / `hide` | Flagged definitions never reach the model. |
 | `secrets.entropy.on_hit` | `record` | What a possible secret (random-looking, no known format) in a tool output does to the session label: `record` (log only), `internal`, or `secret`. Hash-shaped values (hex, UUIDs, digests) never raise it. |
 | `secrets.entropy.redact` | `true` | Redact possible secrets in the event log too. |
+| `servers.<id>.may_receive` | unset | The most confidential data this server may receive in tool-call arguments: `public`, `internal` or `secret`. |
+| `servers.<id>.may_receive_mode` | `evidence` | `evidence`: deny when an argument carries a credential or comes, per Layer 2, from data above the bound. `context`: also deny whenever the session holds such data (sound, blocks more). |
 | `rugpull.mode` / `on_bad_signature` | `enforce` / `refuse` | A tampered or malformed lockfile stops startup instead of disabling the check. |
 | `env_inherit` | `minimal` | Servers get the SDK's small environment allowlist plus their own `env`, never the gateway's full environment. |
 | `allow_sampling` | `false` | `sampling/createMessage` lets a server put text straight into the model. |
@@ -194,8 +196,12 @@ agent is safe.
   connection across conversations stays tainted until MCPhantom restarts. A page that contains a
   fake-looking key makes the context `secret`.
 - **`ask` without elicitation is a deny.** There is no approval queue yet (planned for v1).
-- **Per-server `may_receive` confidentiality bounds** are in the design but not implemented. Today every
-  `tools/call` argument reaches its server unless a rule or the trifecta invariant stops the call.
+- **What a server receives is bounded only if you set `may_receive` on it.** Unset, every `tools/call`
+  argument reaches its server unless a rule or the trifecta invariant stops the call — and the trifecta
+  only guards `egress`/`exec` tools, so a server whose "read-only" tool simply keeps what it is sent is
+  not covered. In the default `evidence` mode the bound catches credentials and data Layer 2 can
+  attribute; an encoding it doesn't decode gets through (`may_receive_mode: context` closes that, at the
+  cost of blocking that server once such data was read).
 - **Images and audio** are labelled by their source but not inspected.
 - **Large inputs fail closed.** Policy evaluation has a 50 ms deadline; an extreme call (≈ 4000 fields
   on a slow machine) can be denied.

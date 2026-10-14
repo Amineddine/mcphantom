@@ -1,12 +1,13 @@
 import { resolve } from 'node:path';
 import type { Classification, Config } from '../config/schema.js';
 import { hasOutsideTarget } from './egress.js';
-import { BOTTOM, canExfiltrate, join, type Effect, type Label } from './labels.js';
+import { BOTTOM, canExfiltrate, confAtLeast, join, type Confidentiality, type Effect, type Label } from './labels.js';
 import { ProvenanceIndex, type EvictionNotice, type Evidence, type OutputRef } from './provenance.js';
-import { resultTexts } from './text.js';
+import { leaves, resultTexts } from './text.js';
 import { PolicyEngine, type PolicyOutcome } from '../policy/engine.js';
 import { findSecrets } from '../secrets/detectors.js';
 import { MAX_ENTROPY_SCAN, possibleSecretsBeyond } from '../secrets/entropy.js';
+import { secretRuleIn } from '../secrets/in-value.js';
 
 export interface ResolvedClassification {
   effect: Effect;
@@ -62,7 +63,7 @@ export interface Decision {
   id: string;
   verdict: Verdict;
   /** Set when an invariant or policy rule drove the verdict; in audit mode the verdict stays `allow`. */
-  rule?: 'trifecta' | 'policy';
+  rule?: 'trifecta' | 'policy' | 'may_receive';
   enforced: boolean;
   /** Policy rule matches and errors for this call (undefined if the tool has no rules). */
   policy?: PolicyOutcome;
@@ -164,7 +165,14 @@ export class TaintEngine {
       return { ...base, verdict: 'deny', rule: 'policy', enforced: true, reason: err ? `policy failed closed (${err.origin}): ${err.message}` : `denied by policy rule (${policy.matches.find((m) => m.effect === 'deny')?.origin ?? '?'})` };
     }
 
-    // 2. The trifecta invariant, unless a named declassify entry lifts it for this call.
+    // 2. The server's `may_receive` bound: every call sends its arguments to the server's operator.
+    const bound = this.config.servers[serverId]?.may_receive;
+    if (bound) {
+      const why = this.mayReceiveViolation(serverId, bound, args, attribution.evidence);
+      if (why) return { ...base, verdict: 'deny', rule: 'may_receive', enforced: true, reason: `server '${serverId}' may receive at most ${bound} data; ${why}` };
+    }
+
+    // 3. The trifecta invariant, unless a named declassify entry lifts it for this call.
     const trifecta = canExfiltrate(effect) && this.context.integrity === 'untrusted' && this.context.confidentiality === 'secret';
     if (trifecta && !policy?.declassified) {
       const enforced = this.config.taint.trifecta === 'deny';
@@ -180,12 +188,12 @@ export class TaintEngine {
       return { ...base, verdict: enforced ? 'deny' : 'allow', rule: 'trifecta', enforced, reason };
     }
 
-    // 3. A policy `ask`.
+    // 4. A policy `ask`.
     if (policy?.effect === 'ask') {
       return { ...base, verdict: 'ask', rule: 'policy', enforced: true, reason: askReason(policy) };
     }
 
-    // 4. Allow (noting a lifted invariant when that is why we are here).
+    // 5. Allow (noting a lifted invariant when that is why we are here).
     const lifted = trifecta && policy?.declassified;
     return {
       ...base,
@@ -193,6 +201,28 @@ export class TaintEngine {
       enforced: false,
       reason: lifted ? `trifecta lifted by declassify '${policy.declassified?.id}': ${policy.declassified?.reason}` : allowReason(effect, this.context),
     };
+  }
+
+  /**
+   * Why sending `args` to `serverId` would exceed its `may_receive` bound, or undefined. Evidence mode:
+   * an argument carries a credential (only `secret` data is known from content alone), or Layer 2
+   * attributes it to an output labelled above the bound — evidence may add restrictions (DESIGN.md §2,
+   * honesty rule), so every matcher counts here. Context mode adds the sound check on the context label.
+   */
+  private mayReceiveViolation(serverId: string, bound: Confidentiality, args: unknown, evidence: Evidence[]): string | undefined {
+    const above = (c: Confidentiality): boolean => c !== bound && confAtLeast(c, bound);
+    if (this.config.servers[serverId]?.may_receive_mode === 'context' && above(this.context.confidentiality)) {
+      return `the session context is ${this.context.confidentiality} (may_receive_mode: context)`;
+    }
+    if (above('secret')) {
+      for (const leaf of leaves(args).slice(0, MAX_BOUND_LEAVES)) {
+        const rule = secretRuleIn(leaf.value.slice(0, MAX_BOUND_LEAF_CHARS));
+        if (rule) return `argument ${leaf.path} carries a credential (${rule})`;
+      }
+    }
+    const hit = evidence.find((e) => above(e.output.label.confidentiality));
+    if (hit) return `argument ${hit.argPath} came from ${hit.output.source}, labelled ${hit.output.label.confidentiality} (${hit.matcher})`;
+    return undefined;
   }
 
   /**
@@ -220,6 +250,10 @@ export class TaintEngine {
     return this.index.stats;
   }
 }
+
+/** Bounds of the credential search for `may_receive` (same per-leaf cap as attribution). */
+const MAX_BOUND_LEAVES = 512;
+const MAX_BOUND_LEAF_CHARS = 64 * 1024;
 
 function askReason(policy: PolicyOutcome): string {
   return `policy requires user confirmation (${policy.matches.find((m) => m.effect === 'ask')?.origin ?? '?'})`;

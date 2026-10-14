@@ -140,9 +140,15 @@ treated as proof of absence of flow; any policy relying on that gets a "precisio
 lint warning.
 
 Every server also receives its arguments, so every `tools/call` is egress to that server's operator:
-per-server `may_receive` bounds the confidentiality of what may be sent to it. **Not implemented in
-v0.1**; scheduled for 6b (owner decision 2026-10-13): today what a server receives is bounded only by policy rules and the trifecta
-invariant, which the README's limitations state.
+per-server `may_receive` bounds the confidentiality of what may be sent to it, whatever the tool's
+effect (implemented in 6b; owner decision 2026-10-13). It is one level, `may_receive: public | internal |
+secret`; unset means no bound. Two modes: **`evidence`** (default) denies a call when an argument carries a
+known-format credential or Layer 2 attributes it to an output labelled above the bound — a restriction,
+which the honesty rule allows, but bypassable by encodings attribution misses; **`context`** (opt-in per
+server, `may_receive_mode: context`) also denies whenever the session context is above the bound — sound,
+at the cost of blocking every call to that server once such data was read. Precedence: policy deny →
+`may_receive` → trifecta → ask → allow; a declassify entry lifts the trifecta only. Pinned against the
+"server that is itself the sink" fixture (`test/may-receive.test.ts`), whose own log is the oracle.
 
 ### Bounded memory and eviction
 
@@ -191,6 +197,10 @@ timeout, else deny. **Staging (owner decision 2026-10-13):** v0.1 has no queue �
 ### 3.1 Shape
 
 YAML documents with expressions in conditions:
+
+*This is the design sketch from 2026-10-12. The shipped syntax differs in places — the README's
+configuration section and `src/config/schema.ts` are authoritative. For example `may_receive` is a single
+level set directly on the server (`may_receive: internal`), not a list inside `trust`.*
 
 ```yaml
 version: 1
@@ -338,6 +348,13 @@ config (`enabled`, `on_hit: record|internal|secret`, default `record`, `redact`)
 `bench:entropy` in CI over 124 benign outputs (31 real, 93 synthetic) and 128 generated random secrets,
 dev/test split fixed before tuning; held-out FPR 40.0% (26/65), detection 68/68, hex secrets 0% by
 design. Floor: FPR ≤ 50%, detection ≥ 95%.
+
+**6b — PR 3 (`may_receive`).** Per-server bound with `evidence` (default) and opt-in `context` modes, as
+above; the credential check is shared with `containsSecret()` (`src/secrets/in-value.ts`). Attack fixture:
+`test/fixtures/servers/sink.ts`, a read-only-looking "summarize" tool that logs what it receives. Tests show
+the attack succeeding without a bound, blocked with one, the published bypass of evidence mode (decimal
+character codes) and context mode closing it. Deferred: `suggest` proposing a `may_receive` value (no
+server-level suggestion exists yet; not guessed).
 
 **6b** (plan, PR order: 1 untested paths → 2 entropy → 3 `may_receive` + sink server → 4 exfiltration
 servers → 5 corpus → 5b PostHog → 6 review):

@@ -10,6 +10,10 @@
   `secrets.entropy.on_hit: internal | secret` makes them escalate. Hex, UUIDs and digests are recorded
   only. Measured with `npm run bench:entropy` (in CI): 40.0% of held-out benign outputs contain such a
   token.
+- **Per-server `may_receive`.** Bounds the confidentiality of what a server may receive in tool-call
+  arguments, for every tool (not only egress ones), so a server whose "read-only" tool keeps what it is
+  sent is covered. `evidence` mode (default) blocks credentials and data Layer 2 attributes to more
+  confidential outputs; `context` mode blocks whenever the session holds such data. Unset: no change.
 - **PostHog API keys** (`phx_`, `phs_`, `pha_`, `phr_`, `phh_`) are detected as secrets. Project tokens
   (`phc_`) are public by design and are not.
 
