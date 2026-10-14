@@ -160,6 +160,9 @@ miss are in the linked files.
 | Decision latency (laptop, i5-8250U) | p50 1.6 ms (small args), 86 ms (128 KB body) | `npm run bench:policy` → [results](bench/results/policy-bench.md) |
 | Proxy overhead per call | low single-digit ms at 1 KB; ~37 ms at 1 MB | `npm run bench:latency` → [results](bench/results/phase1-latency.md) |
 
+**Real-world reference: PostHog's MCP server.** What PostHog already does well, what MCPhantom adds,
+the "untrusted event data" scenario and the catalog scan: [docs/posthog.md](docs/posthog.md).
+
 These suites are written by the author, so they measure the attacks we thought of. Live attack-success
 rates against real models (and an AgentDojo-style evaluation) are not measured yet; that is Phase 9.
 
