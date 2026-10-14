@@ -895,7 +895,9 @@ export function blockedResult(d: Decision): CallToolResult {
           `MCPhantom blocked this call (rule: ${d.rule ?? 'policy'}, decision ${d.id}). ` +
           (d.rule === 'trifecta'
             ? 'This session has handled untrusted content and secret data, so tools that can send data out are disabled for it. '
-            : d.verdict === 'ask'
+            : d.rule === 'may_receive'
+              ? `This server is not allowed to receive the data in these arguments: ${d.reason}. `
+              : d.verdict === 'ask'
               ? 'This call needs the user’s confirmation, which was not given (or the client cannot ask). '
               : `It is not allowed by the configured policy: ${d.reason}. `) +
           'Tell the user; they can inspect it with "mcphantom trace".',

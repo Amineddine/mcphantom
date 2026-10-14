@@ -40,6 +40,15 @@ const common = {
   /** Relay `sampling/createMessage` from this server to the client. Off by default: sampling lets a
    *  server put arbitrary text straight into the model. */
   allow_sampling: z.boolean().default(false),
+  /** The highest confidentiality this server may receive in tool-call arguments (DESIGN.md §2): every
+   *  `tools/call` sends its arguments to the server's operator, whatever the tool's effect. Unset: no
+   *  bound (only policy rules and the trifecta invariant apply). */
+  may_receive: z.enum(['public', 'internal', 'secret']).optional(),
+  /** How `may_receive` is checked. `evidence` (default): deny when an argument carries a credential or is
+   *  attributed by Layer 2 to an output labelled above the bound — precise, but bypassable by encodings
+   *  attribution misses. `context`: also deny whenever the session context label is above the bound —
+   *  sound, but blocks every call to this server once such data has been read. */
+  may_receive_mode: z.enum(['evidence', 'context']).default('evidence'),
   startup_timeout_ms: z.number().int().positive().max(600_000).default(30_000),
 };
 
