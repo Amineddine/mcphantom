@@ -40,9 +40,14 @@ function stableSplit(key: string): 'dev' | 'test' {
 const items: Item[] = [
   ...load('benign-fs.json'),
   ...load('benign-official.json'),
+  // Phase 6b: real first-party definitions (bench/corpus/import-benign-thirdparty.mjs; licences in NOTICE).
+  ...load('benign-github.json'),
+  ...load('benign-playwright.json'),
   // Benign shapes that once caused false positives (AUD-6); kept so the regression stays measured.
   ...load('benign-regressions.json'),
   ...load('malicious.json'),
+  // Phase 6b: rewritten from published third-party research, held-out TEST split only (never tuned on).
+  ...load('malicious-thirdparty.json'),
 ].map((it) => ({ ...it, split: it.split ?? stableSplit(`${it.source ?? ''}|${it.tool.name}|${it.tool.description ?? ''}`) }));
 
 interface Counts {

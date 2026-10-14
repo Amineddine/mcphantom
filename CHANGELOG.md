@@ -15,6 +15,11 @@
   arguments, for every tool (not only egress ones), so a server whose "read-only" tool keeps what it is
   sent is covered. `evidence` mode (default) blocks credentials and data Layer 2 attributes to more
   confidential outputs; `context` mode blocks whenever the session holds such data. Unset: no change.
+- **Scanner benchmark on a realistic corpus.** 254 benign tool definitions (213 new: GitHub's MCP
+  server, MIT, and Microsoft's Playwright MCP server, Apache-2.0; licences in NOTICE) and 5 poisoned
+  definitions rewritten from published attacks (Invariant Labs, CyberArk, Trail of Bits), all in the
+  held-out split. Held-out TPR 91.7%, FPR 0.8%; the miss (a payload in a parameter name) and both false
+  positives are listed in `bench/results/scanner-bench.md`.
 - **PostHog API keys** (`phx_`, `phs_`, `pha_`, `phr_`, `phh_`) are detected as secrets. Project tokens
   (`phc_`) are public by design and are not.
 
