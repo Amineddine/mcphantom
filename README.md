@@ -154,10 +154,14 @@ miss are in the linked files.
 | What | Result | Command |
 |---|---|---|
 | Static scanner, held-out split | TPR 100% (12/12), FPR 0% (0/132), after one tuning round on the dev split; before it, 91.7% / 0.8%. **The held-out split had already been seen before that round**, so treat the 100% as weaker evidence than a first run. Corpus: **260 benign** definitions (248 real: official reference servers, GitHub's and Microsoft Playwright's MCP servers) and **27 poisoned** (22 author-written, 5 rewritten from published third-party attacks, all 5 held out). Every model-visible schema field is scanned, parameter names included. A regression floor, not a claim about novel attacks. | `npm run bench:scanner` → [results](bench/results/scanner-bench.md) |
+| Static scanner on PostHog's published MCP tool catalog | 5 of 1,121 tools hidden (0.4%), all false positives of MCPhantom's; coverage stated exactly (descriptions/titles/annotations of all tools, 43 input schemas). See [docs/posthog.md](docs/posthog.md). | `npm run bench:posthog` → [results](bench/results/posthog-scan.md) |
 | Layer-2 attribution under evasion | **143/143** claimed transformations caught; **0/39** of the transformations the design says it does not catch; **0/36** false attributions on unrelated benign pairs | `npm run bench:evasion` → [results](bench/results/evasion-bench.md) |
 | Scanner under disguise | **90/90** claimed disguises caught | `npm run bench:evasion` |
 | Decision latency (laptop, i5-8250U) | p50 1.6 ms (small args), 86 ms (128 KB body) | `npm run bench:policy` → [results](bench/results/policy-bench.md) |
 | Proxy overhead per call | low single-digit ms at 1 KB; ~37 ms at 1 MB | `npm run bench:latency` → [results](bench/results/phase1-latency.md) |
+
+**Real-world reference: PostHog's MCP server.** What PostHog already does well, what MCPhantom adds,
+the "untrusted event data" scenario and the catalog scan: [docs/posthog.md](docs/posthog.md).
 
 These suites are written by the author, so they measure the attacks we thought of. Live attack-success
 rates against real models (and an AgentDojo-style evaluation) are not measured yet; that is Phase 9.
