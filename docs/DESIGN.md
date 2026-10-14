@@ -365,6 +365,20 @@ the attack succeeding without a bound, blocked with one, the published bypass of
 character codes) and context mode closing it. Deferred: `suggest` proposing a `may_receive` value (no
 server-level suggestion exists yet; not guessed).
 
+**6b — PR 4a (pre-push log).** The hook keeps its full output in `.git/mcphantom-pre-push.log`. The
+exfiltration scenarios (PR 4b) were reshaped by the owner after a safety-classifier interruption: a
+scripted agent issuing tool-call sequences directly (no injection prose; an inert placeholder marker),
+fragment-built canaries, sinks that enforce loopback in code, one small test per channel — after 5/5b.
+
+**6b — PR 5 (corpus).** Benign scanner corpus 41 → 254 (`bench/corpus/import-benign-thirdparty.mjs`:
+github/github-mcp-server @ c59e8c1, MIT, its own tool-definition snapshots; microsoft/playwright-mcp @
+b8b4183, Apache-2.0, reconstructed from its generated README). No third-party server code was executed.
+Five poisoned definitions rewritten from published research (`build-malicious-thirdparty.mjs`; Invariant
+Labs repo has no licence, so nothing is copied), test split only, written before the scanner saw them.
+Held-out: TPR 100% → 91.7% (the new miss: full-schema poisoning via a parameter name and default),
+FPR 0% → 0.8% (two GitHub notification tools that direct the model to another tool). Not tuned in this
+PR — fixing either needs a dev-split example first (owner decision).
+
 **6b** (plan, PR order: 1 untested paths → 2 entropy → 3 `may_receive` + sink server → 4 exfiltration
 servers → 5 corpus → 5b PostHog → 6 review):
 1. Entropy-based secret detection. **Owner constraint:** entropy-only hits (no known format, no

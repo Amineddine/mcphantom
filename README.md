@@ -153,7 +153,7 @@ miss are in the linked files.
 
 | What | Result | Command |
 |---|---|---|
-| Static scanner, held-out split | TPR 100%, FPR 0%, on **14 author-written poisoned + 41 benign** definitions (35 from official servers). Small corpus: a regression floor, not a claim about novel attacks. | `npm run bench:scanner` → [results](bench/results/scanner-bench.md) |
+| Static scanner, held-out split | TPR 91.7% (11/12), FPR 0.8% (1/132). Corpus: **254 benign** definitions (248 real: official reference servers, GitHub's and Microsoft Playwright's MCP servers) and **19 poisoned** (14 author-written, 5 rewritten from published third-party attacks, all 5 in the held-out split). The miss is CyberArk-style full-schema poisoning (payload in a parameter name); the false positives are two GitHub tools whose descriptions direct the model to another tool. A regression floor, not a claim about novel attacks. | `npm run bench:scanner` → [results](bench/results/scanner-bench.md) |
 | Layer-2 attribution under evasion | **143/143** claimed transformations caught; **0/39** of the transformations the design says it does not catch; **0/36** false attributions on unrelated benign pairs | `npm run bench:evasion` → [results](bench/results/evasion-bench.md) |
 | Scanner under disguise | **90/90** claimed disguises caught | `npm run bench:evasion` |
 | Decision latency (laptop, i5-8250U) | p50 1.6 ms (small args), 86 ms (128 KB body) | `npm run bench:policy` → [results](bench/results/policy-bench.md) |

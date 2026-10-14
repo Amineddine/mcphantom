@@ -1,35 +1,35 @@
 {
   "env": {
-    "date": "2026-10-13T04:10:51.413Z",
+    "date": "2026-10-14T03:15:42.559Z",
     "node": "v22.19.0",
     "os": "Windows_NT 10.0.26200"
   },
   "test": {
-    "tp": 7,
-    "fp": 0,
-    "tn": 23,
-    "fn": 0,
-    "tpr": 1,
-    "fpr": 0,
-    "precision": 1
+    "tp": 11,
+    "fp": 1,
+    "tn": 131,
+    "fn": 1,
+    "tpr": 0.9166666666666666,
+    "fpr": 0.007575757575757576,
+    "precision": 0.9166666666666666
   },
   "dev": {
     "tp": 7,
-    "fp": 0,
-    "tn": 18,
+    "fp": 1,
+    "tn": 121,
     "fn": 0,
     "tpr": 1,
-    "fpr": 0,
-    "precision": 1
+    "fpr": 0.00819672131147541,
+    "precision": 0.875
   },
   "all": {
-    "tp": 14,
-    "fp": 0,
-    "tn": 41,
-    "fn": 0,
-    "tpr": 1,
-    "fpr": 0,
-    "precision": 1
+    "tp": 18,
+    "fp": 2,
+    "tn": 252,
+    "fn": 1,
+    "tpr": 0.9473684210526315,
+    "fpr": 0.007874015748031496,
+    "precision": 0.9
   },
   "byCategory": {
     "hidden-unicode": {
@@ -37,18 +37,23 @@
       "caught": 4
     },
     "embedded-instruction": {
-      "total": 6,
-      "caught": 6
+      "total": 9,
+      "caught": 8
     },
     "exfiltration-hint": {
       "total": 2,
       "caught": 2
     },
     "tool-shadowing": {
-      "total": 2,
-      "caught": 2
+      "total": 4,
+      "caught": 4
     }
   },
-  "falsePositives": [],
-  "falseNegatives": []
+  "falsePositives": [
+    "github/github-mcp-server@c59e8c1 (MIT) get_notification_details: instruction to the model to invoke or feed another tool",
+    "github/github-mcp-server@c59e8c1 (MIT) list_notifications: instruction to the model to invoke or feed another tool"
+  ],
+  "falseNegatives": [
+    "embedded-instruction: Adds two numbers."
+  ]
 }
