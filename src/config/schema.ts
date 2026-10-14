@@ -109,6 +109,24 @@ export const ConfigSchema = z.strictObject({
       max_index_mb: z.number().positive().max(4096).default(32),
     })
     .default({ trifecta: 'deny', max_index_mb: 32 }),
+  secrets: z
+    .strictObject({
+      /** Entropy-based "possible secret" detection (src/secrets/entropy.ts): random-looking tokens with
+       *  no known format. It cannot tell a key from a random id (measured: `npm run bench:entropy`). */
+      entropy: z
+        .strictObject({
+          enabled: z.boolean().default(true),
+          /** Effect of a random-shaped hit in a tool output on the session label. `record` (default):
+           *  logged as a possible secret, label unchanged. `internal` / `secret`: raise the output's
+           *  confidentiality to at least that level. Hash-shaped hits (hex, UUIDs, digests) never raise
+           *  the label. */
+          on_hit: z.enum(['record', 'internal', 'secret']).default('record'),
+          /** Redact possible secrets (both shapes) in the event log. */
+          redact: z.boolean().default(true),
+        })
+        .default({ enabled: true, on_hit: 'record', redact: true }),
+    })
+    .default({ entropy: { enabled: true, on_hit: 'record', redact: true } }),
   scan: z
     .strictObject({
       enabled: z.boolean().default(true),

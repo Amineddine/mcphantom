@@ -15,7 +15,7 @@ function seed(evidence?: unknown[], attributionDegraded = false) {
   dirs.push(path.dirname(dataDir));
   const store = new SqliteStore({ dataDir, payloads: 'redacted', maxPayloadBytes: 65_536, retentionDays: 14, retentionMaxMb: 256, knownSecrets: [], insecurePermissions: 'fix', logger: silentLogger });
   store.startSession({ id: 's1' });
-  store.append({ sessionId: 's1', kind: 'taint', server: 'web', name: 'web__fetch', method: 'tool', payload: { contextAfter: { integrity: 'untrusted', confidentiality: 'public' }, secretsDetected: [] } });
+  store.append({ sessionId: 's1', kind: 'taint', server: 'web', name: 'web__fetch', method: 'tool', payload: { contextAfter: { integrity: 'untrusted', confidentiality: 'public' }, secretsDetected: [], possibleSecrets: { random: 2, hash: 5 } } });
   store.append({ sessionId: 's1', kind: 'decision', server: 'hook', name: 'hook__post', method: 'tools/call', outcome: 'denied', payload: { id: 'd1', verdict: 'deny', rule: 'trifecta', enforced: true, server: 'hook', tool: 'hook__post', effect: 'egress', context: { integrity: 'untrusted', confidentiality: 'secret' }, untrustedSources: [{ source: 'web__fetch' }], secretSources: [{ source: 'files__read' }], evidence: evidence ?? [{ argPath: '$.body', kind: 'identifier:secret', matcher: 'exact', rule: 'aws-access-key-id', output: { source: 'files__read' } }], attributionDegraded, reason: 'egress while untrusted+secret' } });
   store.close();
   return dataDir;
@@ -50,6 +50,12 @@ describe('mcphantom trace', () => {
     expect(t).toContain('$.note copy (fuzzy, score 0.72) ← web__fetch');
     expect(t).toContain('$.body identifier:secret (cumulative, joined with 2 earlier call(s)) ← files__read');
     expect(t).toMatch(/note: attribution hit a bound/);
+  });
+
+  it('shows possible-secret counts on ingested outputs (full session view)', () => {
+    const lines: string[] = [];
+    runTrace({ dataDir: seed(), last: false, json: false, paths }, (s) => lines.push(s));
+    expect(lines.join('\n')).toContain('possible secrets: 2 random, 5 hash-shaped');
   });
 
   it('emits JSON with --json', () => {

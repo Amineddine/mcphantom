@@ -27,6 +27,10 @@ export const SECRET_RULES: readonly SecretRule[] = [
   { id: 'google-api-key', re: /\bAIza[0-9A-Za-z_-]{35}\b/g },
   { id: 'stripe-key', re: /\b(?:sk|rk)_(?:live|test)_[0-9A-Za-z]{16,255}\b/g },
   { id: 'npm-token', re: /\bnpm_[A-Za-z0-9]{36}\b/g },
+  // PostHog personal (phx_), secret (phs_), OAuth access/refresh (pha_/phr_) and heatmap (phh_) keys:
+  // base57 bodies, 22-48 characters today (posthog/models/utils.py). phc_ project tokens are public
+  // by design (client-side ingestion) and deliberately not matched.
+  { id: 'posthog-key', re: /\bph[xsarh]_[A-Za-z0-9]{20,128}\b/g },
   { id: 'jwt', re: /\beyJ[A-Za-z0-9_-]{8,4096}\.eyJ[A-Za-z0-9_-]{8,8192}\.[A-Za-z0-9_-]{8,4096}\b/g },
   { id: 'bearer-token', re: /(\bBearer\s{1,8})[A-Za-z0-9._~+/=-]{16,4096}/gi, keepPrefixGroup: 1 },
   {

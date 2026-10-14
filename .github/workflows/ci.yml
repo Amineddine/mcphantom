@@ -68,6 +68,8 @@ jobs:
         run: npm run bench:scanner
       - name: tier-1 evasion benchmark (fails if a claimed evasion is missed or a benign pair is attributed)
         run: npm run bench:evasion
+      - name: tier-1 entropy benchmark (fails if the held-out FPR or detection crosses its floor)
+        run: npm run bench:entropy
       - name: install smoke test (packed tarball, fresh prefix)
         shell: bash
         run: |

@@ -134,6 +134,8 @@ Security-relevant defaults:
 |---|---|---|
 | `taint.trifecta` | `deny` | `log` is audit mode, which the unprotected half of the demo uses. |
 | `scan.block` / `scan.mode` | `medium` / `hide` | Flagged definitions never reach the model. |
+| `secrets.entropy.on_hit` | `record` | What a possible secret (random-looking, no known format) in a tool output does to the session label: `record` (log only), `internal`, or `secret`. Hash-shaped values (hex, UUIDs, digests) never raise it. |
+| `secrets.entropy.redact` | `true` | Redact possible secrets in the event log too. |
 | `rugpull.mode` / `on_bad_signature` | `enforce` / `refuse` | A tampered or malformed lockfile stops startup instead of disabling the check. |
 | `env_inherit` | `minimal` | Servers get the SDK's small environment allowlist plus their own `env`, never the gateway's full environment. |
 | `allow_sampling` | `false` | `sampling/createMessage` lets a server put text straight into the model. |
@@ -182,9 +184,12 @@ agent is safe.
 - **Layer 1 only guards data labelled `secret`.** Exfiltration of data that never got that label is not
   blocked by the invariant: `internal` files you didn't classify as secret, or a secret the detectors
   missed. You can still add per-tool rules for those cases.
-- **Secrets are detected by known formats and keywords**, plus policy-declared sources. A high-entropy
-  value with no known format and no keyword is not detected (entropy-based detection comes in the next
-  phase).
+- **Secrets are detected by known formats and keywords**, plus policy-declared sources. A random value
+  with no known format and no keyword is only a *possible* secret: an entropy detector redacts it in
+  the log and records it, but by default it does not make the session `secret`, because it can't tell
+  a key from a random id. On benign tool outputs it flags 40% of them (held-out split,
+  `npm run bench:entropy`), so turning on `secrets.entropy.on_hit: secret` over-taints a lot. Hex
+  secrets, human-chosen passwords and other low-entropy secrets are not detected at all.
 - **Over-tainting.** One untrusted page taints the rest of the connection. A client that reuses one
   connection across conversations stays tainted until MCPhantom restarts. A page that contains a
   fake-looking key makes the context `secret`.

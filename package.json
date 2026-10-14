@@ -26,6 +26,7 @@
     "bench:scanner": "tsx bench/scanner-bench.mts",
     "bench:policy": "tsx bench/policy-bench.mts",
     "bench:evasion": "tsx bench/evasion-bench.mts",
+    "bench:entropy": "tsx bench/entropy-bench.mts",
     "demo": "tsx src/demo/run.ts",
     "check": "npm run lint && npm run typecheck && npm run build && npm test",
     "prepare": "node scripts/install-hooks.mjs"

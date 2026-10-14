@@ -1,5 +1,8 @@
 import crypto from 'node:crypto';
 import { findSecrets } from '../secrets/detectors.js';
+import { entropy } from '../secrets/entropy.js';
+
+export { entropy } from '../secrets/entropy.js';
 import { normalize } from '../text/normalize.js';
 
 export { fold, normalize } from '../text/normalize.js';
@@ -29,17 +32,6 @@ function ident(kind: IdentifierKind, value: string, rule?: string): Identifier {
   return id;
 }
 
-/** Shannon entropy in bits per character. */
-export function entropy(s: string): number {
-  const counts = new Map<string, number>();
-  for (const ch of s) counts.set(ch, (counts.get(ch) ?? 0) + 1);
-  let h = 0;
-  for (const c of counts.values()) {
-    const p = c / s.length;
-    h -= p * Math.log2(p);
-  }
-  return h;
-}
 
 /** A random-looking token: high entropy and a mix of character classes (not a word or a number). */
 function isHighEntropyToken(t: string): boolean {

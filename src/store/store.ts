@@ -87,6 +87,8 @@ export interface StoreOptions {
   retentionDays: number;
   retentionMaxMb: number;
   knownSecrets: readonly string[];
+  /** Redact entropy-only possible secrets too (config `secrets.entropy.redact`). Default true. */
+  redactEntropy?: boolean;
   insecurePermissions: 'fix' | 'warn' | 'refuse';
   logger: Logger;
 }
@@ -107,7 +109,7 @@ export class SqliteStore implements Store {
 
   constructor(opts: StoreOptions) {
     this.opts = opts;
-    this.redactor = new Redactor({ knownSecrets: opts.knownSecrets, budgetChars: Math.max(opts.maxPayloadBytes * 2, 65_536) });
+    this.redactor = new Redactor({ knownSecrets: opts.knownSecrets, budgetChars: Math.max(opts.maxPayloadBytes * 2, 65_536), entropy: opts.redactEntropy ?? true });
     ensureSecureLocation(opts.dataDir, opts.insecurePermissions, opts.logger);
     this.file = path.join(opts.dataDir, 'events.db');
     ensureSecureFile(this.file, opts.insecurePermissions, opts.logger);

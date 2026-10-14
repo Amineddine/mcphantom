@@ -171,6 +171,13 @@ Identified by (a) policy-declared sources (e.g. `read_file` of `~/.ssh/**`, `**/
 (b) detectors run on every output (gitleaks-style rules + entropy), (c) canary tokens used by the
 demo and benchmark. The same detector feeds log redaction.
 
+Entropy hits (Phase 6b, `src/secrets/entropy.ts`) are only *possible* secrets: a random token with no
+known format cannot be told apart from a random identifier. They are redacted in the log and counted on
+the ingest event; their effect on the label is `secrets.entropy.on_hit` (`record` by default — no label
+change, owner constraint; `internal` or `secret` opt-in). Hash-shaped hits (hex, UUIDs, SRI digests)
+never raise the label. Measured on benign outputs by `bench:entropy`: 40.0% of held-out benign outputs
+contain a random-shaped hit, which is why escalation is opt-in.
+
 ### Ask decisions
 
 Routed to MCP `elicitation` if the client supports it, else a dashboard approval queue with a
@@ -323,6 +330,14 @@ before the fix:
 - *Medium:* with `logging.on_failure: deny`, `prompts/get`, `resources/read`, `resources/subscribe` and
   `completion/complete` reached the upstream before anything was audited (only the response was
   withheld). They are now audited before forwarding (a `request` event with outcome `forwarding`).
+
+**6b — PR 2 (entropy secrets).** Possible-secret detector with `hash`/`random` shapes; `secrets.entropy`
+config (`enabled`, `on_hit: record|internal|secret`, default `record`, `redact`); redaction in the log
+(`[REDACTED:possible-secret]` / `possible-hash`); counts on the taint event and in `trace`;
+`posthog-key` rule (`phx_`/`phs_`/`pha_`/`phr_`/`phh_`; `phc_` is public by design and not matched).
+`bench:entropy` in CI over 124 benign outputs (31 real, 93 synthetic) and 128 generated random secrets,
+dev/test split fixed before tuning; held-out FPR 40.0% (26/65), detection 68/68, hex secrets 0% by
+design. Floor: FPR ≤ 50%, detection ≥ 95%.
 
 **6b** (plan, PR order: 1 untested paths → 2 entropy → 3 `may_receive` + sink server → 4 exfiltration
 servers → 5 corpus → 5b PostHog → 6 review):

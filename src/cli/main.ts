@@ -143,6 +143,7 @@ async function cmdRun(args: string[]): Promise<number> {
     retentionDays: cfg.retention.days,
     retentionMaxMb: cfg.retention.max_mb,
     knownSecrets: loaded.secrets,
+    redactEntropy: cfg.secrets.entropy.redact,
     insecurePermissions: cfg.security.insecure_permissions,
     logger,
   });

@@ -5,6 +5,8 @@ import { BOTTOM, canExfiltrate, join, type Effect, type Label } from './labels.j
 import { ProvenanceIndex, type EvictionNotice, type Evidence, type OutputRef } from './provenance.js';
 import { resultTexts } from './text.js';
 import { PolicyEngine, type PolicyOutcome } from '../policy/engine.js';
+import { findSecrets } from '../secrets/detectors.js';
+import { MAX_ENTROPY_SCAN, possibleSecretsBeyond } from '../secrets/entropy.js';
 
 export interface ResolvedClassification {
   effect: Effect;
@@ -41,6 +43,9 @@ export function classify(config: Config, serverId: string, name: string | undefi
 export interface IngestResult {
   ref: OutputRef;
   secretsDetected: string[];
+  /** Entropy-only "possible secrets" (no known format), by shape. Values are never recorded. Whether
+   *  `random` ones raised the label is `secrets.entropy.on_hit`; `hash` ones never do. */
+  possibleSecrets: { random: number; hash: number };
   identifiers: number;
   evictions: EvictionNotice[];
   /** Decoding of this output was cut short by a bound; encoded identifiers past it are not indexed. */
@@ -108,6 +113,12 @@ export class TaintEngine {
     const provisional: OutputRef = { id, seq: this.seq, server: serverId, source, kind, label: { integrity: cls.integrity, confidentiality: cls.confidentiality } };
     const added = this.index.add(provisional, texts);
     if (added.secrets.length > 0) provisional.label.confidentiality = 'secret';
+    const possible = this.possibleSecrets(texts);
+    const onHit = this.config.secrets.entropy.on_hit;
+    if (possible.random > 0 && onHit !== 'record') {
+      // Owner decision: entropy alone never escalates unless configured to; `internal` only raises.
+      provisional.label.confidentiality = join({ integrity: 'trusted', confidentiality: onHit }, provisional.label).confidentiality;
+    }
     const before = this.context;
     this.context = join(this.context, provisional.label);
     if (provisional.label.integrity === 'untrusted') this.untrustedSources.push(provisional);
@@ -116,9 +127,17 @@ export class TaintEngine {
     for (const e of added.evictions) if (labelled(e.output.label)) this.degraded = true;
     if (added.decodeTruncated && labelled(provisional.label)) this.degraded = true;
     return {
-      ref: provisional, secretsDetected: added.secrets, identifiers: added.identifiers, evictions: added.evictions,
+      ref: provisional, secretsDetected: added.secrets, possibleSecrets: possible, identifiers: added.identifiers, evictions: added.evictions,
       decodeTruncated: added.decodeTruncated, contextBefore: before, contextAfter: this.context,
     };
+  }
+
+  private possibleSecrets(texts: string[]): { random: number; hash: number } {
+    const out = { random: 0, hash: 0 };
+    if (!this.config.secrets.entropy.enabled) return out;
+    const raw = texts.join('\n').slice(0, MAX_ENTROPY_SCAN);
+    for (const p of possibleSecretsBeyond(raw, findSecrets(raw))) out[p.shape]++;
+    return out;
   }
 
   /** Decides a tools/call before it is forwarded. */
