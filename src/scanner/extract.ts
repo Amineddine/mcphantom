@@ -44,9 +44,53 @@ export function instructionsSpan(instructions: string | undefined): TextSpan[] {
 }
 
 /**
- * Pulls human-readable strings out of a JSON Schema: `description`, `title`, enum values, `const`,
- * `default`, and `examples`. These reach the model and are a documented poisoning vector (hidden
- * instructions live in a parameter's description as readily as in the tool's).
+ * Turns an identifier into words so phrase detectors can read it: `contents_of_the_users_ssh_key`,
+ * `contentsOfTheUsersSshKey` and `contents-of-the-users-ssh-key` all become
+ * "contents of the users ssh key". Returns undefined for a plain single word (nothing to add).
+ */
+export function humanize(name: string): string | undefined {
+  const words = name.replace(/([a-z0-9])([A-Z])/g, '$1 $2').split(/[_\-.\s]+/).filter(Boolean);
+  return words.length >= 2 ? words.join(' ').toLowerCase() : undefined;
+}
+
+/** A schema keyword we know: its value is structure, not text for the model. */
+const SCHEMA_KEYWORDS = new Set([
+  'type', 'format', 'pattern', 'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum', 'multipleOf',
+  'minLength', 'maxLength', 'minItems', 'maxItems', 'uniqueItems', 'minProperties', 'maxProperties',
+  'contentEncoding', 'contentMediaType', 'readOnly', 'writeOnly', 'deprecated', 'nullable',
+  '$schema', '$id', '$ref', '$anchor', '$dynamicRef', '$dynamicAnchor', '$vocabulary',
+  'description', 'title', '$comment', 'const', 'default', 'enum', 'examples', 'required', 'dependentRequired',
+  'properties', 'patternProperties', 'definitions', '$defs', 'dependentSchemas',
+  'items', 'additionalProperties', 'unevaluatedProperties', 'unevaluatedItems', 'contains', 'if', 'then',
+  'else', 'not', 'propertyNames', 'allOf', 'anyOf', 'oneOf', 'prefixItems',
+]);
+
+/** Every string inside a JSON value (keys of nested objects included), for non-string defaults etc. */
+function deepStrings(v: unknown, base: string, spans: TextSpan[], depth: number): void {
+  if (depth > MAX_DEPTH || spans.length >= MAX_SPANS) return;
+  if (typeof v === 'string') push(spans, base, v);
+  else if (Array.isArray(v)) v.forEach((x, i) => { deepStrings(x, `${base}[${i}]`, spans, depth + 1); });
+  else if (v && typeof v === 'object') {
+    for (const [k, x] of Object.entries(v)) {
+      pushName(spans, `${base}.${k}(key)`, k);
+      deepStrings(x, `${base}.${k}`, spans, depth + 1);
+    }
+  }
+}
+
+/** An identifier the model reads (parameter name, `required` entry, unknown keyword): raw and as words. */
+function pushName(spans: TextSpan[], where: string, name: string): void {
+  push(spans, where, name);
+  const words = humanize(name);
+  if (words) push(spans, `${where}(words)`, words);
+}
+
+/**
+ * Pulls every model-visible string out of a JSON Schema. The model sees the whole schema, so a payload
+ * can sit anywhere in it (full-schema poisoning): `description`, `title`, `$comment`, enum values,
+ * `const`, `default`, `examples` (strings nested inside non-string values too), parameter names,
+ * `required` entries, and any keyword this list does not know, with its value. Structural keywords
+ * (`type`, `format`, numbers) carry no text and are skipped.
  */
 function schemaSpans(schema: unknown, base: string, spans: TextSpan[], depth = 0): void {
   if (schema === null || typeof schema !== 'object' || depth > MAX_DEPTH || spans.length >= MAX_SPANS) return;
@@ -58,15 +102,24 @@ function schemaSpans(schema: unknown, base: string, spans: TextSpan[], depth = 0
   for (const key of ['description', 'title', '$comment'] as const) {
     if (typeof obj[key] === 'string') push(spans, `${base}.${key}`, obj[key]);
   }
-  if (typeof obj.const === 'string') push(spans, `${base}.const`, obj.const);
-  if (typeof obj.default === 'string') push(spans, `${base}.default`, obj.default);
-  for (const key of ['enum', 'examples'] as const) {
-    if (Array.isArray(obj[key])) for (const [i, v] of (obj[key] as unknown[]).entries()) if (typeof v === 'string') push(spans, `${base}.${key}[${i}]`, v);
+  for (const key of ['const', 'default', 'enum', 'examples'] as const) {
+    if (obj[key] !== undefined) deepStrings(obj[key], `${base}.${key}`, spans, depth + 1);
+  }
+  if (Array.isArray(obj.required)) for (const [i, v] of obj.required.entries()) if (typeof v === 'string') pushName(spans, `${base}.required[${i}]`, v);
+  for (const [k, v] of Object.entries(obj)) {
+    if (SCHEMA_KEYWORDS.has(k)) continue;
+    pushName(spans, `${base}.${k}(keyword)`, k);
+    deepStrings(v, `${base}.${k}(keyword)`, spans, depth + 1);
   }
   // Recurse into the schema's own subschema-bearing keywords only, so we don't rescan enum strings.
-  for (const key of ['properties', 'patternProperties', 'definitions', '$defs'] as const) {
+  for (const key of ['properties', 'patternProperties', 'definitions', '$defs', 'dependentSchemas'] as const) {
     const v = obj[key];
-    if (v && typeof v === 'object') for (const [name, sub] of Object.entries(v)) schemaSpans(sub, `${base}.${key}.${name}`, spans, depth + 1);
+    if (v && typeof v === 'object') {
+      for (const [name, sub] of Object.entries(v)) {
+        if (key === 'properties') pushName(spans, `${base}.properties.${name}(name)`, name);
+        schemaSpans(sub, `${base}.${key}.${name}`, spans, depth + 1);
+      }
+    }
   }
   for (const key of ['items', 'additionalProperties', 'contains', 'if', 'then', 'else', 'not', 'propertyNames'] as const) {
     if (obj[key] && typeof obj[key] === 'object') schemaSpans(obj[key], `${base}.${key}`, spans, depth + 1);

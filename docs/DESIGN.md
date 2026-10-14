@@ -379,6 +379,16 @@ Held-out: TPR 100% → 91.7% (the new miss: full-schema poisoning via a paramete
 FPR 0% → 0.8% (two GitHub notification tools that direct the model to another tool). Not tuned in this
 PR — fixing either needs a dev-split example first (owner decision).
 
+**6b — PR 5t (scanner tuning round).** Dev-split examples written first (`build-tuning-dev.mjs`: 8
+full-schema-poisoning payloads in parameter names, defaults, enums, titles, nested schemas, extra keywords,
+`required`; 6 benign tool-routing descriptions). Extractor now covers every model-visible schema field;
+hints in structural fields are medium; a structural field naming sensitive data with a data-moving verb
+is flagged; "this tool" is excluded from the redirect rule. Dev: TPR 60.0% → 100%, FPR 3.1% → 0%.
+Held-out (run once after freezing): TPR 91.7% → 100%, FPR 0.8% → 0% — **weaker evidence**: the held-out
+split had been observed before tuning. One refinement after that run (unknown-keyword values are
+structural) came from a unit test; held-out unchanged. A fresh held-out set is needed before any further
+scanner claim.
+
 **6b** (plan, PR order: 1 untested paths → 2 entropy → 3 `may_receive` + sink server → 4 exfiltration
 servers → 5 corpus → 5b PostHog → 6 review):
 1. Entropy-based secret detection. **Owner constraint:** entropy-only hits (no known format, no

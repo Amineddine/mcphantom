@@ -83,7 +83,7 @@ const INSTRUCTION_PATTERNS: Pattern[] = [
   { re: /\b(?:you\s+must|you\s+should\s+always|it\s+is\s+(?:required|mandatory|imperative)\s+that\s+you|always\s+remember\s+to)\b/i, severity: 'low', detail: 'imperative directed at the model' },
   // An imperative to the model that also directs invoking another tool or forwarding data is a
   // concrete hijack, not mere emphasis — generalised from a dev-split false negative.
-  { re: /\b(?:you\s+must|you\s+should|always|as\s+an\s+ai\b[^.]{0,30}\byou\b)[^.]{0,60}\b(?:call|use|invoke|forward|send|include|pass)\b[^.]{0,40}\btool\b/i, severity: 'medium', detail: 'instruction to the model to invoke or feed another tool' },
+  { re: /\b(?:you\s+must|you\s+should|always|as\s+an\s+ai\b[^.]{0,30}\byou\b)[^.]{0,60}\b(?:call|use|invoke|forward|send|include|pass)\b[^.]{0,40}\b(?<!\bthis\s{1,4})tool\b/i, severity: 'medium', detail: 'instruction to the model to invoke or feed another tool' },
   { re: /\b(?:before|after|when|whenever)\s+(?:using|calling|invoking|running)\s+this\s+tool\b[^.]{0,80}\b(?:you|the\s+(?:assistant|model|agent))\b/i, severity: 'medium', detail: 'conditional instruction to the model tied to this tool' },
   { re: /\bnew\s+(?:instructions?|rules?|directives?|task)\b\s*[:.]/i, severity: 'medium', detail: 'declares new instructions' },
   { re: /\bas\s+an\s+ai\b|\bas\s+a\s+language\s+model\b/i, severity: 'low', detail: 'addresses the model as an AI' },
@@ -126,6 +126,28 @@ export function detectDataAccessHint(span: TextSpan): Finding[] {
   const m = SENSITIVE_PATHS.exec(span.text);
   if (!m) return [];
   return [{ category: 'data-access-hint', severity: 'low', where: span.where, evidence: excerpt(span.text, m.index, 24), detail: 'description references sensitive credential files' }];
+}
+
+// --------------------------------------------------------------------------------------------------
+// Structural fields (full-schema poisoning; round 5t). Parameter names, `required` entries, unknown
+// keywords, defaults, enum/const/example values and schema titles are structure, not prose: a benign
+// tool has no reason to name credential files or a send-to destination there, so hints found in them
+// are raised to medium, and a field that both names sensitive data and a verb that moves or reads it
+// is reported even without a file path or URL.
+
+const STRUCTURAL_WHERE = /\((?:name|words|key)\)$|\(keyword\)|\.(?:default|const)(?:$|[.[])|\.(?:enum|examples|required)\[|^(?:in|out)putSchema\..*\.title$/;
+export function isStructuralField(where: string): boolean {
+  return STRUCTURAL_WHERE.test(where);
+}
+
+const SENSITIVE_DATA = /\b(?:private\s+key|ssh\s+(?:private\s+)?key|id\s+rsa|env\s+file|dot\s?env|credentials?|passwords?|api\s+keys?|access\s+tokens?|secret\s+keys?|session\s+cookies?|chat\s+history|conversation)\b/i;
+const MOVES_DATA = /\b(?:read|reading|contents?|copy|attach|include|send|put|dump|paste|upload|forward|append)\b/i;
+
+export function detectStructuralDataRequest(span: TextSpan): Finding[] {
+  if (!isStructuralField(span.where)) return [];
+  const m = SENSITIVE_DATA.exec(span.text);
+  if (!m || !MOVES_DATA.test(span.text)) return [];
+  return [{ category: 'data-access-hint', severity: 'medium', where: span.where, evidence: excerpt(span.text, m.index, 24), detail: 'schema field asks for sensitive data (full-schema poisoning)' }];
 }
 
 // --------------------------------------------------------------------------------------------------
