@@ -333,7 +333,27 @@ protection on `main` (requiring the CI and gitleaks checks) enabled in the same 
 with the packed tarball and its SHA-256. **Not on npm** (owner decision: waits for v1). Vulnerability
 reports: private GitHub advisories only.
 
-**Next:** **6b**, in progress (plan approved 2026-10-13), delivered as a series of PRs (workflow below).
+**Next (resume point, 2026-10-14): the Phase 6b hostile review** (`docs/reviews/phase-6b.md`), in a fresh
+session, then Phase 7. All 6b PRs are merged (#1–#7) except PR 4b (decision-level channel tests), open
+for the owner's merge decision at the time of writing. Items the review must cover, beyond each PR's own
+notes below:
+- Exfiltration channels are tested **at the decision level only** (`test/channels.decision.test.ts`): the
+  server-backed per-channel scenarios were stopped twice by a safety classifier (owner: do not retry);
+  server-level coverage stays the demo e2e, the `may_receive` sink tests and the PostHog scenario.
+- New gap found by those tests: base64 inside a URL **path segment** is not attributed by Layer 2 (query
+  parameters and whole values are); the trifecta still blocks. Pinned as KNOWN GAP.
+- Scanner: held-out split observed before round 5t (fresh set planned for Phase 7); the tool-shadowing
+  rule reads "this tool" as another tool (3 of the 5 PostHog false positives; fix next round).
+- Entropy: e-mail local parts flagged (seen on the held-out split, deliberately not fixed; next round
+  needs a fresh split); human/low-entropy secrets undetected; ~1.5% of random base64url tokens collide
+  with the type-prefix rule.
+- `may_receive`: evidence-mode bypass by undecoded encodings (decimal codes), context mode closes it;
+  `suggest` does not propose `may_receive` (deferred, owner).
+- Process: a gitleaks false positive in synthetic corpus data (`.gitleaksignore`, one finding); one lost
+  pre-push failure (cause unconfirmed) led to the hook log fix (PR 4a); `bench:policy` deadline denies on
+  the dev laptop are machine load (PR 1 code shows the same).
+
+**6b** was delivered as a series of PRs (workflow below).
 
 **6b — PR 1 (tests for the 6a review's untested paths).** Every path in `docs/reviews/phase-6a.md`
 "Code paths NOT tested" now has a test. Two defects found and fixed, each with a test shown to fail
