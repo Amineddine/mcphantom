@@ -359,6 +359,16 @@ the owner confirms every merge, in this order:
    measurement; addendum in `docs/reviews/phase-6b.md`).
 2. **Fresh held-out poisoned set** — the new third-party sources and their licences are listed for the
    owner's approval **before anything is collected**; frozen before the scanner sees it; run once.
+   **In progress (branch `7/pr2-heldout-set`, resume here):** sources approved (MSB, appsecco
+   vulnerable-mcp-servers-lab, MCPSecBench — verbatim, MIT, pinned); MCPTox waits for its authors (owner
+   asked; no rewrites of unlicensed material). `bench/corpus/heldout-7/PREREGISTRATION.md` committed
+   (bb17bbb) before any extraction — it fixes the labels, per-kind claims, dedupe and reporting rules.
+   Next, in order: download the three pinned commits into a new scratchpad directory (untrusted data;
+   scripts elsewhere; `python -I`); extract by parsing only (`ast`; TypeScript compiler API for JS); label
+   per the pre-registration, assigning each out-of-scope parameter's bucket before the run; dedupe against
+   `bench/corpus/*.json` (list overlaps); NOTICE entries; write `heldout.json` + `MANIFEST.sha256`;
+   commit; add `bench:heldout` (Wilson 95% CIs, claimed and unclaimed tables, every miss and exclusion);
+   run **once**; report; PR; ask before merging. Do not change the scanner in that PR.
 3. **Tier-1 runtime benchmark** (`mcp-attack-bench`): scenario format, adapter spec, defense-independent
    oracles.
 4. **Baselines and ablations** — no defense, scanner only, deny-all-egress;
