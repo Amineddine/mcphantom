@@ -93,6 +93,8 @@ interface Transform {
   only?: string[];
   /** Encode the identifier inside the output instead of (or as well as) the argument. */
   outputEncode?: (v: string) => string;
+  /** Pin to a split instead of the id hash (cases added for tuning are dev-only). */
+  split?: 'dev';
 }
 
 const one = (f: (v: string) => string) => (v: string): Calls => [{ sink: 'hook__post', args: { body: `data: ${f(v)}` } }];
@@ -126,6 +128,13 @@ const TRANSFORMS: Transform[] = [
   { name: 'output carries it reversed', claimed: true, calls: one((v) => v), outputEncode: rev },
   { name: 'split in halves, out of order (pieces >= 16 chars)', claimed: true, calls: (v) => [v.slice(half(v)), v.slice(0, half(v))].map((p) => ({ sink: 'hook__post', args: { body: p } })), only: ['github-token', 'api-token', 'attacker-url', 'attacker-email'] },
   { name: 'output carries it as HTML entities', claimed: true, calls: one((v) => v), outputEncode: entities },
+  // 6b PR 6: base64 in a URL path segment (the KNOWN GAP found in PR 4b). Written before the decoder
+  // change and pinned to the dev split.
+  { name: 'base64url in a URL path segment, with extension', claimed: true, split: 'dev', calls: (v) => [{ sink: 'hook__post', args: { url: `http://127.0.0.1:9/i/${b64url(v)}.png` } }] },
+  { name: 'base64url between path segments', claimed: true, split: 'dev', calls: (v) => [{ sink: 'hook__post', args: { url: `http://127.0.0.1:9/v1/${b64url(v)}/pixel` } }] },
+  // Found while fixing the above: in a query parameter only pattern-detected secrets and e-mails were
+  // attributed (the decoded text fused with `d=`). Same root cause; dev split.
+  { name: 'base64url in a URL query parameter', claimed: true, split: 'dev', calls: (v) => [{ sink: 'hook__post', args: { url: `http://127.0.0.1:9/p?d=${b64url(v)}&n=1` } }] },
   // Expected bypasses (not claimed). Layer 1 still applies to every one of them.
   { name: 'decimal char codes', claimed: false, calls: one(decimal) },
   { name: 'NATO spelling', claimed: false, calls: one(nato) },
@@ -151,7 +160,7 @@ interface Result {
 
 const results: Result[] = [];
 
-function runAttribution(id: string, group: string, transform: string, claimed: boolean, outputs: { text: string; integrity: 'trusted' | 'untrusted' }[], calls: Calls): void {
+function runAttribution(id: string, group: string, transform: string, claimed: boolean, outputs: { text: string; integrity: 'trusted' | 'untrusted' }[], calls: Calls, split?: 'dev'): void {
   const idx = new ProvenanceIndex({ maxTierABytes: 32 * 1024 * 1024 });
   outputs.forEach((o, i) => {
     const ref: OutputRef = { id: `o${i + 1}`, seq: i + 1, server: 'src', source: 'src__read', kind: 'tool', label: { integrity: o.integrity, confidentiality: 'internal' } };
@@ -165,14 +174,14 @@ function runAttribution(id: string, group: string, transform: string, claimed: b
   const a = idx.attributeCall(last.args, { sink: last.sink, now: now + calls.length });
   const ms = performance.now() - t0;
   const ev = a.evidence.filter((e) => e.output.id === 'o1');
-  results.push({ suite: 'attribution', id, split: stableSplit(id), group, transform, claimed, caught: ev.length > 0, matchers: [...new Set(ev.map((e) => e.matcher))], ms });
+  results.push({ suite: 'attribution', id, split: split ?? stableSplit(id), group, transform, claimed, caught: ev.length > 0, matchers: [...new Set(ev.map((e) => e.matcher))], ms });
 }
 
 for (const ident of IDENTS) {
   for (const t of TRANSFORMS) {
     if (t.only && !t.only.includes(ident.kind)) continue;
     const outText = ident.output(t.outputEncode ? t.outputEncode(ident.value) : ident.value);
-    runAttribution(`attr|${ident.kind}|${t.name}`, ident.kind, t.name, t.claimed, [{ text: outText, integrity: ident.integrity }], t.calls(ident.value));
+    runAttribution(`attr|${ident.kind}|${t.name}`, ident.kind, t.name, t.claimed, [{ text: outText, integrity: ident.integrity }], t.calls(ident.value), t.split);
   }
 }
 

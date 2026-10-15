@@ -49,13 +49,19 @@ describe('exfiltration channels: one tools/call to the gate', () => {
     expect(matchers(d)).toContain('decoded');
   });
 
-  // Found by this test (6b PR 4b): base64 inside a URL *path segment* is not attributed by Layer 2.
-  // The block holds — the trifecta is content-blind — only the explanation is lost. Pinned so a fix is
-  // noticed; recorded in the 6b review.
-  it('KNOWN GAP: secret base64-encoded in a URL path segment → still deny, but no evidence', () => {
+  // Was a KNOWN GAP found by this file (6b PR 4b): base64 inside a URL *path segment* was not attributed
+  // by Layer 2 (the trifecta still blocked). Closed in 6b PR 6.
+  it('secret base64-encoded in a URL path segment → deny, decoded evidence', () => {
     const d = session(`key=${CANARY}`).decide('net', 'fetch', 'net__fetch', { url: `http://127.0.0.1:9/i/${Buffer.from(CANARY).toString('base64url')}.png` });
     expect(d).toMatchObject({ verdict: 'deny', rule: 'trifecta' });
-    expect(matchers(d)).toEqual([]);
+    expect(matchers(d)).toContain('decoded');
+  });
+
+  // Found while closing the gap above (6b PR 6): only pattern-detected secrets and e-mails survived
+  // decoding inside a URL; an unformatted token fused with `d=` and was not attributed.
+  it('unformatted token base64-encoded in a URL query parameter → decoded evidence', () => {
+    const d = session(UNFORMATTED).decide('hook', 'notify', 'hook__notify', { url: `http://127.0.0.1:9/p?d=${Buffer.from(UNFORMATTED).toString('base64url')}&n=1` });
+    expect(matchers(d)).toContain('decoded');
   });
 
   it('secret split across two calls → deny, cumulative evidence on the completing call', () => {

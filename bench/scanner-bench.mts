@@ -45,12 +45,15 @@ const items: Item[] = [
   ...load('benign-playwright.json'),
   // Round 5t: author-written DEV-split tuning examples (bench/corpus/build-tuning-dev.mjs).
   ...load('benign-dev-tuning.json'),
+  // 6b PR 6: author-written DEV-split self-reference examples (bench/corpus/build-tuning-dev-r6.mjs).
+  ...load('benign-dev-shadow-self.json'),
   // Benign shapes that once caused false positives (AUD-6); kept so the regression stays measured.
   ...load('benign-regressions.json'),
   ...load('malicious.json'),
   // Phase 6b: rewritten from published third-party research, held-out TEST split only (never tuned on).
   ...load('malicious-thirdparty.json'),
   ...load('malicious-schema-dev.json'),
+  ...load('malicious-shadow-dev.json'),
 ].map((it) => ({ ...it, split: it.split ?? stableSplit(`${it.source ?? ''}|${it.tool.name}|${it.tool.description ?? ''}`) }));
 
 interface Counts {
@@ -113,8 +116,10 @@ const all = tally(items);
 
 const benignTotal = items.filter((i) => i.label === 'benign').length;
 const benignSynthetic = items.filter((i) => i.label === 'benign' && (i.source ?? '').startsWith('synthetic')).length;
+// Author-written dev examples are not real definitions (5t printed them as real; fixed in 6b PR 6).
+const benignAuthored = items.filter((i) => i.label === 'benign' && (i.source ?? '').startsWith('author-written')).length;
 const malTotal = items.filter((i) => i.label === 'malicious').length;
-const sources = [...new Set(items.filter((i) => i.label === 'benign' && !(i.source ?? '').startsWith('synthetic')).map((i) => i.source))];
+const sources = [...new Set(items.filter((i) => i.label === 'benign' && !/^(?:synthetic|author-written)/.test(i.source ?? '')).map((i) => i.source))];
 
 const r = (name: string, t: ReturnType<typeof tally>) => {
   const { tpr, fpr, precision } = rates(t.counts);
@@ -126,7 +131,7 @@ const lines = [
   '',
   `Generated ${new Date().toISOString()} · scanner block threshold: medium.`,
   '',
-  `Corpus: ${malTotal} malicious (synthetic, hand-labelled) + ${benignTotal} benign (${benignTotal - benignSynthetic} real tool definitions, ${benignSynthetic} synthetic false-positive regressions).`,
+  `Corpus: ${malTotal} malicious (synthetic, hand-labelled) + ${benignTotal} benign (${benignTotal - benignSynthetic - benignAuthored} real tool definitions, ${benignAuthored} author-written dev examples, ${benignSynthetic} synthetic false-positive regressions).`,
   `Benign sources: ${sources.join(', ')}.`,
   'Split is frozen: `test` is held out and never tuned against; detectors are tuned only on `dev`.',
   '',
@@ -145,6 +150,12 @@ const lines = [
   'miss was seen in PR #5), so the after number is weaker evidence than the first held-out run. One rule',
   'was refined after that held-out run (values of unknown keywords count as structural), prompted by a new',
   'unit test, not by held-out data; the held-out numbers were unchanged by it.',
+  '',
+  '**6b PR 6 (tool-shadowing self-reference), before → after.** The shadowing rule read "this tool" and',
+  '"the same tool" as the name of another tool — found on PostHog’s catalog (3 of its 5 hidden tools), not',
+  'tuned on it. Dev split, after adding 6 benign self-reference and 3 shadowing examples written before the',
+  'change: TPR 100% → 100% (18/18), FPR 4.5% (6/134) → 0%. Held-out (already observed, see above): 100% /',
+  '0% before and after. PostHog catalog, reported only: hidden 5 → 2 of 1,121 (`npm run bench:posthog`).',
   '',
   '## Detection by category (all items)',
   '',

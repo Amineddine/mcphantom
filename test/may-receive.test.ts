@@ -122,4 +122,19 @@ describe('may_receive: precedence in the decision', () => {
   it('a call within the bound goes on to the policy (here: ask)', () => {
     expect(engine().decide('mail', 'send', 'mail__send', { body: 'hello' })).toMatchObject({ verdict: 'ask', rule: 'policy' });
   });
+
+  // Found in the 6b review (R6b-1): evidence mode searches the first 64 KiB of each of the first 512
+  // leaves, and ignores the `degraded` flag attribution sets when it hits the same bounds, so a clear-text
+  // credential past either bound reaches the server. Pinned until the owner decides the fix; context mode
+  // is not affected.
+  it.each([
+    ['past 64 KiB of one argument', { body: 'a '.repeat(33_000) + CANARY }],
+    ['in the 513th leaf', { body: [...Array.from({ length: 512 }, () => 'ok'), CANARY] }],
+  ])('KNOWN GAP (evidence mode): a clear-text credential %s is not bounded', (_n, args) => {
+    const d = engine().decide('mail', 'send', 'mail__send', args);
+    expect(d.rule).not.toBe('may_receive');
+    expect(d.attributionDegraded).toBe(true);
+    const ctx = engine({ servers: { ...servers, mail: { ...servers.mail, may_receive_mode: 'context' } } });
+    expect(ctx.decide('mail', 'send', 'mail__send', args)).toMatchObject({ verdict: 'deny', rule: 'may_receive' });
+  });
 });

@@ -1,6 +1,6 @@
 # Adversarial-evasion benchmark (Phase 6a)
 
-Generated 2026-10-14T03:37:20.285Z · Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz · Node v22.19.0. Regenerate: `npm run bench:evasion`.
+Generated 2026-10-15T00:56:35.024Z · Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz · Node v22.19.0. Regenerate: `npm run bench:evasion`.
 
 Deterministic and model-free. "Claimed" = the design says it is caught; unclaimed rows are expected
 bypasses, published so they are not mistaken for coverage. Every bypass here still faces Layer 1 (the
@@ -12,8 +12,8 @@ tuned on either split.
 | split | claimed caught | unclaimed caught |
 |---|---|---|
 | test | 77/77 (100.0%) | 0/17 (0.0%) |
-| dev | 66/66 (100.0%) | 0/22 (0.0%) |
-| all | 143/143 (100.0%) | 0/39 (0.0%) |
+| dev | 81/81 (100.0%) | 0/22 (0.0%) |
+| all | 158/158 (100.0%) | 0/39 (0.0%) |
 
 | transformation | claimed | caught | how (matchers / via) |
 |---|---|---|---|
@@ -41,6 +41,9 @@ tuned on either split.
 | output carries it base64-encoded | yes | 5/5 (100.0%) | decoded |
 | output carries it reversed | yes | 5/5 (100.0%) | decoded |
 | output carries it as HTML entities | yes | 5/5 (100.0%) | decoded |
+| base64url in a URL path segment, with extension | yes | 5/5 (100.0%) | decoded |
+| base64url between path segments | yes | 5/5 (100.0%) | decoded |
+| base64url in a URL query parameter | yes | 5/5 (100.0%) | decoded |
 | decimal char codes | no | 0/5 (0.0%) | — |
 | NATO spelling | no | 0/5 (0.0%) | — |
 | groups of 4 separated by spaces | no | 0/5 (0.0%) | — |
@@ -56,7 +59,7 @@ tuned on either split.
 | first half copied | yes | 4/4 (100.0%) | exact |
 | paraphrased | no | 0/4 (0.0%) | — |
 
-Time per case: p50 0.80 ms, p95 2.54 ms, max 6.88 ms.
+Time per case: p50 0.66 ms, p95 2.50 ms, max 5.55 ms.
 
 ## Static scanner (list-time hiding)
 
@@ -89,7 +92,7 @@ Time per case: p50 0.80 ms, p95 2.54 ms, max 6.88 ms.
 | decimal char codes | no | 0/6 (0.0%) | — |
 | base64 split across two properties | no | 5/6 (83.3%) | decoded:base64, raw |
 
-Time per case: p50 0.64 ms, p95 2.46 ms, max 19.21 ms.
+Time per case: p50 0.54 ms, p95 1.50 ms, max 16.29 ms.
 
 ## False attribution (benign)
 

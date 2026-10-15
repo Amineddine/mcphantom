@@ -10,23 +10,20 @@ Source: PostHog/posthog@61a8655 services/mcp/schema (MIT), imported by `bench/co
 
 ## Result
 
-- Tools MCPhantom would **hide** at default settings: **5 of 1121 (0.4%)**. Each is a false positive of MCPhantom's (PostHog is the vendor), listed below.
+- Tools MCPhantom would **hide** at default settings: **2 of 1121 (0.2%)**. Each is a false positive of MCPhantom's (PostHog is the vendor), listed below.
 - Standalone schemas flagged: 0 of 42.
 - Tools with only low-severity findings (recorded, still shown): 15.
 
 | finding (severity) | count |
 |---|---|
 | embedded-instruction (low) | 12 |
-| tool-shadowing (high) | 4 |
 | exfiltration-hint (low) | 3 |
+| tool-shadowing (high) | 1 |
 | embedded-instruction (medium) | 1 |
 
 ## Hidden tools (false positives) — every one
 
 - `error-tracking-symbol-sets-list` — tool-shadowing (high) in `description`: description redefines the behaviour of another tool ('download')
-- `experiment-create` — tool-shadowing (high) in `description`: description redefines the behaviour of another tool ('this')
-- `experiment-ship-variant` — tool-shadowing (high) in `description`: description redefines the behaviour of another tool ('this')
-- `marketing-analytics-diagnose` — tool-shadowing (high) in `description`: description redefines the behaviour of another tool ('this')
 - `mcp-connection-tools-list` — embedded-instruction (medium) in `description`: instruction to the model to invoke or feed another tool
 
 ## Flagged standalone schemas

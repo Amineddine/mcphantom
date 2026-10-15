@@ -305,7 +305,7 @@ moving to `node:sqlite` once it is stable is a contained change. CI installs on 
 
 ---
 
-## Current state and resume point (updated 2026-10-13)
+## Current state and resume point (updated 2026-10-15)
 
 **Done and committed:** Phases 1–5 — gateway core, taint + trifecta (incl. write-outside-workspace as
 egress), static scanner + list-time hiding, rug-pull pinning (tools, prompts, instructions), CEL policy
@@ -333,25 +333,20 @@ protection on `main` (requiring the CI and gitleaks checks) enabled in the same 
 with the packed tarball and its SHA-256. **Not on npm** (owner decision: waits for v1). Vulnerability
 reports: private GitHub advisories only.
 
-**Next (resume point, 2026-10-14): the Phase 6b hostile review** (`docs/reviews/phase-6b.md`), in a fresh
-session, then Phase 7. All 6b PRs are merged (#1–#7) except PR 4b (decision-level channel tests), open
-for the owner's merge decision at the time of writing. Items the review must cover, beyond each PR's own
-notes below:
-- Exfiltration channels are tested **at the decision level only** (`test/channels.decision.test.ts`): the
-  server-backed per-channel scenarios were stopped twice by a safety classifier (owner: do not retry);
-  server-level coverage stays the demo e2e, the `may_receive` sink tests and the PostHog scenario.
-- New gap found by those tests: base64 inside a URL **path segment** is not attributed by Layer 2 (query
-  parameters and whole values are); the trifecta still blocks. Pinned as KNOWN GAP.
-- Scanner: held-out split observed before round 5t (fresh set planned for Phase 7); the tool-shadowing
-  rule reads "this tool" as another tool (3 of the 5 PostHog false positives; fix next round).
-- Entropy: e-mail local parts flagged (seen on the held-out split, deliberately not fixed; next round
-  needs a fresh split); human/low-entropy secrets undetected; ~1.5% of random base64url tokens collide
-  with the type-prefix rule.
-- `may_receive`: evidence-mode bypass by undecoded encodings (decimal codes), context mode closes it;
-  `suggest` does not propose `may_receive` (deferred, owner).
-- Process: a gitleaks false positive in synthetic corpus data (`.gitleaksignore`, one finding); one lost
-  pre-push failure (cause unconfirmed) led to the hook log fix (PR 4a); `bench:policy` deadline denies on
-  the dev laptop are machine load (PR 1 code shows the same).
+**Phase 6b — done (2026-10-15); review `docs/reviews/phase-6b.md` (PR 6).** PRs #1–#8 merged; PR 6
+carries the review and two small fixes (below). Open from the review: **R6b-1** — `may_receive` evidence
+mode stops at 64 KiB per argument leaf and 512 leaves and ignores the `degraded` flag, so a clear-text
+credential past either bound reaches a bounded server (pinned as KNOWN GAP; fix pending owner decision);
+hex/URL-escape/entity decoding inside URLs may fuse with its surroundings as base64 did (not measured);
+two PostHog scanner false positives remain (a plain word read as a tool name; routing advice to another
+tool rated medium). Carried as before: entropy e-mail local parts (needs a fresh split), human/low-entropy
+secrets, ~1.5% base64url type-prefix collisions, evidence-mode bypass by undecoded encodings, `suggest`
+not proposing `may_receive`, exfiltration channels tested at the decision level only (server-backed
+scenarios stopped twice by a safety classifier; owner: do not retry).
+
+**Next (resume point, 2026-10-15): Phase 7**, plan to be approved by the owner (proposed at the end of
+the PR 6 session): fresh held-out poisoned set, the R6b-1 decision, the Tier-1 runtime benchmark, the
+research items in the Phase 7 row of §5, and PostHog's real server against the local mock backend.
 
 **6b** was delivered as a series of PRs (workflow below).
 
@@ -408,6 +403,16 @@ Held-out (run once after freezing): TPR 91.7% → 100%, FPR 0.8% → 0% — **we
 split had been observed before tuning. One refinement after that run (unknown-keyword values are
 structural) came from a unit test; held-out unchanged. A fresh held-out set is needed before any further
 scanner claim.
+
+**6b — PR 6 (review + two fixes).** `docs/reviews/phase-6b.md`. Each fix has new dev-split examples
+only, written before the change. (1) Tool shadowing: "this tool" / "the same tool" no longer read as
+another tool's name, and every match is checked (`build-tuning-dev-r6.mjs`): dev FPR 4.5% → 0%, TPR 100%
+kept; held-out unchanged; PostHog catalog, reported only, hidden 5 → 2. (2) Decoder: base64 in a URL
+path segment is decoded segment by segment, and decoded base64 is set apart from its surroundings — the
+fix showed that in a *query parameter* too, only pattern-detected secrets and e-mails had been
+attributed (R6b-2). 15 new dev cases in `bench:evasion`: 3/15 → 15/15; held-out 77/77, false
+attribution 0/36 unchanged. Segment tries are bounded (mixed-case segments only, 256 per call, reported as truncated) after a first version was 17× slower on slash-joined runs (R6b-10); new `bench:policy` case. Also: the scanner bench counted author-written dev examples as real
+definitions since 5t (real: 248).
 
 **6b** (plan, PR order: 1 untested paths → 2 entropy → 3 `may_receive` + sink server → 4 exfiltration
 servers → 5 corpus → 5b PostHog → 6 review):
@@ -585,6 +590,11 @@ across conversations; image/audio content is labeled by source but not inspected
 ---
 
 ## Change log
+
+- 2026-10-15 — Phase 6b closed with its hostile review (`docs/reviews/phase-6b.md`, PR 6): tool-shadowing
+  self-reference fixed (PostHog false positives 5 → 2), base64 inside URLs attributed for every
+  identifier kind, `may_receive` evidence-mode bounds found failing open (R6b-1, pinned, owner decides),
+  corpus count corrected to 248 real definitions. Next: Phase 7.
 
 - 2026-10-13 — Phase 6.5 / v0.1.0: README, demo GIF, repository hygiene, release. Owner decisions:
   private advisories only; npm waits for v1; `may_receive` implemented in 6b with the sink attack server;

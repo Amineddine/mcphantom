@@ -1,6 +1,6 @@
 {
   "env": {
-    "date": "2026-10-14T03:44:16.834Z",
+    "date": "2026-10-15T00:31:04.745Z",
     "node": "v22.19.0",
     "os": "Windows_NT 10.0.26200"
   },
@@ -14,18 +14,18 @@
     "precision": 1
   },
   "dev": {
-    "tp": 15,
+    "tp": 18,
     "fp": 0,
-    "tn": 128,
+    "tn": 134,
     "fn": 0,
     "tpr": 1,
     "fpr": 0,
     "precision": 1
   },
   "all": {
-    "tp": 27,
+    "tp": 30,
     "fp": 0,
-    "tn": 260,
+    "tn": 266,
     "fn": 0,
     "tpr": 1,
     "fpr": 0,
@@ -45,8 +45,8 @@
       "caught": 2
     },
     "tool-shadowing": {
-      "total": 5,
-      "caught": 5
+      "total": 8,
+      "caught": 8
     }
   },
   "falsePositives": [],
