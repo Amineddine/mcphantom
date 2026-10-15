@@ -565,6 +565,15 @@ Every phase ends with green CI, a commit, and a written hostile review with its 
 - **Resource pinning:** pin resource and resource-template definitions in the lockfile like tools and
   prompts, with the same enforce/observe semantics.
 
+### Backlog (owner)
+
+- **Configurable per-call attribution limits** (owner, 2026-10-15; not scheduled): field size (64 KiB),
+  field count (512), call size (1 MiB) and decode budget (128 KiB) are constants. Under `may_receive`
+  option B, a call past them to a bounded server is denied once the session holds data above the bound,
+  and the only ways out are splitting the call or raising the bound. Making them configurable (per server)
+  would trade decision latency against those false blocks; measure with `bench:may-receive` and
+  `bench:policy` first.
+
 ### Scanner follow-ups (owner, Phase 3 → later)
 
 - **Done now:** scan a tool's descriptions concatenated to catch instructions split across properties
