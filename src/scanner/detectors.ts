@@ -154,13 +154,18 @@ export function detectStructuralDataRequest(span: TextSpan): Finding[] {
 // Tool shadowing: a description that talks about *another* tool and changes how it should be used.
 // This is how one malicious server hijacks a trusted server's tool (Invariant Labs' shadowing).
 
-const SHADOW = /\b(?:when|before|after|instead\s+of|rather\s+than)\s+(?:using|calling|invoking)\s+(?:the\s+)?[`'"]?([a-z][a-z0-9_]{2,})[`'"]?\s+tool\b/i;
-const SHADOW2 = /\bthe\s+[`'"]?([a-z][a-z0-9_]{2,})[`'"]?\s+tool\s+(?:must|should|will|now)\b/i;
+const SHADOW = /\b(?:when|before|after|instead\s+of|rather\s+than)\s+(?:using|calling|invoking)\s+(?:the\s+)?[`'"]?([a-z][a-z0-9_]{2,})[`'"]?\s+tool\b/gi;
+const SHADOW2 = /\bthe\s+[`'"]?([a-z][a-z0-9_]{2,})[`'"]?\s+tool\s+(?:must|should|will|now)\b/gi;
+// "this tool" / "the same tool" is the tool itself, not a name (6b PR 6; seen on PostHog's catalog,
+// fixed on author-written dev examples). Every match is checked, so a self-reference placed before the
+// real target does not hide it.
+const SELF_REFERENCE = new Set(['this', 'same']);
 
 export function detectShadowing(span: TextSpan, ownToolName: string): Finding[] {
   for (const re of [SHADOW, SHADOW2]) {
-    const m = re.exec(span.text);
-    if (m && m[1] && m[1].toLowerCase() !== ownToolName.toLowerCase()) {
+    for (const m of span.text.matchAll(re)) {
+      const name = m[1]?.toLowerCase();
+      if (!name || SELF_REFERENCE.has(name) || name === ownToolName.toLowerCase()) continue;
       return [{ category: 'tool-shadowing', severity: 'high', where: span.where, evidence: excerpt(span.text, m.index, 40), detail: `description redefines the behaviour of another tool ('${m[1]}')` }];
     }
   }

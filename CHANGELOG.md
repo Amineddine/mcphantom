@@ -26,8 +26,8 @@
   this tool" is no longer read as an instruction to call another tool (it hid two GitHub tools).
   Held-out: TPR 91.7% → 100%, FPR 0.8% → 0% — on a split already observed before tuning.
 - **PostHog MCP server as a reference target** (`docs/posthog.md`). Static scan of PostHog's
-  published tool catalog (`npm run bench:posthog`): 5 of 1,121 tools would be hidden, all MCPhantom
-  false positives. A fixture-based "untrusted event data" scenario in CI: `execute-sql` output is
+  published tool catalog (`npm run bench:posthog`): 2 of 1,121 tools would be hidden (5 before the
+  tool-shadowing fix below), all MCPhantom false positives. A fixture-based "untrusted event data" scenario in CI: `execute-sql` output is
   labelled untrusted, a later exfiltration is blocked, and a write back into PostHog is stopped by a
   policy rule. A generic MCP risk, not a PostHog vulnerability; no PostHog service was contacted.
 - **PostHog API keys** (`phx_`, `phs_`, `pha_`, `phr_`, `phh_`) are detected as secrets. Project tokens
@@ -43,6 +43,21 @@
   `resources/subscribe` and `completion/complete` were sent upstream before anything was audited; only
   the response was withheld. They are now recorded first (`request` event, outcome `forwarding`), and
   not sent if that write fails. The default (`warn`) was not affected beyond the extra event.
+- **Base64 inside a URL was attributed only for known-format secrets and e-mail addresses.** An
+  unformatted token or a URL, base64-encoded into a query parameter or a path segment
+  (`/i/<base64>.png`), was not traced back to the output it came from; the trifecta invariant still
+  blocked, but `may_receive` evidence mode and `from()` rules did not see it. Decoded segments are now
+  kept apart from the surrounding URL, and path segments are decoded one by one.
+- **"Before calling this tool…" hid tools as shadowing.** The tool-shadowing rule read "this tool" and
+  "the same tool" as the name of another tool. Found on PostHog's catalog (3 tools), fixed on new
+  author-written examples.
+
+### Known issues
+
+- **`may_receive` evidence mode stops looking after 64 KiB of an argument or 512 argument fields.** A
+  credential sent past either bound to a server with `may_receive` is not blocked by the bound (the
+  decision is marked attribution-degraded). `may_receive_mode: context` is not affected. Pinned by a
+  test; fix pending.
 
 ## 0.1.0 (2026-10-13)
 

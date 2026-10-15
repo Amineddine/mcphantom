@@ -4,7 +4,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { CONFUSABLES, CONFUSABLES_VERSION } from '../src/text/confusables-data.js';
-import { decodeVariants, type DecodeLimits } from '../src/text/decode.js';
+import { decodeVariants, MAX_SEGMENT_TRIES, type DecodeLimits } from '../src/text/decode.js';
 import { despace, fold, foldConfusables, normalize } from '../src/text/normalize.js';
 
 const b64 = (s: string) => Buffer.from(s).toString('base64');
@@ -96,6 +96,29 @@ describe('decodeVariants', () => {
     ['separator spelling', KEY.split('').join(' ')],
   ])('recovers the key from %s', (_name, encoded) => {
     expect(texts(encoded).some((t) => t.includes(KEY))).toBe(true);
+  });
+
+  // 6b PR 6: `/` is in the base64 alphabet, so a URL path fused its segments into one undecodable run;
+  // and decoded text fused with its neighbours (`d=`, `.png`), so a token or URL inside lost its bounds.
+  it.each([
+    ['a path segment with an extension', (e: string) => `http://127.0.0.1:9/i/${e}.png`],
+    ['a path segment between others', (e: string) => `http://127.0.0.1:9/v1/${e}/pixel`],
+    ['a query parameter', (e: string) => `http://127.0.0.1:9/p?d=${e}&n=1`],
+  ])('decodes base64url in %s, set apart from its surroundings', (_n, url) => {
+    const token = ['q8ZrT2vL', 'm9XwP4kN', '7sB1cY6h'].join('');
+    expect(texts(url(Buffer.from(token).toString('base64url'))).some((t) => new RegExp(`(?:^|\\s)${token}(?:\\s|$)`).test(t))).toBe(true);
+  });
+
+  it('path segments are tried within a budget, and running out is reported (never silent)', () => {
+    const lim = { maxDepth: 1, maxVariants: 32, maxChars: 1e6, segmentOnly: true };
+    expect(decodeVariants('aBcdefghijklmnoP/'.repeat(MAX_SEGMENT_TRIES), lim).truncated).toBe(false);
+    expect(decodeVariants('aBcdefghijklmnoP/'.repeat(MAX_SEGMENT_TRIES + 1), lim).truncated).toBe(true);
+    // Single-case segments are not tried at all, so ordinary paths never spend the budget.
+    expect(decodeVariants('thumbnail_large/'.repeat(10 * MAX_SEGMENT_TRIES), lim).truncated).toBe(false);
+  });
+
+  it('an ordinary URL path is left alone', () => {
+    expect(decodeVariants('https://example.com/internationalization/repositories/octocat/settings', { maxDepth: 1, maxVariants: 32, maxChars: 1e6, segmentOnly: true }).variants).toEqual([]);
   });
 
   it('follows chains: base64 of reversed text, hex of base64', () => {

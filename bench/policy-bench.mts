@@ -64,6 +64,8 @@ process.stdout.write(`Policy deadline: ${EVAL_BUDGET_MS} ms over the whole evalu
 process.stdout.write('| case | whole decision (attribution + policy) | policy evaluation alone | denied by deadline |\n|---|---|---|---|\n');
 measure('small args', { to: 'me@corp.example', path: 'workspace/x', body: 'hello' }, 5000);
 measure('128 KB body', { to: 'me@corp.example', path: 'workspace/x', body: 'a '.repeat(64 * 1024) }, 300);
+// 6b PR 6: mixed-case base64-alphabet runs joined by `/` make the decoder try path segments (bounded).
+measure('128 KB slash-joined base64-alphabet body', { to: 'me@corp.example', path: 'workspace/x', body: 'aBcdefghijklmnoP/'.repeat(7710) }, 300);
 measure('deeply nested args', nest(5000), 500);
 measure('many keys (4000, under the field cap)', manyKeys(4000), 500);
 measure('too many keys (5000, expect fast deny)', manyKeys(5000), 500);

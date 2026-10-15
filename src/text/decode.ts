@@ -1,3 +1,4 @@
+import { isUtf8 } from 'node:buffer';
 import { despace } from './normalize.js';
 
 /**
@@ -50,7 +51,7 @@ export function decodeVariants(input: string, limits: DecodeLimits = DEFAULT_DEC
   const seen = new Set<string>([input]);
   const variants: Variant[] = [];
   let chars = 0;
-  let truncated = false;
+  const state: DecodeState = { segmentTries: MAX_SEGMENT_TRIES, truncated: false };
   let frontier: Variant[] = [{ text: input, chain: [] }];
   for (let depth = 0; depth < limits.maxDepth && frontier.length > 0; depth++) {
     const next: Variant[] = [];
@@ -60,11 +61,10 @@ export function decodeVariants(input: string, limits: DecodeLimits = DEFAULT_DEC
         // A whole-string transform directly after another one is skipped: rot13∘rot13 and
         // reverse∘reverse are the identity, and rot13∘reverse only re-orders work already covered.
         if (WHOLE.has(name) && WHOLE.has(v.chain[v.chain.length - 1] as Decoder)) continue;
-        const out = fn(WHOLE.has(name) && limits.wholeOn === 'tokens' ? tokensOf(v.text) : v.text);
+        const out = fn(WHOLE.has(name) && limits.wholeOn === 'tokens' ? tokensOf(v.text) : v.text, state);
         if (out === undefined || seen.has(out)) continue;
         if (variants.length >= limits.maxVariants || chars + out.length > limits.maxChars) {
-          truncated = true;
-          return { variants, truncated };
+          return { variants, truncated: true };
         }
         seen.add(out);
         chars += out.length;
@@ -75,8 +75,21 @@ export function decodeVariants(input: string, limits: DecodeLimits = DEFAULT_DEC
     }
     frontier = next;
   }
-  return { variants, truncated };
+  return { variants, truncated: state.truncated };
 }
+
+/** Per-call budget shared by the decoders (only the base64 path-segment split uses one). */
+interface DecodeState {
+  segmentTries: number;
+  truncated: boolean;
+}
+
+/**
+ * Path segments tried one by one per `decodeVariants` call. Each try is cheap (~1.5 µs) but a hostile
+ * 128 KiB body of slash-joined runs has thousands; past the budget, segments are not split and the
+ * result is reported `truncated` (6b PR 6, measured with `bench:policy`).
+ */
+export const MAX_SEGMENT_TRIES = 256;
 
 // -------------------------------------------------------------------------------------------------
 // Decoders. Each returns the transformed string, or undefined if it does not apply.
@@ -89,7 +102,7 @@ function tokensOf(s: string): string {
   return s.match(/\S{8,}/g)?.join(' ') ?? '';
 }
 
-const DECODERS: [Decoder, (s: string) => string | undefined][] = [
+const DECODERS: [Decoder, (s: string, state: DecodeState) => string | undefined][] = [
   ['base64', decodeBase64Segments],
   ['hex', decodeHexSegments],
   ['url', decodeUrlEscapes],
@@ -111,12 +124,10 @@ function changed(before: string, after: string): string | undefined {
  */
 function plausibleText(bytes: Buffer): string | undefined {
   if (bytes.length === 0) return undefined;
-  let text: string;
-  try {
-    text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
-  } catch {
-    return undefined;
-  }
+  // Validated without throwing: most candidate runs are not base64 text, and a throwing strict decoder
+  // cost an exception per run (17x slower on slash-joined runs once path segments were tried; 6b PR 6).
+  if (!isUtf8(bytes)) return undefined;
+  const text = bytes.toString('utf8');
   // Count characters that are neither letters, numbers, punctuation, symbols nor ordinary whitespace.
   const noise = text.match(/[^\p{L}\p{N}\p{P}\p{S}\p{Zs}\t\n\r]/gu)?.length ?? 0;
   const total = text.length;
@@ -126,16 +137,47 @@ function plausibleText(bytes: Buffer): string | undefined {
 /** Standard and URL-safe base64 runs of ≥ 12 characters (9 decoded bytes), padding optional. */
 const BASE64_RUN = /(?<![A-Za-z0-9+/\-_])[A-Za-z0-9+/\-_]{12,}={0,2}(?![A-Za-z0-9+/\-_=])/g;
 
-function decodeBase64Segments(s: string): string | undefined {
-  const out = s.replace(BASE64_RUN, (run) => {
-    const body = run.replace(/=+$/, '');
-    if (body.length % 4 === 1) return run; // not a valid base64 length
-    if (/[+/]/.test(body) && /[-_]/.test(body)) return run; // mixed alphabets
-    const text = plausibleText(Buffer.from(body.replace(/-/g, '+').replace(/_/g, '/'), 'base64'));
-    if (text === undefined) return run;
-    return text;
+function decodeBase64Segments(s: string, state: DecodeState): string | undefined {
+  const out = s.replace(BASE64_RUN, (run: string, at: number) => {
+    const whole = decodeBase64Run(run);
+    if (whole !== undefined) return isolate(whole, s, at, run.length);
+    // `/` is in the standard alphabet, so a URL path joins its segments into one run (`9/i/<b64url>`)
+    // that decodes to noise. Each segment is tried on its own (6b PR 6: base64 in a URL path segment).
+    // Only segments mixing upper and lower case are tried: base64 of printable text practically always
+    // does, ordinary path words (`thumbnail_large_2`) do not.
+    if (!run.includes('/')) return run;
+    const parts = run.split('/');
+    const decoded = parts.map((p) => {
+      if (p.length < 12 || !/[A-Z]/.test(p) || !/[a-z]/.test(p)) return undefined;
+      if (state.segmentTries <= 0) {
+        state.truncated = true;
+        return undefined;
+      }
+      state.segmentTries--;
+      return decodeBase64Run(p);
+    });
+    if (decoded.every((d) => d === undefined)) return run;
+    return isolate(parts.map((p, i) => (decoded[i] === undefined ? p : ` ${decoded[i]} `)).join('/').trim(), s, at, run.length);
   });
   return changed(s, out);
+}
+
+function decodeBase64Run(run: string): string | undefined {
+  const body = run.replace(/=+$/, '');
+  if (body.length % 4 === 1) return undefined; // not a valid base64 length
+  if (/[+/]/.test(body) && /[-_]/.test(body)) return undefined; // mixed alphabets
+  return plausibleText(Buffer.from(body.replace(/-/g, '+').replace(/_/g, '/'), 'base64'));
+}
+
+/**
+ * Decoded text spliced into its surroundings fuses with them (`?d=` + a token, a URL + `.png`), and the
+ * identifier extractors then take the wrong span. A space is added on each side that touches a
+ * non-space character (6b PR 6; before, only pattern-detected secrets and e-mails survived in a URL).
+ */
+function isolate(text: string, s: string, at: number, len: number): string {
+  const before = at > 0 && !/\s/.test(s[at - 1] ?? '') ? ' ' : '';
+  const after = at + len < s.length && !/\s/.test(s[at + len] ?? '') ? ' ' : '';
+  return before + text + after;
 }
 
 /** Hex runs of ≥ 16 digits (8 bytes), optionally `0x`-prefixed or `\x`/space/colon separated pairs. */
