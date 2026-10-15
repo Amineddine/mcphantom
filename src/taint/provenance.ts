@@ -50,7 +50,16 @@ export interface Attribution {
   /** True if a bound (leaf/call size, decode budget, variant cap) stopped attribution early, so the
    *  absence of evidence is weaker than usual. */
   degraded: boolean;
+  /** Which bounds did (Phase 7, R6b-1): the `may_receive` bound fails closed on some, not all. */
+  degradedBy: DegradeCause[];
 }
+
+/**
+ * Why attribution stopped early. `leaves`, `leaf-size`, `call-size`, `decode-budget` and `decode-limit`
+ * can hide an identifier or a verbatim copy; `fuzzy` loses only edited copies; `cumulative` loses only
+ * the reassembly of a value split across calls to one tool far apart (or across too many tools).
+ */
+export type DegradeCause = 'leaves' | 'leaf-size' | 'call-size' | 'decode-budget' | 'decode-limit' | 'fuzzy' | 'cumulative';
 
 export interface EvictionNotice {
   output: OutputRef;
@@ -207,7 +216,7 @@ export class ProvenanceIndex {
   attributeCall(args: unknown, opts: { sink?: string; now?: number } = {}): Attribution {
     const out: Evidence[] = [];
     const seen = new Set<string>();
-    let degraded = false;
+    const causes = new Set<DegradeCause>();
     const push = (e: Evidence): void => {
       const key = `${e.argPath}|${e.output.id}|${e.kind}`;
       if (!seen.has(key)) {
@@ -241,7 +250,7 @@ export class ProvenanceIndex {
     // Bound the work: attributing thousands of leaves (a hostile or pathological call) is capped so
     // one call cannot make the decision path slow. The Layer-1 context label is unaffected either way.
     const allLeaves = leaves(args);
-    if (allLeaves.length > MAX_ATTRIBUTED_LEAVES) degraded = true;
+    if (allLeaves.length > MAX_ATTRIBUTED_LEAVES) causes.add('leaves');
     let budget = MAX_ATTRIBUTED_TOTAL;
     let decodeBudget = MAX_DECODED_PER_CALL;
     let fuzzyBudget = MAX_FUZZY_PER_CALL;
@@ -249,12 +258,12 @@ export class ProvenanceIndex {
     const attributed: string[] = [];
     for (const full of allLeaves.slice(0, MAX_ATTRIBUTED_LEAVES)) {
       if (budget <= 0) {
-        degraded = true;
+        causes.add('call-size');
         break;
       }
       const take = Math.min(full.value.length, MAX_ATTRIBUTED_CHARS, budget);
       budget -= take;
-      if (take < full.value.length) degraded = true;
+      if (take < full.value.length) causes.add(take < MAX_ATTRIBUTED_CHARS ? 'call-size' : 'leaf-size');
       const leaf = take < full.value.length ? { path: full.path, value: full.value.slice(0, take) } : full;
       attributed.push(leaf.value);
       // Tier B: identifiers reproduced in the argument. Extraction runs on the raw value, on its folded
@@ -275,7 +284,7 @@ export class ProvenanceIndex {
       // so an output already matched verbatim keeps the stronger evidence (same de-duplication key).
       if (reduce(leaf.value.slice(0, MAX_FUZZY_PER_LEAF)).length >= MIN_FUZZY_REDUCED) {
         const piece = leaf.value.slice(0, Math.min(MAX_FUZZY_PER_LEAF, fuzzyBudget));
-        if (piece.length < leaf.value.length) degraded = true;
+        if (piece.length < leaf.value.length) causes.add('fuzzy');
         fuzzyBudget -= piece.length;
         const needle = fingerprints(piece);
         if (needle.length > 0) {
@@ -293,18 +302,18 @@ export class ProvenanceIndex {
     // matcher is the one recorded. Decoding is the expensive part, so it has its own per-call budget.
     for (const leaf of decodeQueue) {
       if (leaf.value.length > decodeBudget) {
-        degraded = true;
+        causes.add('decode-budget');
         break;
       }
       decodeBudget -= leaf.value.length;
       const r = decodeVariants(leaf.value, ARG_DECODE_LIMITS);
-      if (r.truncated) degraded = true;
+      if (r.truncated) causes.add('decode-limit');
       // Folded form only: the lookup compares normalized hashes already, so a normalize pass would
       // repeat the work.
       for (const v of r.variants) lookup(leaf.path, fold(v.text), false, v.chain);
     }
-    if (opts.sink !== undefined && this.cumulative(opts.sink, attributed, opts.now ?? Date.now(), matched, push)) degraded = true;
-    return { evidence: out, degraded };
+    if (opts.sink !== undefined && this.cumulative(opts.sink, attributed, opts.now ?? Date.now(), matched, push)) causes.add('cumulative');
+    return { evidence: out, degraded: causes.size > 0, degradedBy: [...causes] };
   }
 
   /**

@@ -52,12 +52,12 @@
   "the same tool" as the name of another tool. Found on PostHog's catalog (3 tools), fixed on new
   author-written examples.
 
-### Known issues
-
-- **`may_receive` evidence mode stops looking after 64 KiB of an argument or 512 argument fields.** A
-  credential sent past either bound to a server with `may_receive` is not blocked by the bound (the
-  decision is marked attribution-degraded). `may_receive_mode: context` is not affected. Pinned by a
-  test; fix pending.
+- **`may_receive` evidence mode stopped looking after 64 KiB of an argument or 512 argument fields.** A
+  credential sent past either bound was not blocked. Every field is now searched in full, and a call
+  that is too big to check (or follows an output attribution lost track of) is denied when the session
+  holds data above the server's bound; the reason says which bound and how to proceed. Edited copies in
+  fields over 8 KiB and splits more than 16 KiB apart are not covered in evidence mode (see Known
+  limitations; `npm run bench:may-receive` shows the false-block cost of the alternatives).
 
 ## 0.1.0 (2026-10-13)
 

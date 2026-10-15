@@ -146,7 +146,14 @@ secret`; unset means no bound. Two modes: **`evidence`** (default) denies a call
 known-format credential or Layer 2 attributes it to an output labelled above the bound — a restriction,
 which the honesty rule allows, but bypassable by encodings attribution misses; **`context`** (opt-in per
 server, `may_receive_mode: context`) also denies whenever the session context is above the bound — sound,
-at the cost of blocking every call to that server once such data was read. Precedence: policy deny →
+at the cost of blocking every call to that server once such data was read. **Where attribution cannot
+look, evidence mode fails closed** (R6b-1, owner option B, Phase 7): credentials are searched in every
+field in full; a call is denied when the session holds data above the bound and attribution hit a bound
+that can hide a credential, an identifier or a verbatim copy on this call (field count, field size, call
+size, decode budget or limit), or lost track of an output above the bound (eviction, partial decoding).
+The similarity matchers' bounds (fuzzy, cumulative) do not block: they lose only edited copies and
+far-apart splits, and blocking on them false-blocked 16 KiB documents (`bench:may-receive`: A/B/C/literal).
+The reason names the bound and the way out. Precedence: policy deny →
 `may_receive` → trifecta → ask → allow; a declassify entry lifts the trifecta only. Pinned against the
 "server that is itself the sink" fixture (`test/may-receive.test.ts`), whose own log is the oracle.
 
@@ -348,7 +355,8 @@ scenarios stopped twice by a safety classifier; owner: do not retry).
 the owner confirms every merge, in this order:
 1. **R6b-1** — `may_receive` searches whole argument fields for clear-text credentials and denies a call
    to a bounded server when the decision is attribution-degraded; the false-block cost on large benign
-   calls is measured and reported.
+   calls is measured and reported. **Done in Phase 7 PR 1** (owner chose option B after the
+   measurement; addendum in `docs/reviews/phase-6b.md`).
 2. **Fresh held-out poisoned set** — the new third-party sources and their licences are listed for the
    owner's approval **before anything is collected**; frozen before the scanner sees it; run once.
 3. **Tier-1 runtime benchmark** (`mcp-attack-bench`): scenario format, adapter spec, defense-independent

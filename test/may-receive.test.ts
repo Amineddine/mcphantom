@@ -123,18 +123,71 @@ describe('may_receive: precedence in the decision', () => {
     expect(engine().decide('mail', 'send', 'mail__send', { body: 'hello' })).toMatchObject({ verdict: 'ask', rule: 'policy' });
   });
 
-  // Found in the 6b review (R6b-1): evidence mode searches the first 64 KiB of each of the first 512
-  // leaves, and ignores the `degraded` flag attribution sets when it hits the same bounds, so a clear-text
-  // credential past either bound reaches the server. Pinned until the owner decides the fix; context mode
-  // is not affected.
+  // R6b-1 (6b review), fixed in Phase 7: evidence mode used to search only the first 64 KiB of each of
+  // the first 512 leaves and ignored attribution's `degraded` flag.
   it.each([
     ['past 64 KiB of one argument', { body: 'a '.repeat(33_000) + CANARY }],
     ['in the 513th leaf', { body: [...Array.from({ length: 512 }, () => 'ok'), CANARY] }],
-  ])('KNOWN GAP (evidence mode): a clear-text credential %s is not bounded', (_n, args) => {
+  ])('a clear-text credential %s is bounded (whole fields are searched)', (_n, args) => {
     const d = engine().decide('mail', 'send', 'mail__send', args);
-    expect(d.rule).not.toBe('may_receive');
-    expect(d.attributionDegraded).toBe(true);
-    const ctx = engine({ servers: { ...servers, mail: { ...servers.mail, may_receive_mode: 'context' } } });
-    expect(ctx.decide('mail', 'send', 'mail__send', args)).toMatchObject({ verdict: 'deny', rule: 'may_receive' });
+    expect(d).toMatchObject({ verdict: 'deny', rule: 'may_receive' });
+    expect(d.reason).toContain('carries a credential');
+  });
+
+  it('arguments past a bound that can hide a credential fail closed, and the reason names it and the way out', () => {
+    const d = engine().decide('mail', 'send', 'mail__send', { body: 'a '.repeat(40_000) });
+    expect(d).toMatchObject({ verdict: 'deny', rule: 'may_receive', attributionDegraded: true });
+    expect(d.degradedBy).toContain('leaf-size');
+    expect(d.reason).toContain('fail-closed');
+    expect(d.reason).toContain('an argument field over 64 KiB');
+    expect(d.reason).toContain('split it into smaller calls');
+    expect(d.reason).toContain("raise may_receive for 'mail'");
+  });
+
+  // Owner option B: the similarity matchers' bounds lose only edited copies and far-apart splits, so
+  // they do not block (bench:may-receive publishes what each alternative would have cost).
+  it('the fuzzy and cumulative bounds alone do not block', () => {
+    const prose = Array.from({ length: 3000 }, (_, i) => ['plan', 'review', 'draft', 'notes', 'budget'][i % 5]).join(' ');
+    const fuzzy = engine().decide('mail', 'send', 'mail__send', { body: prose }); // ~17 KiB of prose
+    expect(fuzzy.degradedBy).toEqual(['fuzzy']);
+    expect(fuzzy.rule).not.toBe('may_receive');
+    const e = engine();
+    for (let i = 0; i < 10; i++) e.sent('mail__send', { body: prose.slice(0, 2048) });
+    const later = e.decide('mail', 'send', 'mail__send', { body: 'hello' });
+    expect(later.degradedBy).toEqual(['cumulative']);
+    expect(later.rule).not.toBe('may_receive');
+  });
+
+  it('...but not when nothing above the bound was ever read (nothing could have been missed)', () => {
+    const c = ConfigSchema.parse({ version: 1, servers });
+    const e = new TaintEngine(c, new PolicyEngine(c));
+    e.ingest('tool', 'files', 'files__read', 'read', { content: [{ type: 'text', text: 'meeting notes' }] });
+    expect(e.decide('mail', 'send', 'mail__send', { body: 'a '.repeat(40_000) })).toMatchObject({ verdict: 'ask', rule: 'policy', attributionDegraded: true });
+  });
+});
+
+describe('may_receive: outputs attribution lost track of', () => {
+  const big = (label: string) => `${label}
+` + 'x'.repeat(140 * 1024); // past the 128 KiB output decode bound
+  const engine = (outputConf: 'internal' | 'secret') => {
+    const c = ConfigSchema.parse({ version: 1, servers: {
+      files: { command: 'x', defaults: { effect: 'read', integrity: 'trusted', confidentiality: outputConf } },
+      mail: { command: 'x', may_receive: 'internal', tools: { send: { effect: 'egress', integrity: 'trusted' } } },
+    } });
+    const e = new TaintEngine(c, new PolicyEngine(c));
+    e.ingest('tool', 'files', 'files__read', 'read', { content: [{ type: 'text', text: big('report') }] });
+    return e;
+  };
+
+  it('a secret output decoded only in part makes later calls to the bounded server fail closed', () => {
+    const d = engine('secret').decide('mail', 'send', 'mail__send', { body: 'hello' });
+    expect(d).toMatchObject({ verdict: 'deny', rule: 'may_receive' });
+    expect(d.reason).toContain('lost track of secret data');
+    expect(d.reason).toContain('start a new session');
+    expect(d.degradedBy).toEqual(['output-decode']);
+  });
+
+  it('an internal one does not, for a server allowed to receive internal data', () => {
+    expect(engine('internal').decide('mail', 'send', 'mail__send', { body: 'hello' }).verdict).toBe('allow');
   });
 });

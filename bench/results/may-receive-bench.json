@@ -1,0 +1,587 @@
+[
+ {
+  "call": "1 KiB message",
+  "state": "internal only",
+  "verdict": "allow",
+  "degradedBy": "—",
+  "options": {
+   "literal": "allow",
+   "A": "allow",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "4 KiB message",
+  "state": "internal only",
+  "verdict": "allow",
+  "degradedBy": "—",
+  "options": {
+   "literal": "allow",
+   "A": "allow",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "8 KiB message",
+  "state": "internal only",
+  "verdict": "allow",
+  "degradedBy": "—",
+  "options": {
+   "literal": "allow",
+   "A": "allow",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "16 KiB document",
+  "state": "internal only",
+  "verdict": "allow",
+  "degradedBy": "fuzzy",
+  "options": {
+   "literal": "deny",
+   "A": "allow",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "32 KiB document",
+  "state": "internal only",
+  "verdict": "allow",
+  "degradedBy": "fuzzy",
+  "options": {
+   "literal": "deny",
+   "A": "allow",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "63 KiB document",
+  "state": "internal only",
+  "verdict": "allow",
+  "degradedBy": "fuzzy",
+  "options": {
+   "literal": "deny",
+   "A": "allow",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "65 KiB document",
+  "state": "internal only",
+  "verdict": "allow",
+  "degradedBy": "leaf-size, fuzzy",
+  "options": {
+   "literal": "deny",
+   "A": "allow",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "256 KiB file write",
+  "state": "internal only",
+  "verdict": "allow",
+  "degradedBy": "leaf-size, fuzzy, cumulative",
+  "options": {
+   "literal": "deny",
+   "A": "allow",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "100 fields of 200 B (JSON batch)",
+  "state": "internal only",
+  "verdict": "allow",
+  "degradedBy": "cumulative",
+  "options": {
+   "literal": "deny",
+   "A": "allow",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "512 short fields",
+  "state": "internal only",
+  "verdict": "allow",
+  "degradedBy": "—",
+  "options": {
+   "literal": "allow",
+   "A": "allow",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "513 short fields",
+  "state": "internal only",
+  "verdict": "allow",
+  "degradedBy": "leaves",
+  "options": {
+   "literal": "deny",
+   "A": "allow",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "2000 short fields",
+  "state": "internal only",
+  "verdict": "allow",
+  "degradedBy": "leaves",
+  "options": {
+   "literal": "deny",
+   "A": "allow",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "40 fields of 2 KiB",
+  "state": "internal only",
+  "verdict": "allow",
+  "degradedBy": "fuzzy, cumulative",
+  "options": {
+   "literal": "deny",
+   "A": "allow",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "base64 attachment 48 KiB (binary)",
+  "state": "internal only",
+  "verdict": "allow",
+  "degradedBy": "fuzzy, decode-limit, cumulative",
+  "options": {
+   "literal": "deny",
+   "A": "allow",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "small message after 10 earlier 2 KiB sends to the same tool",
+  "state": "internal only",
+  "verdict": "allow",
+  "degradedBy": "cumulative",
+  "options": {
+   "literal": "deny",
+   "A": "allow",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "1 KiB message",
+  "state": "small secret",
+  "verdict": "allow",
+  "degradedBy": "—",
+  "options": {
+   "literal": "allow",
+   "A": "allow",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "4 KiB message",
+  "state": "small secret",
+  "verdict": "allow",
+  "degradedBy": "—",
+  "options": {
+   "literal": "allow",
+   "A": "allow",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "8 KiB message",
+  "state": "small secret",
+  "verdict": "allow",
+  "degradedBy": "—",
+  "options": {
+   "literal": "allow",
+   "A": "allow",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "16 KiB document",
+  "state": "small secret",
+  "verdict": "allow",
+  "degradedBy": "fuzzy",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "32 KiB document",
+  "state": "small secret",
+  "verdict": "allow",
+  "degradedBy": "fuzzy",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "63 KiB document",
+  "state": "small secret",
+  "verdict": "allow",
+  "degradedBy": "fuzzy",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "65 KiB document",
+  "state": "small secret",
+  "verdict": "deny",
+  "degradedBy": "leaf-size, fuzzy",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "deny",
+   "C": "deny"
+  },
+  "reason": "server 'sink' may receive at most internal data; fail-closed: attribution could not check these arguments (an argument field over 64 KiB) and the session holds secret data. To send this, split it into smaller calls (fields ≤ 64 KiB, ≤ 512 fields, ≤ 128 KiB of text in all), or raise may_receive for 'sink' if it may receive secret data"
+ },
+ {
+  "call": "256 KiB file write",
+  "state": "small secret",
+  "verdict": "deny",
+  "degradedBy": "leaf-size, fuzzy, cumulative",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "deny",
+   "C": "deny"
+  },
+  "reason": "server 'sink' may receive at most internal data; fail-closed: attribution could not check these arguments (an argument field over 64 KiB) and the session holds secret data. To send this, split it into smaller calls (fields ≤ 64 KiB, ≤ 512 fields, ≤ 128 KiB of text in all), or raise may_receive for 'sink' if it may receive secret data"
+ },
+ {
+  "call": "100 fields of 200 B (JSON batch)",
+  "state": "small secret",
+  "verdict": "allow",
+  "degradedBy": "cumulative",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "512 short fields",
+  "state": "small secret",
+  "verdict": "allow",
+  "degradedBy": "—",
+  "options": {
+   "literal": "allow",
+   "A": "allow",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "513 short fields",
+  "state": "small secret",
+  "verdict": "deny",
+  "degradedBy": "leaves",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "deny",
+   "C": "deny"
+  },
+  "reason": "server 'sink' may receive at most internal data; fail-closed: attribution could not check these arguments (more than 512 argument fields) and the session holds secret data. To send this, split it into smaller calls (fields ≤ 64 KiB, ≤ 512 fields, ≤ 128 KiB of text in all), or raise may_receive for 'sink' if it may receive secret data"
+ },
+ {
+  "call": "2000 short fields",
+  "state": "small secret",
+  "verdict": "deny",
+  "degradedBy": "leaves",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "deny",
+   "C": "deny"
+  },
+  "reason": "server 'sink' may receive at most internal data; fail-closed: attribution could not check these arguments (more than 512 argument fields) and the session holds secret data. To send this, split it into smaller calls (fields ≤ 64 KiB, ≤ 512 fields, ≤ 128 KiB of text in all), or raise may_receive for 'sink' if it may receive secret data"
+ },
+ {
+  "call": "40 fields of 2 KiB",
+  "state": "small secret",
+  "verdict": "allow",
+  "degradedBy": "fuzzy, cumulative",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "base64 attachment 48 KiB (binary)",
+  "state": "small secret",
+  "verdict": "deny",
+  "degradedBy": "fuzzy, decode-limit, cumulative",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "deny",
+   "C": "deny"
+  },
+  "reason": "server 'sink' may receive at most internal data; fail-closed: attribution could not check these arguments (an argument decodes into more variants than attribution follows) and the session holds secret data. To send this, split it into smaller calls (fields ≤ 64 KiB, ≤ 512 fields, ≤ 128 KiB of text in all), or raise may_receive for 'sink' if it may receive secret data"
+ },
+ {
+  "call": "small message after 10 earlier 2 KiB sends to the same tool",
+  "state": "small secret",
+  "verdict": "allow",
+  "degradedBy": "cumulative",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "allow",
+   "C": "allow"
+  },
+  "reason": ""
+ },
+ {
+  "call": "1 KiB message",
+  "state": "large secret",
+  "verdict": "deny",
+  "degradedBy": "output-decode",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "deny",
+   "C": "allow"
+  },
+  "reason": "server 'sink' may receive at most internal data; fail-closed: attribution lost track of secret data earlier in this session. To continue, start a new session (an output over 128 KiB was decoded only in part), or raise may_receive for 'sink' if it may receive secret data"
+ },
+ {
+  "call": "4 KiB message",
+  "state": "large secret",
+  "verdict": "deny",
+  "degradedBy": "output-decode",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "deny",
+   "C": "allow"
+  },
+  "reason": "server 'sink' may receive at most internal data; fail-closed: attribution lost track of secret data earlier in this session. To continue, start a new session (an output over 128 KiB was decoded only in part), or raise may_receive for 'sink' if it may receive secret data"
+ },
+ {
+  "call": "8 KiB message",
+  "state": "large secret",
+  "verdict": "deny",
+  "degradedBy": "output-decode",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "deny",
+   "C": "allow"
+  },
+  "reason": "server 'sink' may receive at most internal data; fail-closed: attribution lost track of secret data earlier in this session. To continue, start a new session (an output over 128 KiB was decoded only in part), or raise may_receive for 'sink' if it may receive secret data"
+ },
+ {
+  "call": "16 KiB document",
+  "state": "large secret",
+  "verdict": "deny",
+  "degradedBy": "fuzzy, output-decode",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "deny",
+   "C": "allow"
+  },
+  "reason": "server 'sink' may receive at most internal data; fail-closed: attribution lost track of secret data earlier in this session. To continue, start a new session (an output over 128 KiB was decoded only in part), or raise may_receive for 'sink' if it may receive secret data"
+ },
+ {
+  "call": "32 KiB document",
+  "state": "large secret",
+  "verdict": "deny",
+  "degradedBy": "fuzzy, output-decode",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "deny",
+   "C": "allow"
+  },
+  "reason": "server 'sink' may receive at most internal data; fail-closed: attribution lost track of secret data earlier in this session. To continue, start a new session (an output over 128 KiB was decoded only in part), or raise may_receive for 'sink' if it may receive secret data"
+ },
+ {
+  "call": "63 KiB document",
+  "state": "large secret",
+  "verdict": "deny",
+  "degradedBy": "fuzzy, output-decode",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "deny",
+   "C": "allow"
+  },
+  "reason": "server 'sink' may receive at most internal data; fail-closed: attribution lost track of secret data earlier in this session. To continue, start a new session (an output over 128 KiB was decoded only in part), or raise may_receive for 'sink' if it may receive secret data"
+ },
+ {
+  "call": "65 KiB document",
+  "state": "large secret",
+  "verdict": "deny",
+  "degradedBy": "leaf-size, fuzzy, output-decode",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "deny",
+   "C": "deny"
+  },
+  "reason": "server 'sink' may receive at most internal data; fail-closed: attribution could not check these arguments (an argument field over 64 KiB) and the session holds secret data. To send this, split it into smaller calls (fields ≤ 64 KiB, ≤ 512 fields, ≤ 128 KiB of text in all), or raise may_receive for 'sink' if it may receive secret data"
+ },
+ {
+  "call": "256 KiB file write",
+  "state": "large secret",
+  "verdict": "deny",
+  "degradedBy": "leaf-size, fuzzy, cumulative, output-decode",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "deny",
+   "C": "deny"
+  },
+  "reason": "server 'sink' may receive at most internal data; fail-closed: attribution could not check these arguments (an argument field over 64 KiB) and the session holds secret data. To send this, split it into smaller calls (fields ≤ 64 KiB, ≤ 512 fields, ≤ 128 KiB of text in all), or raise may_receive for 'sink' if it may receive secret data"
+ },
+ {
+  "call": "100 fields of 200 B (JSON batch)",
+  "state": "large secret",
+  "verdict": "deny",
+  "degradedBy": "cumulative, output-decode",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "deny",
+   "C": "allow"
+  },
+  "reason": "server 'sink' may receive at most internal data; fail-closed: attribution lost track of secret data earlier in this session. To continue, start a new session (an output over 128 KiB was decoded only in part), or raise may_receive for 'sink' if it may receive secret data"
+ },
+ {
+  "call": "512 short fields",
+  "state": "large secret",
+  "verdict": "deny",
+  "degradedBy": "output-decode",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "deny",
+   "C": "allow"
+  },
+  "reason": "server 'sink' may receive at most internal data; fail-closed: attribution lost track of secret data earlier in this session. To continue, start a new session (an output over 128 KiB was decoded only in part), or raise may_receive for 'sink' if it may receive secret data"
+ },
+ {
+  "call": "513 short fields",
+  "state": "large secret",
+  "verdict": "deny",
+  "degradedBy": "leaves, output-decode",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "deny",
+   "C": "deny"
+  },
+  "reason": "server 'sink' may receive at most internal data; fail-closed: attribution could not check these arguments (more than 512 argument fields) and the session holds secret data. To send this, split it into smaller calls (fields ≤ 64 KiB, ≤ 512 fields, ≤ 128 KiB of text in all), or raise may_receive for 'sink' if it may receive secret data"
+ },
+ {
+  "call": "2000 short fields",
+  "state": "large secret",
+  "verdict": "deny",
+  "degradedBy": "leaves, output-decode",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "deny",
+   "C": "deny"
+  },
+  "reason": "server 'sink' may receive at most internal data; fail-closed: attribution could not check these arguments (more than 512 argument fields) and the session holds secret data. To send this, split it into smaller calls (fields ≤ 64 KiB, ≤ 512 fields, ≤ 128 KiB of text in all), or raise may_receive for 'sink' if it may receive secret data"
+ },
+ {
+  "call": "40 fields of 2 KiB",
+  "state": "large secret",
+  "verdict": "deny",
+  "degradedBy": "fuzzy, cumulative, output-decode",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "deny",
+   "C": "allow"
+  },
+  "reason": "server 'sink' may receive at most internal data; fail-closed: attribution lost track of secret data earlier in this session. To continue, start a new session (an output over 128 KiB was decoded only in part), or raise may_receive for 'sink' if it may receive secret data"
+ },
+ {
+  "call": "base64 attachment 48 KiB (binary)",
+  "state": "large secret",
+  "verdict": "deny",
+  "degradedBy": "fuzzy, decode-limit, cumulative, output-decode",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "deny",
+   "C": "deny"
+  },
+  "reason": "server 'sink' may receive at most internal data; fail-closed: attribution could not check these arguments (an argument decodes into more variants than attribution follows) and the session holds secret data. To send this, split it into smaller calls (fields ≤ 64 KiB, ≤ 512 fields, ≤ 128 KiB of text in all), or raise may_receive for 'sink' if it may receive secret data"
+ },
+ {
+  "call": "small message after 10 earlier 2 KiB sends to the same tool",
+  "state": "large secret",
+  "verdict": "deny",
+  "degradedBy": "cumulative, output-decode",
+  "options": {
+   "literal": "deny",
+   "A": "deny",
+   "B": "deny",
+   "C": "allow"
+  },
+  "reason": "server 'sink' may receive at most internal data; fail-closed: attribution lost track of secret data earlier in this session. To continue, start a new session (an output over 128 KiB was decoded only in part), or raise may_receive for 'sink' if it may receive secret data"
+ }
+]
