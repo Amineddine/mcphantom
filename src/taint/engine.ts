@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 import type { Classification, Config } from '../config/schema.js';
 import { hasOutsideTarget } from './egress.js';
 import { BOTTOM, canExfiltrate, confAtLeast, join, type Confidentiality, type Effect, type Label } from './labels.js';
-import { ProvenanceIndex, type EvictionNotice, type Evidence, type OutputRef } from './provenance.js';
+import { ProvenanceIndex, type DegradeCause, type EvictionNotice, type Evidence, type OutputRef } from './provenance.js';
 import { leaves, resultTexts } from './text.js';
 import { PolicyEngine, type PolicyOutcome } from '../policy/engine.js';
 import { findSecrets } from '../secrets/detectors.js';
@@ -80,6 +80,9 @@ export interface Decision {
    *  output carrying a non-bottom label (eviction, decode cap), so the absence of evidence may be an
    *  artefact of a bound. */
   attributionDegraded: boolean;
+  /** Which bounds degraded it: this call's (`DegradeCause`) and the session's — `evicted` (a labelled
+   *  output's index entries were dropped) or `output-decode` (an output was decoded only in part). */
+  degradedBy: (DegradeCause | 'evicted' | 'output-decode')[];
   reason: string;
 }
 
@@ -97,6 +100,10 @@ export class TaintEngine {
   private readonly untrustedSources: OutputRef[] = [];
   private readonly secretSources: OutputRef[] = [];
   private degraded = false;
+  /** Highest confidentiality among outputs attribution lost track of (evicted, or decoded only in
+   *  part); `public` while none. Read by the `may_receive` bound (R6b-1, Phase 7). */
+  private degradedConf: Confidentiality = 'public';
+  private readonly sessionCauses = new Set<'evicted' | 'output-decode'>();
   private readonly policy: PolicyEngine | undefined;
 
   constructor(config: Config, policy?: PolicyEngine) {
@@ -125,12 +132,18 @@ export class TaintEngine {
     if (provisional.label.integrity === 'untrusted') this.untrustedSources.push(provisional);
     if (provisional.label.confidentiality === 'secret') this.secretSources.push(provisional);
     const labelled = (l: Label): boolean => l.integrity === 'untrusted' || l.confidentiality !== 'public';
-    for (const e of added.evictions) if (labelled(e.output.label)) this.degraded = true;
-    if (added.decodeTruncated && labelled(provisional.label)) this.degraded = true;
+    for (const e of added.evictions) if (labelled(e.output.label)) this.loseTrack(e.output.label, 'evicted');
+    if (added.decodeTruncated && labelled(provisional.label)) this.loseTrack(provisional.label, 'output-decode');
     return {
       ref: provisional, secretsDetected: added.secrets, possibleSecrets: possible, identifiers: added.identifiers, evictions: added.evictions,
       decodeTruncated: added.decodeTruncated, contextBefore: before, contextAfter: this.context,
     };
+  }
+
+  private loseTrack(l: Label, cause: 'evicted' | 'output-decode'): void {
+    this.degraded = true;
+    this.sessionCauses.add(cause);
+    this.degradedConf = join({ integrity: 'trusted', confidentiality: this.degradedConf }, l).confidentiality;
   }
 
   private possibleSecrets(texts: string[]): { random: number; id: number } {
@@ -156,6 +169,7 @@ export class TaintEngine {
       id, server: serverId, tool, effect, context: { ...this.context },
       untrustedSources: [...this.untrustedSources], secretSources: [...this.secretSources],
       evidence: attribution.evidence, attributionDegraded: this.degraded || attribution.degraded,
+      degradedBy: [...attribution.degradedBy, ...this.sessionCauses],
       ...(policy ? { policy } : {}),
     };
 
@@ -168,7 +182,7 @@ export class TaintEngine {
     // 2. The server's `may_receive` bound: every call sends its arguments to the server's operator.
     const bound = this.config.servers[serverId]?.may_receive;
     if (bound) {
-      const why = this.mayReceiveViolation(serverId, bound, args, attribution.evidence);
+      const why = this.mayReceiveViolation(serverId, bound, args, attribution.evidence, attribution.degradedBy);
       if (why) return { ...base, verdict: 'deny', rule: 'may_receive', enforced: true, reason: `server '${serverId}' may receive at most ${bound} data; ${why}` };
     }
 
@@ -205,23 +219,41 @@ export class TaintEngine {
 
   /**
    * Why sending `args` to `serverId` would exceed its `may_receive` bound, or undefined. Evidence mode:
-   * an argument carries a credential (only `secret` data is known from content alone), or Layer 2
-   * attributes it to an output labelled above the bound — evidence may add restrictions (DESIGN.md §2,
-   * honesty rule), so every matcher counts here. Context mode adds the sound check on the context label.
+   * an argument carries a credential (only `secret` data is known from content alone; every field is
+   * searched in full in clear text), or Layer 2 attributes it to an output labelled above the bound —
+   * evidence may add restrictions (DESIGN.md §2, honesty rule), so every matcher counts here. Where
+   * attribution could not look, the bound fails closed (R6b-1, Phase 7, owner option B): on this call's
+   * bounds that can hide a credential, an identifier or a verbatim copy (not the fuzzy/cumulative ones,
+   * which lose only edited copies and far-apart splits), and on earlier outputs it lost track of — in
+   * both cases only if what it might have missed is above the bound. The reason names the bound and
+   * the way out. Context mode adds the sound check on the context label.
    */
-  private mayReceiveViolation(serverId: string, bound: Confidentiality, args: unknown, evidence: Evidence[]): string | undefined {
+  private mayReceiveViolation(serverId: string, bound: Confidentiality, args: unknown, evidence: Evidence[], callDegradedBy: DegradeCause[]): string | undefined {
     const above = (c: Confidentiality): boolean => c !== bound && confAtLeast(c, bound);
     if (this.config.servers[serverId]?.may_receive_mode === 'context' && above(this.context.confidentiality)) {
       return `the session context is ${this.context.confidentiality} (may_receive_mode: context)`;
     }
     if (above('secret')) {
-      for (const leaf of leaves(args).slice(0, MAX_BOUND_LEAVES)) {
-        const rule = secretRuleIn(leaf.value.slice(0, MAX_BOUND_LEAF_CHARS));
+      for (const leaf of leaves(args)) {
+        const rule = secretRuleIn(leaf.value);
         if (rule) return `argument ${leaf.path} carries a credential (${rule})`;
       }
     }
     const hit = evidence.find((e) => above(e.output.label.confidentiality));
     if (hit) return `argument ${hit.argPath} came from ${hit.output.source}, labelled ${hit.output.label.confidentiality} (${hit.matcher})`;
+    const raise = `or raise may_receive for '${serverId}' if it may receive ${this.context.confidentiality} data`;
+    // Attribution's per-call bounds were hit: it cannot say these arguments are clean. Only matters if
+    // the session holds something above the bound at all.
+    const hiding = callDegradedBy.filter((c) => c in CALL_BOUND);
+    if (hiding.length > 0 && above(this.context.confidentiality)) {
+      const what = hiding.map((c) => CALL_BOUND[c as keyof typeof CALL_BOUND]).join('; ');
+      return `fail-closed: attribution could not check these arguments (${what}) and the session holds ${this.context.confidentiality} data. To send this, split it into smaller calls (fields ≤ 64 KiB, ≤ 512 fields, ≤ 128 KiB of text in all), ${raise}`;
+    }
+    // Attribution lost track of earlier outputs above the bound.
+    if (above(this.degradedConf)) {
+      const fix = this.sessionCauses.has('evicted') ? 'raise taint.max_index_mb (the provenance index evicted it), start a new session, ' : 'start a new session (an output over 128 KiB was decoded only in part), ';
+      return `fail-closed: attribution lost track of ${this.degradedConf} data earlier in this session. To continue, ${fix}${raise}`;
+    }
     return undefined;
   }
 
@@ -251,9 +283,15 @@ export class TaintEngine {
   }
 }
 
-/** Bounds of the credential search for `may_receive` (same per-leaf cap as attribution). */
-const MAX_BOUND_LEAVES = 512;
-const MAX_BOUND_LEAF_CHARS = 64 * 1024;
+/** Attribution bounds that can hide a credential, an identifier or a verbatim copy, as reported to the
+ *  user when `may_receive` fails closed on them. */
+const CALL_BOUND = {
+  leaves: 'more than 512 argument fields',
+  'leaf-size': 'an argument field over 64 KiB',
+  'call-size': 'over 1 MiB of argument text',
+  'decode-budget': 'over 128 KiB of argument text to decode',
+  'decode-limit': 'an argument decodes into more variants than attribution follows',
+} as const;
 
 function askReason(policy: PolicyOutcome): string {
   return `policy requires user confirmation (${policy.matches.find((m) => m.effect === 'ask')?.origin ?? '?'})`;

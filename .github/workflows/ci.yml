@@ -70,6 +70,8 @@ jobs:
         run: npm run bench:evasion
       - name: tier-1 entropy benchmark (fails if the held-out FPR or detection crosses its floor)
         run: npm run bench:entropy
+      - name: may_receive false-block benchmark (fails if the engine drifts from the published rule)
+        run: npm run bench:may-receive
       - name: install smoke test (packed tarball, fresh prefix)
         shell: bash
         run: |

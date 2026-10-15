@@ -61,7 +61,7 @@ token; each new test fails without the change. The first version of this fix was
 
 | # | Severity | Finding | Disposition |
 |---|---|---|---|
-| R6b-1 | **Medium (open, pinned)** | **`may_receive` evidence mode fails open past its own bounds.** The credential search covers the first 64 KiB of each of the first 512 argument leaves, and the check ignores the `degraded` flag attribution sets at the same bounds. A clear-text AWS key after 64 KiB of padding, or in the 513th leaf, reaches a server with `may_receive: internal` (probe and tests: `allow`, `attributionDegraded: true`). `secretRuleIn`'s comment ("the clear-text search always covers all of it") is not true for this caller. Context mode is unaffected. | Pinned as KNOWN GAP in `test/may-receive.test.ts`. Not fixed here (outside this PR's scope). Proposed: clear-text search over the whole leaf (cheap, as in `containsSecret`), and deny when a bounded server's decision is degraded. Owner decides. |
+| R6b-1 | **Medium (open, pinned)** | **`may_receive` evidence mode fails open past its own bounds.** The credential search covers the first 64 KiB of each of the first 512 argument leaves, and the check ignores the `degraded` flag attribution sets at the same bounds. A clear-text AWS key after 64 KiB of padding, or in the 513th leaf, reaches a server with `may_receive: internal` (probe and tests: `allow`, `attributionDegraded: true`). `secretRuleIn`'s comment ("the clear-text search always covers all of it") is not true for this caller. Context mode is unaffected. | **Fixed in Phase 7 PR 1** (owner option B) — see the addendum below. |
 | R6b-2 | Medium (fixed here) | Decoded base64 inside a URL fused with its surroundings: unformatted tokens and URLs encoded in a query parameter or path segment were not attributed (Layer 1 still blocked under the trifecta). The DESIGN resume note said query parameters were covered; that held for format-detected secrets and e-mails only. | Fixed (above). Same splice remains for the hex, URL-escape, HTML-entity and `\u` decoders: not measured, listed under untested paths. |
 | R6b-3 | Low (fixed here) | **Corpus count mislabelled.** Since round 5t, `scanner-bench.md` printed the 6 author-written dev examples as real definitions ("254 real"); PR 5's own title also said "254 real benign definitions". Real definitions: 248 (14 + 21 + 141 + 72); 254 was the benign *total* including 6 synthetic regressions. | The bench counts author-written examples separately (now "248 real, 12 author-written, 6 synthetic"). CHANGELOG wording ("254 benign tool definitions") was correct and is kept. |
 | R6b-4 | Low (fixed here) | Tool-shadowing self-reference (above). | Fixed on dev examples; PostHog 5 → 2. |
@@ -159,3 +159,48 @@ an unformatted-token query-parameter test (`channels.decision.test.ts`); the R6b
 decoder change; their result files are committed (`bench:entropy` output unchanged; `bench:policy`
 prints only, so its numbers are in the Cost section). gitleaks 8.30.1 (checksum verified)
 over the working tree: no leaks.
+
+## Addendum (2026-10-15, Phase 7 PR 1): R6b-1 resolved
+
+**Owner decision:** search every argument field in full for clear-text credentials, and deny calls to a
+`may_receive`-bounded server when the decision is attribution-degraded; measure the false-block cost.
+
+**What the measurement found.** "Degraded" was much broader than large calls. Attribution marks a call
+degraded on seven per-call bounds (`degradedBy`, now on every decision): more than 512 fields, a field
+over 64 KiB, over 1 MiB in all, over 128 KiB to decode, a decode variant limit — and the two similarity
+matchers' bounds, fuzzy (8 KiB per field, 32 KiB per call) and cumulative (16 KiB per tool, **sticky for
+the rest of the session** once trimmed). The session itself is degraded once an output is evicted or
+decoded only in part (over 128 KiB). Four rules were measured on 15 benign call shapes to a server with
+`may_receive: internal` (`npm run bench:may-receive`; every call benign, so every deny is a false block):
+
+| session has read | literal (deny whenever degraded) | A (any bound, only if what could be missed is above the bound) | **B (implemented)**: as A, only bounds that can hide a credential, an identifier or a copy | C: as B, without partly decoded outputs |
+|---|---|---|---|---|
+| internal data only | 11/15 | 0/15 | **0/15** | 0/15 |
+| a small secret | 11/15 | 11/15 | **5/15** | 5/15 |
+| a secret output over 128 KiB | 15/15 | 15/15 | **15/15** | 5/15 |
+
+What each rule gives up (evidence mode only; `context` mode blocks all of it anyway):
+
+- **Literal** — nothing more, but it blocks 16 KiB documents, a 20 KB JSON batch and every call to a
+  tool after ~16 KiB of earlier sends even when the session never read anything above the bound, where
+  there is nothing to miss.
+- **A** — nothing more than literal in practice (when the context is not above the bound, no output
+  above it exists to be missed). Same false blocks as literal once a secret is read.
+- **B (chosen)** — an *edited* copy of confidential prose in a field over 8 KiB (verbatim copies are
+  still checked up to 64 KiB per field), and a value split across calls to one tool with more than 16 KiB
+  sent in between. Credentials are searched in full regardless. Still blocks the genuinely large calls (a
+  field over 64 KiB, over 512 fields, a 48 KiB binary attachment) and, after a secret output over 128 KiB,
+  every call to the bounded server for the rest of the session.
+- **C** — additionally, a secret that appears *encoded* past the first 128 KiB of a large output; if it is
+  later sent in clear text, the full-field credential search still catches known formats.
+
+Each B denial says which bound and how to proceed (split the call; raise `taint.max_index_mb` for an
+eviction; start a new session after a partly decoded output; or raise the server's `may_receive`).
+`may_receive_mode: context` is not a way out: it denies more. The per-call bounds are constants, not
+configuration.
+
+Tests (`test/may-receive.test.ts`): the two KNOWN GAP cases now deny with a credential reason; a call
+past a hiding bound fails closed with the bound named; the fuzzy and cumulative bounds alone do not
+block; a partly decoded secret output blocks later calls, an internal one does not; nothing blocks when
+nothing above the bound was read. `bench:may-receive` fails if the engine's verdicts disagree with its B
+column.

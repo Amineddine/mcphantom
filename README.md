@@ -213,6 +213,14 @@ agent is safe.
   not covered. In the default `evidence` mode the bound catches credentials and data Layer 2 can
   attribute; an encoding it doesn't decode gets through (`may_receive_mode: context` closes that, at the
   cost of blocking that server once such data was read).
+- **`evidence` mode fails closed where attribution cannot look, but not everywhere.** Credentials are
+  searched in full in every argument field. Once the session holds data above a server's bound, a call
+  to it is denied if it is too big for attribution to check (a field over 64 KiB, more than 512 fields,
+  over 128 KiB of text to decode) or if attribution lost track of such data earlier (an evicted or
+  partly decoded output); the reason names the bound and the way out. Two bounds do **not** block, by
+  design: an *edited* copy of confidential prose in a field over 8 KiB, and a value split across calls
+  to one tool with more than 16 KiB sent in between, both get through evidence mode. What each
+  alternative would cost in false blocks: `npm run bench:may-receive`.
 - **Images and audio** are labelled by their source but not inspected.
 - **Large inputs fail closed.** Policy evaluation has a 50 ms deadline; an extreme call (≈ 4000 fields
   on a slow machine) can be denied.
