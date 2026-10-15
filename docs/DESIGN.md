@@ -344,9 +344,39 @@ secrets, ~1.5% base64url type-prefix collisions, evidence-mode bypass by undecod
 not proposing `may_receive`, exfiltration channels tested at the decision level only (server-backed
 scenarios stopped twice by a safety classifier; owner: do not retry).
 
-**Next (resume point, 2026-10-15): Phase 7**, plan to be approved by the owner (proposed at the end of
-the PR 6 session): fresh held-out poisoned set, the R6b-1 decision, the Tier-1 runtime benchmark, the
-research items in the Phase 7 row of §5, and PostHog's real server against the local mock backend.
+**Next (resume point, 2026-10-15): Phase 7**, plan approved by the owner (2026-10-15), one PR per item,
+the owner confirms every merge, in this order:
+1. **R6b-1** — `may_receive` searches whole argument fields for clear-text credentials and denies a call
+   to a bounded server when the decision is attribution-degraded; the false-block cost on large benign
+   calls is measured and reported.
+2. **Fresh held-out poisoned set** — the new third-party sources and their licences are listed for the
+   owner's approval **before anything is collected**; frozen before the scanner sees it; run once.
+3. **Tier-1 runtime benchmark** (`mcp-attack-bench`): scenario format, adapter spec, defense-independent
+   oracles.
+4. **Baselines and ablations** — no defense, scanner only, deny-all-egress;
+   Layer 1 only, each Layer-2 matcher off in turn, entropy `on_hit` levels, both `may_receive` modes
+   (this is also the "how much does Layer 2 add over Layer 1" measurement). Third-party tools only where
+   the licence allows and they do not call a remote service.
+5. **Latency, memory, eviction loss** — ≥ 10 launches per configuration, bootstrap CIs, quiet Linux runner
+   and laptop; includes the 1 MB regression and the slash-heavy 128 KB case (R6b-10).
+6. **AgentDojo port** — licence check first; decision-level or fixture tests with inert placeholders and
+   no injection prose (the channel-test approach). If anything is interrupted: stop, tell the owner, do
+   not retry.
+7. **PostHog's real MCP server + the local mock backend in a GitHub Actions job** with a Redis service
+   container — **no installs on the owner's laptop**; the workflow is shown to the owner before its
+   first run.
+Also in Phase 7: the **transformation classifier** for the thesis measurement (below). Live runs stay in
+Phase 9. Sessions hand off cleanly (resume point updated) when context passes ~75%.
+
+**Roadmap update (owner; recorded 2026-10-15 — it had not reached this file):**
+- **Thesis measurement** (Phase 9, live models): in real exfiltration attempts, how often does the
+  argument carry the secret / attacker URL **exactly, encoded, or paraphrased**? This decides how much of
+  the threat Layer 2 can see at all. Phase 7 builds only the **classifier** that labels an argument's
+  transformation (exact / normalized / decoded / paraphrased) against the output it came from, so the
+  Phase 9 runs can use it.
+- **AgentDojo port** (Debenedetti et al., NeurIPS 2024 D&B) — deterministic part in Phase 7 (above), live
+  in Phase 9.
+- **Baselines and ablations** — Phase 7 (above).
 
 **6b** was delivered as a series of PRs (workflow below).
 
@@ -502,9 +532,9 @@ Every phase ends with green CI, a commit, and a written hostile review with its 
 | 5 | **Policy engine (CEL).** Loader, AST schema lint, evaluator, deny>ask>allow, declassify, `lint`/`test`/`explain`; `init` bulk classification suggestions | Contract tests on CEL semantics, property + fuzz tests |
 | 6 | **Taint deepening.** Decoded/fuzzy/cumulative matchers, secret detectors, Tier A/B bounded index with eviction events and `attribution_degraded`, elicitation/ask flow; exfiltration attack servers | Adversarial evasion suite, with the evasions that succeed published |
 | 6.5 | **v0.1 public release** (right after 6a): polished README with a "Related work" section, scripted demo GIF, repository made public — **only with the owner's explicit confirmation** | README claims each link to a reproducible command; GIF regenerates from a script |
-| 7 | **Tier-1 runtime benchmark** (`mcp-attack-bench`), adapter spec, latency + memory + eviction-loss benchmarks (semantic layer dropped from v1). **Fresh held-out poisoned set** (owner, 2026-10-14): new third-party sources, frozen before running, replacing the scanner test split observed in 6b. **PostHog:** real server against the local mock backend; false-block rate on normal PostHog workflows; latency over the PostHog upstream | Numbers and methodology published |
+| 7 | **Tier-1 runtime benchmark** (`mcp-attack-bench`), adapter spec, latency + memory + eviction-loss benchmarks (semantic layer dropped from v1). **Fresh held-out poisoned set** (owner, 2026-10-14): new third-party sources, frozen before running, replacing the scanner test split observed in 6b. **Baselines and ablations; AgentDojo port (deterministic, inert placeholders); transformation classifier for the Phase-9 thesis measurement** (owner roadmap update, 2026-10-15). **PostHog:** real server against the local mock backend, in a GitHub Actions job (Redis service container; no local installs); false-block rate on normal PostHog workflows; latency over the PostHog upstream | Numbers and methodology published |
 | 8 | **Dashboard, v1 scope: the taint-trace view only** (decision → Layer-1 sources, Layer-2 evidence, rule, degraded flag) **plus a minimal approval queue** for `ask` decisions on clients without elicitation (approve/deny one pending call, with a timeout that denies). The full "Blacklight" UI comes after v1 | Playwright e2e + dashboard security tests; queue approval/deny/timeout paths tested |
-| 9 | **Showcase + Tier-2 live runs.** The headline demo uses **real Claude Code as the MCP client against a real poisoned page**, with a **replay mode** (recorded real transcript, model + date shown) for anyone without Claude Code. The demo must run **from the installed package — `npx mcphantom demo`** — not only a dev checkout. Tier-2 bulk runs: Ollama default; Anthropic API behind a flag with the USD-50 cap. The deterministic `npm run demo` is kept as the CI regression test. | Live attack-success rates with confidence intervals; `npx mcphantom demo` works from a clean global install; replay mode needs no network or model |
+| 9 | **Showcase + Tier-2 live runs.** The headline demo uses **real Claude Code as the MCP client against a real poisoned page**, with a **replay mode** (recorded real transcript, model + date shown) for anyone without Claude Code. The demo must run **from the installed package — `npx mcphantom demo`** — not only a dev checkout. Tier-2 bulk runs: Ollama default; Anthropic API behind a flag with the USD-50 cap. **Thesis measurement** (owner): how often live exfiltration attempts carry the secret / attacker URL exactly, encoded or paraphrased, labelled by the Phase-7 classifier; live AgentDojo runs. The deterministic `npm run demo` is kept as the CI regression test. | Live attack-success rates with confidence intervals; `npx mcphantom demo` works from a clean global install; replay mode needs no network or model |
 | 10 | **v1 hardening.** Claude Code hook integration — a `PreToolUse` hook so the client's built-in tools (Bash, WebFetch, …, which never cross MCP) are checked against the same taint state and policy, and a `SessionStart` hook that resets the session's taint (addresses over-tainting across conversations); optional per-server sandboxing of upstream servers (the real boundary for same-user tampering and host actions); an audited "trust this source" declassify offered from the approval prompt, recorded as a named declassify entry | Hook e2e against real Claude Code; sandbox escape tests per OS; every approval-created declassify appears in the trace and the policy diff |
 | 11 | **Docs + v1 release**: README, architecture diagram, threat model, known bypasses, write-up, demo GIF; GitHub + npm (each push/publish confirmed with the owner first) | Every claim linked to a reproducible command |
 
@@ -590,6 +620,10 @@ across conversations; image/audio content is labeled by source but not inspected
 ---
 
 ## Change log
+
+- 2026-10-15 — Phase 7 plan approved (owner): order R6b-1 → fresh held-out set → runtime benchmark →
+  baselines/ablations → latency → AgentDojo port → PostHog in CI. Roadmap update recorded: thesis
+  measurement (Phase 9; classifier in Phase 7), AgentDojo port, baselines and ablations.
 
 - 2026-10-15 — Phase 6b closed with its hostile review (`docs/reviews/phase-6b.md`, PR 6): tool-shadowing
   self-reference fixed (PostHog false positives 5 → 2), base64 inside URLs attributed for every
