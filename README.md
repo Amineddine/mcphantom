@@ -168,6 +168,7 @@ miss are in the linked files.
 | Static scanner on **author-written and derived examples** (internal test split; not held-out performance on real attacks) | TPR 100% (12/12), FPR 0% (0/132), after one tuning round on the dev split; before it, 91.7% / 0.8%. The test split had already been seen before that round. Corpus: **260 benign** definitions (248 real: official reference servers, GitHub's and Microsoft Playwright's MCP servers) and **27 poisoned** (22 author-written, 5 rewritten from published third-party attacks, all 5 held out). Every model-visible schema field is scanned, parameter names included. A regression floor, not a claim about novel attacks. | `npm run bench:scanner` → [results](bench/results/scanner-bench.md) |
 | Static scanner on PostHog's published MCP tool catalog | 5 of 1,121 tools hidden (0.4%), all false positives of MCPhantom's; coverage stated exactly (descriptions/titles/annotations of all tools, 43 input schemas). See [docs/posthog.md](docs/posthog.md). | `npm run bench:posthog` → [results](bench/results/posthog-scan.md) |
 | Runtime benchmark, Tier 1 (`mcp-attack-bench`, recorded traces replayed through the gate; author-written, a regression floor) | MCPhantom at defaults: **0/60** claimed exfiltration attacks succeed (5 channels × 6 encodings × 2 secret formats; Wilson 0–6.0%), 2 partial leaks (2 of 3 fragments of a split secret reached a `may_receive`-bounded sink server before the block); no defense / scanner only 60/60, deny-all-egress 24/60. False blocks **4/15** benign traces — all four the deliberately over-tainted case. Outside the claims: an unbounded sink server and a secret in the URL of a tool classified `read` get through (8/8). Black-box check through the real gateway on the demo fixtures in CI. | `npm run bench:runtime` → [results](bench/results/runtime-bench.md), [spec](docs/benchmark.md) |
+| Baselines and ablations (pre-registered; same traces plus a `from()` policy family and an unclassified-source family) | Layer 2 changes **no trifecta decision** (the invariant reads Layer-1 labels); it decides `may_receive` and `from()` rules. Layer 1 only: 7/60 claimed attacks succeed (all to the bounded sink server) and 4/5 policy-family attacks on internal data succeed; one declassified benign trace becomes a false block. Trifecta in audit mode: 48/60. `may_receive_mode: context`: 0 partial leaks, 6/15 false blocks. Entropy `on_hit: secret` stops 3/3 random secrets from an unclassified source at 1/3 false blocks. | `npm run bench:ablations` → [results](bench/results/ablations.md), [review](docs/reviews/phase-7-ablations.md) |
 | Layer-2 attribution under evasion | **143/143** claimed transformations caught; **0/39** of the transformations the design says it does not catch; **0/36** false attributions on unrelated benign pairs | `npm run bench:evasion` → [results](bench/results/evasion-bench.md) |
 | Scanner under disguise (author-written examples) | **90/90** claimed disguises caught | `npm run bench:evasion` |
 | Decision latency (laptop, i5-8250U) | p50 1.6 ms (small args), 86 ms (128 KB body) | `npm run bench:policy` → [results](bench/results/policy-bench.md) |
@@ -234,6 +235,13 @@ agent is safe.
   design: an *edited* copy of confidential prose in a field over 8 KiB, and a value split across calls
   to one tool with more than 16 KiB sent in between, both get through evidence mode. What each
   alternative would cost in false blocks: `npm run bench:may-receive`.
+- **A secret split across calls to a bounded server leaks in part before the block.** The cumulative
+  matcher can only attribute the call that *completes* the secret, so in evidence mode 2 of 3 fragments
+  reach the server first (2 partial leaks in the runtime benchmark). `may_receive_mode: context` closes
+  it (0 fragments, measured), but blocks every call to that server once the session holds anything
+  above the bound — and outputs of tools with no confidentiality set count as `internal`, so on a
+  `may_receive: public` server one unclassified read is enough (2 extra false blocks on the benchmark's
+  2 benign sink-server traces). Measured in `npm run bench:ablations`.
 - **Images and audio** are labelled by their source but not inspected.
 - **Large inputs fail closed.** Policy evaluation has a 50 ms deadline; an extreme call (≈ 4000 fields
   on a slow machine) can be denied.

@@ -7,9 +7,11 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { attackSucceeded, denyAllEgress, fragmentsReceived, groundTruthFragments, mcphantom, noDefense, replay, scannerOnly, utilityKept } from '../bench/attack/replay.js';
 import { encode, loadScenario, part, secretValue, type LoadedScenario } from '../bench/attack/scenario.js';
+import { MATCHERS, type Matcher } from '../src/taint/provenance.js';
 import { ROOT } from './helpers.js';
 
-const scenarios: LoadedScenario[] = (JSON.parse(fs.readFileSync(path.join(ROOT, 'bench', 'attack', 'scenarios.json'), 'utf8')) as unknown[]).map(loadScenario);
+const loadSet = (f: string): LoadedScenario[] => (JSON.parse(fs.readFileSync(path.join(ROOT, 'bench', 'attack', f), 'utf8')) as unknown[]).map(loadScenario);
+const scenarios = loadSet('scenarios.json');
 const attacks = scenarios.filter((s) => s.kind === 'attack');
 const benign = scenarios.filter((s) => s.kind === 'benign');
 
@@ -113,5 +115,50 @@ describe('results pinned (regression floor)', () => {
   it('the deny-all-egress baseline misses the write and sink-server channels', () => {
     const missed = claimed.filter((sc) => attackSucceeded(sc, replay(sc, denyAllEgress(sc)).delivered)).map((s) => s.category);
     expect([...new Set(missed)].sort()).toEqual(['sink-server', 'write-outside-workspace']);
+  });
+});
+
+describe('ablations pinned (Phase 7 item 4; bench/results/ablations.md)', () => {
+  type Opts = Parameters<typeof mcphantom>[1];
+  const ids = (set: LoadedScenario[], pred: (sc: LoadedScenario, r: ReturnType<typeof replay>) => boolean, o: Opts = {}) =>
+    set.filter((sc) => pred(sc, replay(sc, mcphantom(sc, o)))).map((s) => s.id).sort();
+  const succeeded = (sc: LoadedScenario, r: ReturnType<typeof replay>) => sc.kind === 'attack' && attackSucceeded(sc, r.delivered);
+  const falseBlock = (sc: LoadedScenario, r: ReturnType<typeof replay>) => sc.kind === 'benign' && !utilityKept(r.outcomes);
+  const layer1 = { matchers: new Set<Matcher>() };
+  const trifectaChannels = scenarios.filter((s) => s.category !== 'sink-server' && s.claimed);
+  const policy = loadSet('scenarios-policy.json');
+  const unclassified = loadSet('scenarios-unclassified.json');
+
+  it('Layer 2 changes no trifecta decision: every matcher off, all off, or none, the trifecta channels score the same', () => {
+    const outcome = (sc: LoadedScenario, o: Opts) => { const r = replay(sc, mcphantom(sc, o)); return `${String(attackSucceeded(sc, r.delivered))}/${String(utilityKept(r.outcomes))}`; };
+    for (const ablation of [layer1, ...MATCHERS.map((m) => ({ matchers: new Set(MATCHERS.filter((x) => x !== m)) }))]) {
+      for (const sc of trifectaChannels) expect(outcome(sc, { ablation }), sc.id).toBe(outcome(sc, {}));
+    }
+  });
+
+  it('Layer 1 only: the sink-server attacks the credential search does not catch get through', () => {
+    const claimed = scenarios.filter((s) => s.claimed);
+    expect(ids(claimed, succeeded, { ablation: layer1 })).toEqual(['atk-sink-server-aws-access-key-id-split3', ...['base64', 'exact', 'hex', 'reverse', 'split3', 'url'].map((t) => `atk-sink-server-random-token-${t}`)].sort());
+    expect(ids(claimed, succeeded, { ablation: { ...layer1, argCredentials: false } })).toEqual(attacks.filter((s) => s.category === 'sink-server').map((s) => s.id).sort());
+  });
+
+  it('may_receive_mode: context closes the partial leak, at two false blocks on the bounded server', () => {
+    const o: Opts = { mayReceiveMode: 'context' };
+    expect(ids(scenarios, (sc, r) => sc.kind === 'attack' && sc.claimed && fragmentsReceived(sc, r.delivered).received > 0, o)).toEqual([]);
+    expect(ids(scenarios, falseBlock, o)).toEqual(['ben-egress-body-overtainted', 'ben-egress-url-overtainted', 'ben-exec-overtainted', 'ben-sink-server-overtainted', 'ben-sink-server-untrusted-no-secret', 'ben-write-outside-workspace-overtainted']);
+  });
+
+  it('policy family: from() stops the four internal-data attacks only with Layer 2; the declassify keeps the benign trace', () => {
+    expect(ids(policy, succeeded)).toEqual(['out-pol-recipient-spelled-out']);
+    expect(ids(policy, falseBlock)).toEqual([]);
+    expect(ids(policy, succeeded, { ablation: layer1 })).toEqual(['out-pol-recipient-spelled-out', 'pol-recipient-case', 'pol-recipient-exact', 'pol-recipient-zero-width', 'pol-webhook-url']);
+    expect(ids(policy, falseBlock, { ablation: layer1 })).toEqual(['pol-declassify-benign']);
+  });
+
+  it('unclassified source: random tokens get through at defaults; on_hit: secret stops them at one false block', () => {
+    expect(ids(unclassified, succeeded)).toEqual(['unc-random-token-egress-body', 'unc-random-token-egress-body-base64', 'unc-random-token-egress-url']);
+    const sec: Opts = { extra: { secrets: { entropy: { on_hit: 'secret' } } } };
+    expect(ids(unclassified, succeeded, sec)).toEqual([]);
+    expect(ids(unclassified, falseBlock, sec)).toEqual(['unc-benign-request-id']);
   });
 });

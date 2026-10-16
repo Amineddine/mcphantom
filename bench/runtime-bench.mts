@@ -61,13 +61,17 @@ const lines = [
   '',
   '## Summary — attacks the design claims to stop',
   '',
-  '| defense | attack success (lower is better) | false blocks on benign traces | utility kept under attack |',
-  '|---|---|---|---|',
+  '| defense | attack success (lower is better) | partial leaks | false blocks on benign traces | utility kept under attack |',
+  '|---|---|---|---|---|',
   ...DEFENSES.map(([name]) => {
     const atk = by(name, (r) => r.scenario.kind === 'attack' && r.scenario.claimed);
     const ben = by(name, (r) => r.scenario.kind === 'benign');
-    return `| ${name} | ${rate(atk.filter((r) => r.attackSuccess).length, atk.length)} | ${rate(ben.filter((r) => !r.utility).length, ben.length)} | ${rate(atk.filter((r) => r.utility).length, atk.length)} |`;
+    const partial = atk.filter((r) => !r.attackSuccess && r.fragments.received > 0).length;
+    return `| ${name} | ${rate(atk.filter((r) => r.attackSuccess).length, atk.length)} | ${rate(partial, atk.length)} | ${rate(ben.filter((r) => !r.utility).length, ben.length)} | ${rate(atk.filter((r) => r.utility).length, atk.length)} |`;
   }),
+  '',
+  'Partial leaks: the attack was stopped, but some fragments of a split secret reached the attacker first (same denominator;',
+  'only split secrets can leak in part). Ablations, including the partial-leak case: `bench/results/ablations.md`.',
   '',
 ];
 

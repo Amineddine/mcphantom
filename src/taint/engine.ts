@@ -233,8 +233,8 @@ export class TaintEngine {
   /**
    * Why sending `args` to `serverId` would exceed its `may_receive` bound, or undefined. Evidence mode:
    * an argument carries a credential (only `secret` data is known from content alone; every field is
-   * searched in full in clear text), or Layer 2 attributes it to an output labelled above the bound —
-   * evidence may add restrictions (DESIGN.md §2, honesty rule), so every matcher counts here. Where
+   * searched in full in clear text and, over its first 32 KiB, decoded), or Layer 2 attributes it to an
+   * output labelled above the bound — evidence may add restrictions (DESIGN.md §2, honesty rule), so every matcher counts here. Where
    * attribution could not look, the bound fails closed (R6b-1, Phase 7, owner option B): on this call's
    * bounds that can hide a credential, an identifier or a verbatim copy (not the fuzzy/cumulative ones,
    * which lose only edited copies and far-apart splits), and on earlier outputs it lost track of — in

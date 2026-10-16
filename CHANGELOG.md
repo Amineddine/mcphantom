@@ -4,6 +4,11 @@
 
 ### Added
 
+- **Baselines and ablations** (`npm run bench:ablations`; `docs/reviews/phase-7-ablations.md`), pre-registered and
+  run once. Layer 2 changes no trifecta decision (the invariant reads Layer-1 labels); it decides `may_receive` and
+  `from()` rules — off, 7/60 claimed attacks reach the bounded sink server and 4/5 policy-family attacks on internal
+  data succeed. `may_receive_mode: context` closes the split-secret partial leak at 2 extra false blocks. Partial
+  leaks are now a column in every results table, including `bench:runtime`.
 - **Runtime benchmark, Tier 1** (`npm run bench:runtime`; `docs/benchmark.md`). 83 recorded traces
   replayed through the gate with oracles that read only what each server received: with MCPhantom at
   defaults, 0 of 60 claimed exfiltration attacks succeed (2 partial leaks of a split secret listed), with

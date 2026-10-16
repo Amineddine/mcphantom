@@ -398,7 +398,11 @@ the owner confirms every merge, in this order:
    attacks, 2 partial leaks (split secret to the bounded sink server: 2 of 3 fragments before the cumulative
    block), 4/15 false blocks (all over-tainting), 8/8 outside-claims attacks get through. Author-written: a
    regression floor, not performance on real attacks. **Merged as #12 (`c17a4ac`).**
-4. **Baselines and ablations** — **resume here (branch `7/pr4-ablations`).** Owner notes (2026-10-16):
+4. **Baselines and ablations** — **built on branch `7/pr4-ablations` (PR pending owner review);** review
+   `docs/reviews/phase-7-ablations.md`, results `bench/results/ablations.md`. Result: Layer 2 changes no trifecta
+   decision; off, 7/60 suite attacks (bounded sink server) and 4/5 `from()` policy-family attacks succeed;
+   context mode closes the partial leak at +2 false blocks (one unclassified read suffices on a `public` server).
+   **Next after merge: item 5 (latency, memory, eviction loss).** Owner notes (2026-10-16):
    (i) include the **partial-leak case** (split secret to the `may_receive`-bounded sink server, 2 of 3
    fragments delivered): does `may_receive_mode: context` close it, and at what false-block cost? Report it
    either way and add it to the README's known limitations. (ii) **Partial leaks are their own metric in every
