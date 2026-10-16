@@ -115,8 +115,34 @@ PR links: `#N` = https://github.com/Amineddine/mcphantom/pull/N.
   safety-classifier history. PR: #12. *Compiled from records.*
 - **Item 4 rules.** Ablate the split-secret partial leak with `may_receive_mode: context` and report it
   either way in the README limitations. Partial leaks are their own metric in every results table. PR:
-  (item 4). *Compiled from records.*
+  #14. *Compiled from records.*
 - **Decision log, owner reviews and README roles.** This log is kept from now on. Every new review ends
   with an "Owner review" section (my verdict, what I changed or overrode, risks I accept); old reviews are
   not backfilled. The README states the roles precisely. Reason: decision provenance and authorship
   should be explicit. PR: #13.
+- **Item 4: Layer 2 measured where it is designed to work.** Add a small pre-registered family of `from()`
+  policy traces (benign and attack: deny when a recipient or URL comes from untrusted data; a declassify for
+  trusted recipients). The report must say plainly that under the default config Layer 2 does not change
+  trifecta decisions. Options: the existing suite alone, or adding policy traces. Reason: Layer 2 is designed
+  to ground `from()` policies, and the suite has none, so without them the ablation would understate it. PR: #14.
+- **Item 4: entropy `on_hit` measured on unclassified-source traces.** Options: add traces where the secret
+  comes from a source with no confidentiality set (pre-registered), or report that `on_hit` has no effect on
+  the existing suite. Reason: accepted the recommendation; there, `on_hit` would show no effect for a reason
+  unrelated to entropy (every secret was already classified). PR: #14.
+- **Item 4: "Layer 1 only" keeps the argument credential check, plus a row without it**; trifecta audit mode
+  added as a configuration. Options: keep or drop the check, one row or two; include audit mode or not.
+  Reason: the check is pattern detection, not attribution, and the extra row shows its own contribution.
+  PR: #14.
+- **Item 4: matcher ablation through an internal hook in `src/taint`**, on condition of a test proving that
+  no configuration can reach it. Options: an internal constructor option, or filtering evidence in the bench.
+  Reason: a matcher has to be turned off where it runs; the test keeps the switch out of the product.
+  PR: #14.
+- **No placeholders in drafts.** Owner review sections and every other draft are written in full from my
+  messages, never with "[to fill]" fields; I edit them before merge. Options: not recorded. Reason: we both work
+  on this project, so neither of us should lose context; Claude Code writes every draft in full in its role, I
+  review and edit in mine, and each contribution stays distinct. PR: #14.
+- **`init` follow-up scheduled (from the item-4 review, R7a-1).** `init` prompts users to classify each tool's
+  confidentiality and warns about `may_receive_mode: context`'s false-block cost (unclassified outputs count as
+  `internal`, so one such read blocks a `public`-bounded server). Options: not recorded. Reason (from my item-4 Owner
+  review): R7a-1 is accepted because context mode is opt-in and documented, with this as its follow-up.
+  Recorded in the DESIGN backlog. PR: #14.

@@ -24,6 +24,7 @@ export interface OutputRef {
  * what earlier forwarded calls sent to the same tool — an exfiltration split into pieces).
  */
 export type Matcher = 'exact' | 'normalized' | 'decoded' | 'fuzzy' | 'cumulative';
+export const MATCHERS: readonly Matcher[] = ['exact', 'normalized', 'decoded', 'fuzzy', 'cumulative'];
 
 /** Layer-2 evidence that an argument value came from an earlier output. */
 export interface Evidence {
@@ -140,10 +141,14 @@ export class ProvenanceIndex {
   evicted: OutputRef[] = [];
   /** What forwarded calls sent to each tool, for the cumulative matcher. */
   private readonly sinks = new SinkBuffers();
+  /** Matchers that run. All of them, except in the ablation benchmark (`bench:ablations`): the set is
+   *  not reachable from the configuration. */
+  private readonly on: ReadonlySet<Matcher>;
 
-  constructor(opts: { maxTierABytes: number; maxTierBEntries?: number }) {
+  constructor(opts: { maxTierABytes: number; maxTierBEntries?: number; matchers?: ReadonlySet<Matcher> }) {
     this.maxTierABytes = opts.maxTierABytes;
     this.maxTierBEntries = opts.maxTierBEntries ?? 200_000;
+    this.on = opts.matchers ?? new Set(MATCHERS);
   }
 
   /**
@@ -232,12 +237,14 @@ export class ProvenanceIndex {
     // raw reversed token is indexed and the argument's reversal reproduces it.
     const lookup = (leafPath: string, text: string, isRaw: boolean, chain?: Decoder[]): void => {
       for (const id of extractIdentifiers(text)) {
-        const exact = isRaw ? this.tierB.get(`r:${id.rawHash}`) : undefined;
+        // With `exact` off (ablation), a verbatim copy is still found through its normalized hash.
+        const exact = isRaw && this.on.has('exact') ? this.tierB.get(`r:${id.rawHash}`) : undefined;
         const hit = exact ?? this.tierB.get(`n:${id.normHash}`);
         if (!hit) continue;
-        matched.add(id.normHash);
         for (const src of hit.outputs) {
           const matcher: Matcher = chain || src.chain ? 'decoded' : exact ? 'exact' : 'normalized';
+          if (!this.on.has(matcher)) continue;
+          matched.add(id.normHash);
           push({
             argPath: leafPath, output: src.ref, kind: `identifier:${hit.kind}`, matcher,
             ...(hit.rule ? { rule: hit.rule } : {}),
@@ -276,13 +283,13 @@ export class ProvenanceIndex {
       const n = normalize(leaf.value);
       if (n.length >= MIN_COPY_LEN) {
         for (const a of this.tierA) {
-          if (a.raw.includes(leaf.value)) push({ argPath: leaf.path, output: a.ref, kind: 'copy', matcher: 'exact' });
-          else if (a.norm.includes(n)) push({ argPath: leaf.path, output: a.ref, kind: 'copy', matcher: 'normalized' });
+          if (this.on.has('exact') && a.raw.includes(leaf.value)) push({ argPath: leaf.path, output: a.ref, kind: 'copy', matcher: 'exact' });
+          else if (this.on.has('normalized') && a.norm.includes(n)) push({ argPath: leaf.path, output: a.ref, kind: 'copy', matcher: 'normalized' });
         }
       }
       // Fuzzy: text copied with light edits or reordering. Runs after the exact/normalized copy check,
       // so an output already matched verbatim keeps the stronger evidence (same de-duplication key).
-      if (reduce(leaf.value.slice(0, MAX_FUZZY_PER_LEAF)).length >= MIN_FUZZY_REDUCED) {
+      if (this.on.has('fuzzy') && reduce(leaf.value.slice(0, MAX_FUZZY_PER_LEAF)).length >= MIN_FUZZY_REDUCED) {
         const piece = leaf.value.slice(0, Math.min(MAX_FUZZY_PER_LEAF, fuzzyBudget));
         if (piece.length < leaf.value.length) causes.add('fuzzy');
         fuzzyBudget -= piece.length;
@@ -296,7 +303,7 @@ export class ProvenanceIndex {
           }
         }
       }
-      if (leaf.value.length >= MIN_DECODE_LEN) decodeQueue.push(leaf);
+      if (this.on.has('decoded') && leaf.value.length >= MIN_DECODE_LEN) decodeQueue.push(leaf);
     }
     // Decoded forms of the arguments, identifiers only, after every direct match so the strongest
     // matcher is the one recorded. Decoding is the expensive part, so it has its own per-call budget.
@@ -312,7 +319,7 @@ export class ProvenanceIndex {
       // repeat the work.
       for (const v of r.variants) lookup(leaf.path, fold(v.text), false, v.chain);
     }
-    if (opts.sink !== undefined && this.cumulative(opts.sink, attributed, opts.now ?? Date.now(), matched, push)) causes.add('cumulative');
+    if (opts.sink !== undefined && this.on.has('cumulative') && this.cumulative(opts.sink, attributed, opts.now ?? Date.now(), matched, push)) causes.add('cumulative');
     return { evidence: out, degraded: causes.size > 0, degradedBy: [...causes] };
   }
 

@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 import type { Classification, Config } from '../config/schema.js';
 import { hasOutsideTarget } from './egress.js';
 import { BOTTOM, canExfiltrate, confAtLeast, join, type Confidentiality, type Effect, type Label } from './labels.js';
-import { ProvenanceIndex, type DegradeCause, type EvictionNotice, type Evidence, type OutputRef } from './provenance.js';
+import { ProvenanceIndex, type DegradeCause, type EvictionNotice, type Evidence, type Matcher, type OutputRef } from './provenance.js';
 import { leaves, resultTexts } from './text.js';
 import { PolicyEngine, type PolicyOutcome } from '../policy/engine.js';
 import { findSecrets } from '../secrets/detectors.js';
@@ -86,6 +86,14 @@ export interface Decision {
   reason: string;
 }
 
+/** Switches for the ablation benchmark (`bench:ablations`); never set by the gateway. */
+export interface Ablation {
+  /** Layer-2 matchers that run (default: all). */
+  matchers?: ReadonlySet<Matcher>;
+  /** The `may_receive` clear-text credential search over arguments (default: on). */
+  argCredentials?: boolean;
+}
+
 /**
  * Per-session taint state. Owns the context label (Layer 1) and the provenance index (Layer 2).
  * One instance per downstream connection: MCPhantom cannot see conversation boundaries inside a
@@ -106,10 +114,15 @@ export class TaintEngine {
   private readonly sessionCauses = new Set<'evicted' | 'output-decode'>();
   private readonly policy: PolicyEngine | undefined;
 
-  constructor(config: Config, policy?: PolicyEngine) {
+  private readonly argCredentials: boolean;
+
+  /** `ablation` is for the ablation benchmark only (Phase 7 item 4): it is not part of the configuration
+   *  and nothing in the gateway passes it. Omitted, every matcher and check runs. */
+  constructor(config: Config, policy?: PolicyEngine, ablation: Ablation = {}) {
     this.config = config;
-    this.index = new ProvenanceIndex({ maxTierABytes: config.taint.max_index_mb * 1024 * 1024 });
+    this.index = new ProvenanceIndex({ maxTierABytes: config.taint.max_index_mb * 1024 * 1024, ...(ablation.matchers ? { matchers: ablation.matchers } : {}) });
     this.policy = policy;
+    this.argCredentials = ablation.argCredentials ?? true;
   }
 
   /** Records content entering the model's context and raises the context label. */
@@ -220,8 +233,8 @@ export class TaintEngine {
   /**
    * Why sending `args` to `serverId` would exceed its `may_receive` bound, or undefined. Evidence mode:
    * an argument carries a credential (only `secret` data is known from content alone; every field is
-   * searched in full in clear text), or Layer 2 attributes it to an output labelled above the bound —
-   * evidence may add restrictions (DESIGN.md §2, honesty rule), so every matcher counts here. Where
+   * searched in full in clear text and, over its first 32 KiB, decoded), or Layer 2 attributes it to an
+   * output labelled above the bound — evidence may add restrictions (DESIGN.md §2, honesty rule), so every matcher counts here. Where
    * attribution could not look, the bound fails closed (R6b-1, Phase 7, owner option B): on this call's
    * bounds that can hide a credential, an identifier or a verbatim copy (not the fuzzy/cumulative ones,
    * which lose only edited copies and far-apart splits), and on earlier outputs it lost track of — in
@@ -233,7 +246,7 @@ export class TaintEngine {
     if (this.config.servers[serverId]?.may_receive_mode === 'context' && above(this.context.confidentiality)) {
       return `the session context is ${this.context.confidentiality} (may_receive_mode: context)`;
     }
-    if (above('secret')) {
+    if (this.argCredentials && above('secret')) {
       for (const leaf of leaves(args)) {
         const rule = secretRuleIn(leaf.value);
         if (rule) return `argument ${leaf.path} carries a credential (${rule})`;

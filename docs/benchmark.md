@@ -65,6 +65,16 @@ the scenario's servers, given a configuration the adapter generates from `server
 defense's own format). The harness replays `steps` as `tools/call` requests by exposed name and reads the
 fixtures' own logs. `ask` and elicitation are not answered (counted as not delivered).
 
+## Baselines and ablations (Phase 7 item 4)
+
+`npm run bench:ablations` → [results](../bench/results/ablations.md); review `docs/reviews/phase-7-ablations.md`;
+pre-registration `bench/attack/PREREGISTRATION-ablations.md`. The same replay and oracles over three sets reported
+apart (the item-3 suite; a `from()` **policy family**, `scenarios-policy.json`; an **unclassified-source family**,
+`scenarios-unclassified.json`) and 17 configurations. Scenarios may carry per-tool `rules` and top-level
+`declassify` entries; the MCPhantom adapter takes `{ extra, mayReceiveMode, ablation }`. Ablation switches (Layer-2
+matcher set, argument credential search) are an internal `TaintEngine` constructor argument that no configuration
+reaches. Every table reports **partial leaks** as their own column (owner rule, 2026-10-16).
+
 ## Not measured
 
 Paraphrased or model-rewritten data (Phase 9 thesis measurement); covert / low-entropy channels; URL

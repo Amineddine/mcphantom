@@ -20,6 +20,8 @@ const Classification = z.object({
   integrity: z.enum(['trusted', 'untrusted']).optional(),
   confidentiality: z.enum(['public', 'internal', 'secret']).optional(),
   workspace: z.string().optional(),
+  /** Author-written per-tool policy rules (CEL, `src/policy`), for the policy family (Phase 7 item 4). */
+  rules: z.array(z.object({ deny: z.string().optional(), ask: z.string().optional(), allow: z.string().optional() })).optional(),
 });
 
 const ToolSpec = z.object({
@@ -59,6 +61,8 @@ export const ScenarioSchema = z.object({
   /** Attack scenarios: the ground truth the success oracle checks — which secret, encoded how. */
   exfil: z.object({ secret: z.string(), transform: z.enum(['exact', 'base64', 'hex', 'url', 'reverse', 'split3']) }).optional(),
   steps: z.array(Step).min(1),
+  /** Named exceptions to the trifecta invariant, as an operator would configure them (policy family). */
+  declassify: z.array(z.object({ id: z.string(), tool: z.string(), when: z.string(), reason: z.string() })).optional(),
 });
 export type Scenario = z.infer<typeof ScenarioSchema>;
 /** What a scenario author writes (defaulted fields optional). */

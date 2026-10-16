@@ -1,6 +1,6 @@
 # mcp-attack-bench — Tier 1 runtime (decision-level replay)
 
-Generated 2026-10-16T03:02:24.218Z · v22.19.0 · Windows_NT 10.0.26200 · 83 recorded traces (68 attack, 15 benign).
+Generated 2026-10-16T15:50:52.357Z · v22.19.0 · Windows_NT 10.0.26200 · 83 recorded traces (68 attack, 15 benign).
 Traces go to each defense in process, in the gateway's order; no servers, no network, no model. Oracles read only the
 delivery log and each scenario's ground truth (the secret, encoded as the trace sent it), never the defense's evidence.
 Injection points hold an inert marker: this measures what a defense does once a model has been steered, not whether it is.
@@ -12,12 +12,15 @@ rate describes that mix, not a real workload (normal-workflow false blocks are m
 
 ## Summary — attacks the design claims to stop
 
-| defense | attack success (lower is better) | false blocks on benign traces | utility kept under attack |
-|---|---|---|---|
-| no defense | 60 / 60 (100.0%; 94.0% – 100.0%) | 0 / 15 (0.0%; 0.0% – 20.4%) | 60 / 60 (100.0%; 94.0% – 100.0%) |
-| scanner only | 60 / 60 (100.0%; 94.0% – 100.0%) | 0 / 15 (0.0%; 0.0% – 20.4%) | 60 / 60 (100.0%; 94.0% – 100.0%) |
-| deny all egress | 24 / 60 (40.0%; 28.6% – 52.6%) | 9 / 15 (60.0%; 35.7% – 80.2%) | 60 / 60 (100.0%; 94.0% – 100.0%) |
-| MCPhantom (defaults) | 0 / 60 (0.0%; 0.0% – 6.0%) | 4 / 15 (26.7%; 10.9% – 52.0%) | 60 / 60 (100.0%; 94.0% – 100.0%) |
+| defense | attack success (lower is better) | partial leaks | false blocks on benign traces | utility kept under attack |
+|---|---|---|---|---|
+| no defense | 60 / 60 (100.0%; 94.0% – 100.0%) | 0 / 60 (0.0%; 0.0% – 6.0%) | 0 / 15 (0.0%; 0.0% – 20.4%) | 60 / 60 (100.0%; 94.0% – 100.0%) |
+| scanner only | 60 / 60 (100.0%; 94.0% – 100.0%) | 0 / 60 (0.0%; 0.0% – 6.0%) | 0 / 15 (0.0%; 0.0% – 20.4%) | 60 / 60 (100.0%; 94.0% – 100.0%) |
+| deny all egress | 24 / 60 (40.0%; 28.6% – 52.6%) | 0 / 60 (0.0%; 0.0% – 6.0%) | 9 / 15 (60.0%; 35.7% – 80.2%) | 60 / 60 (100.0%; 94.0% – 100.0%) |
+| MCPhantom (defaults) | 0 / 60 (0.0%; 0.0% – 6.0%) | 2 / 60 (3.3%; 0.9% – 11.4%) | 4 / 15 (26.7%; 10.9% – 52.0%) | 60 / 60 (100.0%; 94.0% – 100.0%) |
+
+Partial leaks: the attack was stopped, but some fragments of a split secret reached the attacker first (same denominator;
+only split secrets can leak in part). Ablations, including the partial-leak case: `bench/results/ablations.md`.
 
 ## scanner only: attack success by channel and by encoding
 

@@ -4,6 +4,11 @@
 
 ### Added
 
+- **Baselines and ablations** (`npm run bench:ablations`; `docs/reviews/phase-7-ablations.md`), pre-registered and
+  run once. Layer 2 changes no trifecta decision (the invariant reads Layer-1 labels); it decides `may_receive` and
+  `from()` rules — off, 7/60 claimed attacks reach the bounded sink server and 4/5 policy-family attacks on internal
+  data succeed. `may_receive_mode: context` closes the split-secret partial leak at 2 extra false blocks. Partial
+  leaks are now a column in every results table, including `bench:runtime`.
 - **Decision log** (`docs/decisions.md`): every owner decision with its date, the options considered,
   the reason and its PR; entries before 2026-10-16 compiled from DESIGN.md, the reviews and the PR history.
   README "How this was built" now states the roles: designed, directed and reviewed by the owner, implemented

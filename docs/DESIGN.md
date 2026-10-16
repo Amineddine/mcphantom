@@ -351,7 +351,7 @@ secrets, ~1.5% base64url type-prefix collisions, evidence-mode bypass by undecod
 not proposing `may_receive`, exfiltration channels tested at the decision level only (server-backed
 scenarios stopped twice by a safety classifier; owner: do not retry).
 
-**Next (resume point, 2026-10-16): Phase 7**, plan approved by the owner (2026-10-15), one PR per item,
+**Next (resume point, 2026-10-16, after #14): Phase 7 item 5**, plan approved by the owner (2026-10-15), one PR per item,
 the owner confirms every merge, in this order:
 1. **R6b-1** — `may_receive` searches whole argument fields for clear-text credentials and denies a call
    to a bounded server when the decision is attribution-degraded; the false-block cost on large benign
@@ -397,12 +397,21 @@ the owner confirms every merge, in this order:
    in `test/attack-bench.blackbox.e2e.test.ts` (ran without interruption). MCPhantom at defaults: 0/60 claimed
    attacks, 2 partial leaks (split secret to the bounded sink server: 2 of 3 fragments before the cumulative
    block), 4/15 false blocks (all over-tainting), 8/8 outside-claims attacks get through. Author-written: a
-   regression floor, not performance on real attacks.
-4. **Baselines and ablations** — no defense, scanner only, deny-all-egress;
+   regression floor, not performance on real attacks. **Merged as #12 (`c17a4ac`).**
+4. **Baselines and ablations** — **done, merged as #14;** review
+   `docs/reviews/phase-7-ablations.md`, results `bench/results/ablations.md`. Result: Layer 2 changes no trifecta
+   decision; off, 7/60 suite attacks (bounded sink server) and 4/5 `from()` policy-family attacks succeed;
+   context mode closes the partial leak at +2 false blocks (one unclassified read suffices on a `public` server).
+   **Next: item 5 (latency, memory, eviction loss).** Owner notes (2026-10-16):
+   (i) include the **partial-leak case** (split secret to the `may_receive`-bounded sink server, 2 of 3
+   fragments delivered): does `may_receive_mode: context` close it, and at what false-block cost? Report it
+   either way and add it to the README's known limitations. (ii) **Partial leaks are their own metric in every
+   results table from now on.** The bench already takes config overrides: `mcphantom(sc, extra, name)` in
+   `bench/attack/replay.ts`. Then, as planned — no defense, scanner only, deny-all-egress;
    Layer 1 only, each Layer-2 matcher off in turn, entropy `on_hit` levels, both `may_receive` modes
    (this is also the "how much does Layer 2 add over Layer 1" measurement). Third-party tools only where
    the licence allows and they do not call a remote service.
-5. **Latency, memory, eviction loss** — ≥ 10 launches per configuration, bootstrap CIs, quiet Linux runner
+5. **Latency, memory, eviction loss** — **resume here.** ≥ 10 launches per configuration, bootstrap CIs, quiet Linux runner
    and laptop; includes the 1 MB regression and the slash-heavy 128 KB case (R6b-10).
 6. **AgentDojo port** — licence check first; decision-level or fixture tests with inert placeholders and
    no injection prose (the channel-test approach). If anything is interrupted: stop, tell the owner, do
@@ -607,6 +616,13 @@ Every phase ends with green CI, a commit, and a written hostile review with its 
   prompts, with the same enforce/observe semantics.
 
 ### Backlog (owner)
+
+- **`init`: classification prompt and context-mode warning** (owner, 2026-10-16; from R7a-1 in
+  `docs/reviews/phase-7-ablations.md`; not yet assigned to a phase). `init` prompts the user to set each tool's
+  confidentiality, because unclassified outputs count as `internal`. When a server is given `may_receive_mode:
+  context`, it warns about the false-block cost: once the session holds data above the bound, every call to that
+  server is blocked, and on a `public` bound one unclassified read is enough (measured: 4 → 6 of 15 false
+  blocks in `bench:ablations`).
 
 - **Configurable per-call attribution limits** (owner, 2026-10-15; not scheduled): field size (64 KiB),
   field count (512), call size (1 MiB) and decode budget (128 KiB) are constants. Under `may_receive`
