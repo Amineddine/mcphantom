@@ -312,7 +312,7 @@ moving to `node:sqlite` once it is stable is a contained change. CI installs on 
 
 ---
 
-## Current state and resume point (updated 2026-10-15)
+## Current state and resume point (updated 2026-10-16)
 
 **Done and committed:** Phases 1–5 — gateway core, taint + trifecta (incl. write-outside-workspace as
 egress), static scanner + list-time hiding, rug-pull pinning (tools, prompts, instructions), CEL policy
@@ -351,7 +351,7 @@ secrets, ~1.5% base64url type-prefix collisions, evidence-mode bypass by undecod
 not proposing `may_receive`, exfiltration channels tested at the decision level only (server-backed
 scenarios stopped twice by a safety classifier; owner: do not retry).
 
-**Next (resume point, 2026-10-15): Phase 7**, plan approved by the owner (2026-10-15), one PR per item,
+**Next (resume point, 2026-10-16): Phase 7**, plan approved by the owner (2026-10-15), one PR per item,
 the owner confirms every merge, in this order:
 1. **R6b-1** — `may_receive` searches whole argument fields for clear-text credentials and denies a call
    to a bounded server when the decision is attribution-degraded; the false-block cost on large benign
@@ -359,6 +359,28 @@ the owner confirms every merge, in this order:
    measurement; addendum in `docs/reviews/phase-6b.md`).
 2. **Fresh held-out poisoned set** — the new third-party sources and their licences are listed for the
    owner's approval **before anything is collected**; frozen before the scanner sees it; run once.
+   **Done in Phase 7 PR 2 (branch `7/pr2-heldout-set`; report `docs/reviews/phase-7-heldout.md`).** Sources:
+   MSB `c1d6a70`, MCPSecBench `7612c5a`, appsecco lab `47b7f20` (MIT, verbatim, parse-only). Pre-registration
+   `bb17bbb`; amendment 1 `a5cfdc3` (MSB's description/`Args:` insertion code is disabled at `c1d6a70`; its
+   10→9 PI items use that code's placement and are reported as their own subgroup, never pooled — owner
+   decision); frozen `3892407` (88 items, 52 exclusions, 3 not extractable, 0 dev/test overlaps); run once.
+   **Result: claimed headline 1/4 (Wilson 4.6–69.9%), MSB PI subgroup 0/9 (0–29.9%), outside the claims
+   0/75; only 1 of 88 items raised any finding.** The scanner does not generalise to third-party injection
+   wording (`<INFORMATION>` user-impersonation blocks, `[important]` tool-selection and ordering directives);
+   README now leads with it (the runtime trifecta block, not the scanner, is the core protection). Not tuned
+   on; this set is now observed. Owner (2026-10-16): item 3 goes next; the scanner round comes later, as
+   item 2b below.
+2b. **Scanner generalisation (after item 3; owner rule 2026-10-16).** Detector improvements come **only from
+   new author-written dev examples written from the five failure categories** in
+   `docs/reviews/phase-7-heldout.md` (fake markup outside the tag list; user impersonation and polite
+   imperatives; bracketed emphasis markers; tool-selection directives; ordering directives naming an
+   operation) — categories, not the missed tokens. Measured on dev while tuning, then on a **different,
+   separately pre-registered and frozen held-out set** (MCPTox if licensed, or another fresh source).
+   `heldout-7` is never used to claim a fix. False positives re-measured on the benign corpus.
+   **MCPTox (2026-10-16):** the owner e-mailed its authors (Zhiqiang Wang, cc Haohua Du) asking them to add
+   a licence to `github.com/zhiqiangwang4/MCPTox-Benchmark`. If they agree, it becomes a **second, separately
+   pre-registered and frozen** held-out set (and the fresh measurement of any scanner fix); until then it
+   stays out.
 3. **Tier-1 runtime benchmark** (`mcp-attack-bench`): scenario format, adapter spec, defense-independent
    oracles.
 4. **Baselines and ablations** — no defense, scanner only, deny-all-egress;
@@ -564,6 +586,15 @@ Every phase ends with green CI, a commit, and a written hostile review with its 
 
 - **Resource pinning:** pin resource and resource-template definitions in the lockfile like tools and
   prompts, with the same enforce/observe semantics.
+
+### Backlog (owner)
+
+- **Configurable per-call attribution limits** (owner, 2026-10-15; not scheduled): field size (64 KiB),
+  field count (512), call size (1 MiB) and decode budget (128 KiB) are constants. Under `may_receive`
+  option B, a call past them to a bounded server is denied once the session holds data above the bound,
+  and the only ways out are splitting the call or raising the bound. Making them configurable (per server)
+  would trade decision latency against those false blocks; measure with `bench:may-receive` and
+  `bench:policy` first.
 
 ### Scanner follow-ups (owner, Phase 3 → later)
 

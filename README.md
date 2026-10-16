@@ -13,12 +13,23 @@ to do. Regenerate it: [docs/demo/](docs/demo/).*
 > Windows × Node 22/24. Not published to npm yet (planned for v1). Read
 > [Known limitations and bypasses](#known-limitations-and-bypasses) before you rely on it.
 
+> **The static scanner, measured independently:** on a pre-registered third-party set, frozen before
+> the scanner saw it and run once, it caught **1 of 4** claimed attacks (Wilson 95% CI 4.6–69.9%) and
+> **0 of 9** MSB prompt-injection items (0–29.9%); only 1 of 88 poisoned definitions raised any finding
+> ([report](docs/reviews/phase-7-heldout.md)). It recognises the phrasings it was built from, not
+> injection prose in general. The earlier 100% / 91.7% / 90-of-90 figures below are on author-written
+> and derived examples, not held-out performance on real attacks.
+>
+> **The core protection is the runtime trifecta block, not the scanner.** That rule decides by where
+> data came from (context labels), never from the text of an injection, so it does not depend on
+> detecting the injection at all; the scanner is a pre-filter on top.
+
 ## What it blocks today
 
 | Threat | What MCPhantom does | Reproduce |
 |---|---|---|
 | **Lethal-trifecta exfiltration.** Untrusted content steers the agent into sending your secrets out. | Once a session has seen both untrusted and secret data, any `egress`/`exec` call (and any `write` outside its declared workspace) is **denied**. This check never looks at content, so paraphrasing doesn't get past it. | `npm run demo`, `test/demo.e2e.test.ts` |
-| **Tool poisoning.** Hidden instructions in tool, prompt or server `instructions` text. | Scanned **before the model sees the list**: invisible Unicode, embedded instructions, shadowing, exfiltration hints, including disguised versions (look-alike characters, base64/hex/URL encoding, letter-spacing, …). A flagged tool is removed from `tools/list`. | `npm run bench:scanner`, `npm run bench:evasion`, `test/scanner.gateway.test.ts` |
+| **Tool poisoning.** Hidden instructions in tool, prompt or server `instructions` text. | Scanned **before the model sees the list**: invisible Unicode, embedded instructions, shadowing, exfiltration hints, including disguised versions (look-alike characters, base64/hex/URL encoding, letter-spacing, …). A flagged tool is removed from `tools/list`. **On a fresh third-party held-out set it caught only 1 of 13 injected descriptions** (see [Measured results](#measured-results)): it recognises the attack phrasings it was built from, not injection prose in general. An injection it misses is still subject to the trifecta rule above. | `npm run bench:scanner`, `npm run bench:evasion`, `npm run bench:heldout`, `test/scanner.gateway.test.ts` |
 | **Rug-pulls.** A definition changes after you approved it. | `mcphantom approve` pins model-visible definitions (canonical JSON + SHA-256, HMAC-signed lockfile). Changed or new definitions are hidden, including ones introduced mid-session via `list_changed`. | `test/rugpull.gateway.test.ts`, `mcphantom lock diff` |
 | **Unsafe calls by tool.** | Per-tool [CEL](https://cel.dev) rules: `deny` > `ask` > `allow`, with predicates such as `from(arg.to, "untrusted")` (where did this value come from?), `containsSecret(arg)`, `glob`, `within`. Named, audited `declassify` exceptions. `ask` uses MCP elicitation; on clients without it, `ask` is a deny. | `test/policy.gateway.test.ts`, `mcphantom policy explain` |
 | **Server-to-model injection.** | `sampling/createMessage` is denied by default (per-server opt-in). Unknown methods are rejected, and any internal error denies the request (fail-closed). | `test/gateway.test.ts` |
@@ -153,10 +164,11 @@ miss are in the linked files.
 
 | What | Result | Command |
 |---|---|---|
-| Static scanner, held-out split | TPR 100% (12/12), FPR 0% (0/132), after one tuning round on the dev split; before it, 91.7% / 0.8%. **The held-out split had already been seen before that round**, so treat the 100% as weaker evidence than a first run. Corpus: **260 benign** definitions (248 real: official reference servers, GitHub's and Microsoft Playwright's MCP servers) and **27 poisoned** (22 author-written, 5 rewritten from published third-party attacks, all 5 held out). Every model-visible schema field is scanned, parameter names included. A regression floor, not a claim about novel attacks. | `npm run bench:scanner` → [results](bench/results/scanner-bench.md) |
+| **Static scanner — independent third-party set** (pre-registered, frozen with a SHA-256 manifest, run once; the headline scanner number) | **1/4** claimed description injections from MCPSecBench caught (Wilson 95% CI 4.6–69.9%); **0/9** MSB prompt injections, placed by MSB's own (disabled) insertion code (0–29.9%), reported separately; 0/75 of the kinds outside the claims. **Only 1 of 88 items raised any finding.** The scanner misses common third-party injection wording (e.g. an `<INFORMATION>` block "from the user" asking for a file write). Not tuned on; the fix needs new dev examples first and a fresh set to measure it. | `npm run bench:heldout` → [results](bench/results/heldout-7.md) |
+| Static scanner on **author-written and derived examples** (internal test split; not held-out performance on real attacks) | TPR 100% (12/12), FPR 0% (0/132), after one tuning round on the dev split; before it, 91.7% / 0.8%. The test split had already been seen before that round. Corpus: **260 benign** definitions (248 real: official reference servers, GitHub's and Microsoft Playwright's MCP servers) and **27 poisoned** (22 author-written, 5 rewritten from published third-party attacks, all 5 held out). Every model-visible schema field is scanned, parameter names included. A regression floor, not a claim about novel attacks. | `npm run bench:scanner` → [results](bench/results/scanner-bench.md) |
 | Static scanner on PostHog's published MCP tool catalog | 5 of 1,121 tools hidden (0.4%), all false positives of MCPhantom's; coverage stated exactly (descriptions/titles/annotations of all tools, 43 input schemas). See [docs/posthog.md](docs/posthog.md). | `npm run bench:posthog` → [results](bench/results/posthog-scan.md) |
 | Layer-2 attribution under evasion | **143/143** claimed transformations caught; **0/39** of the transformations the design says it does not catch; **0/36** false attributions on unrelated benign pairs | `npm run bench:evasion` → [results](bench/results/evasion-bench.md) |
-| Scanner under disguise | **90/90** claimed disguises caught | `npm run bench:evasion` |
+| Scanner under disguise (author-written examples) | **90/90** claimed disguises caught | `npm run bench:evasion` |
 | Decision latency (laptop, i5-8250U) | p50 1.6 ms (small args), 86 ms (128 KB body) | `npm run bench:policy` → [results](bench/results/policy-bench.md) |
 | Proxy overhead per call | low single-digit ms at 1 KB; ~37 ms at 1 MB | `npm run bench:latency` → [results](bench/results/phase1-latency.md) |
 

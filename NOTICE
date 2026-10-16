@@ -120,3 +120,37 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---------------------------------------------------------------------------
+
+bench/corpus/heldout-7/heldout.json contains tool definitions (names, descriptions, input schemas
+reconstructed statically from source; see bench/corpus/heldout-7/extract/) and the prompt-injection
+template and attack goals, verbatim, from:
+
+* dongsenzhang/MSB at commit c1d6a70171e4d2c44c87a2ae909d13df00c6aa8d,
+  Copyright (c) 2026 Dongsen Zhang;
+* AIS2Lab/MCPSecBench at commit 7612c5a3e811dcf01f64e4f2bb324591a2feaaf4,
+  Copyright (c) 2025 AIS2Lab;
+* appsecco/vulnerable-mcp-servers-lab at commit 47b7f2082261136b667daa7be9273698e66e479e
+  (tool names and file paths in the exclusion list only), Copyright (c) 2025 Appsecco;
+
+each used under the MIT License, whose text (identical for all three apart from the copyright line
+above) follows:
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
