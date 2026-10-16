@@ -80,3 +80,35 @@ examples first.
 While establishing the attack kinds, the first 40 characters of each of MSB's 5 attack-goal strings were
 printed in a structure summary (`attack_task.jsonl`). No definition, template or other payload text was
 read before this file was committed.
+
+## Amendment 1 (2026-10-16) — after downloading, before the injection template or any payload was read
+
+**What was found.** At MSB `c1d6a70`, the code that puts `PROMPT_INJECTION_TEMPLATE` into a tool description
+or after `Args:` (`mcp_use/agents/prompts/system_prompt_builder.py`, `generate_tool_descriptions`) is
+**commented out** (it sits inside a `'''…'''` string). The active code appends the filled template as a
+separate line of the system prompt, after all the tool descriptions, and ignores
+`parameter_description_injection`. So in MSB as it runs, the injection is in no tool definition. The text
+above ("by MSB's own insertion rule") is therefore wrong about provenance.
+
+**Decision (owner, 2026-10-16).** The 10 prompt-injection items are still built, exactly as the rule above
+describes, using MSB's disabled insertion code as the placement rule:
+- `prompt_injection`: the description is split once at `Args:`; the filled template is appended to the
+  part before it (MSB's code concatenates without a separator, because its `rstrip().endswith('\n')` test
+  is never true); the `Args:` part follows unchanged.
+- `prompt_injection-parameter_description`: `" " + template` is appended to the first line after `Args:`
+  (MSB's `lines[1]`). The disabled code would also inject into the description for this variant (it tests
+  `"prompt_injection" in attack_type`); this set keeps the two variants distinct, as written above, so the
+  parameter item carries the template once.
+- FastMCP builds `description` from the whole docstring, `Args:` included, so the "parameter description"
+  text sits in `description`, not in `inputSchema`. This is reported.
+
+**Reporting change.** These 10 items form their own subgroup, **"MSB PI, placement reconstructed from MSB's
+disabled insertion code"**, with its own caught / total and Wilson 95% interval, and are **not pooled** into
+the headline claimed-set number. The report states that MSB's active harness puts the injection in the
+system prompt instead.
+
+**Also found, resolved by the rules as written (no change).** Each Word-server variant file defines every
+variant's tools in separate `register_tools_<variant>()` functions and calls exactly one at module level;
+the definitions extracted are those of the function that file calls. MSB's out-of-scope parameters are
+named `llm_model_name` / `llm_name`; their bucket is assigned from their descriptions before the run, as
+written above.

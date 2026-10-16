@@ -361,7 +361,12 @@ the owner confirms every merge, in this order:
    owner's approval **before anything is collected**; frozen before the scanner sees it; run once.
    **In progress (branch `7/pr2-heldout-set`, resume here):** sources approved (MSB, appsecco
    vulnerable-mcp-servers-lab, MCPSecBench — verbatim, MIT, pinned); MCPTox waits for its authors (owner
-   asked; no rewrites of unlicensed material). `bench/corpus/heldout-7/PREREGISTRATION.md` committed
+   asked; no rewrites of unlicensed material). **MCPTox (2026-10-16):** the owner e-mailed its authors (Zhiqiang Wang, cc
+   Haohua Du) asking them to add a licence to `github.com/zhiqiangwang4/MCPTox-Benchmark`. If they agree, it
+   becomes a **second, separately pre-registered and frozen** held-out set; until then it stays out.
+   Amendment 1 to the pre-registration (2026-10-16, before the template was read): MSB's description/`Args:`
+   insertion code is disabled at `c1d6a70`; the 10 MSB PI items are built with that code's placement and
+   reported as their own subgroup, not pooled into the headline claimed number (owner decision). `bench/corpus/heldout-7/PREREGISTRATION.md` committed
    (bb17bbb) before any extraction — it fixes the labels, per-kind claims, dedupe and reporting rules.
    Next, in order: download the three pinned commits into a new scratchpad directory (untrusted data;
    scripts elsewhere; `python -I`); extract by parsing only (`ast`; TypeScript compiler API for JS); label
