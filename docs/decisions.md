@@ -119,4 +119,4 @@ PR links: `#N` = https://github.com/Amineddine/mcphantom/pull/N.
 - **Decision log, owner reviews and README roles.** This log is kept from now on. Every new review ends
   with an "Owner review" section (my verdict, what I changed or overrode, risks I accept); old reviews are
   not backfilled. The README states the roles precisely. Reason: decision provenance and authorship
-  should be explicit. PR: (this PR).
+  should be explicit. PR: #13.
