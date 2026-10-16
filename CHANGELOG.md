@@ -4,6 +4,10 @@
 
 ### Added
 
+- **Runtime benchmark, Tier 1** (`npm run bench:runtime`; `docs/benchmark.md`). 83 recorded traces
+  replayed through the gate with oracles that read only what each server received: with MCPhantom at
+  defaults, 0 of 60 claimed exfiltration attacks succeed (2 partial leaks of a split secret listed), with
+  4/15 false blocks, all the over-tainting case; baselines and out-of-claims attacks reported alongside.
 - **Fresh third-party held-out set for the scanner** (`npm run bench:heldout`, run once;
   `docs/reviews/phase-7-heldout.md`). 88 poisoned definitions from MSB and MCPSecBench (MIT, verbatim),
   pre-registered and frozen with a SHA-256 manifest before the scanner saw them. **The scanner caught 1
