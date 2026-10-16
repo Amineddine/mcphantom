@@ -312,7 +312,7 @@ moving to `node:sqlite` once it is stable is a contained change. CI installs on 
 
 ---
 
-## Current state and resume point (updated 2026-10-15)
+## Current state and resume point (updated 2026-10-16)
 
 **Done and committed:** Phases 1–5 — gateway core, taint + trifecta (incl. write-outside-workspace as
 egress), static scanner + list-time hiding, rug-pull pinning (tools, prompts, instructions), CEL policy
@@ -351,7 +351,7 @@ secrets, ~1.5% base64url type-prefix collisions, evidence-mode bypass by undecod
 not proposing `may_receive`, exfiltration channels tested at the decision level only (server-backed
 scenarios stopped twice by a safety classifier; owner: do not retry).
 
-**Next (resume point, 2026-10-15): Phase 7**, plan approved by the owner (2026-10-15), one PR per item,
+**Next (resume point, 2026-10-16): Phase 7**, plan approved by the owner (2026-10-15), one PR per item,
 the owner confirms every merge, in this order:
 1. **R6b-1** — `may_receive` searches whole argument fields for clear-text credentials and denies a call
    to a bounded server when the decision is attribution-degraded; the false-block cost on large benign
@@ -359,21 +359,20 @@ the owner confirms every merge, in this order:
    measurement; addendum in `docs/reviews/phase-6b.md`).
 2. **Fresh held-out poisoned set** — the new third-party sources and their licences are listed for the
    owner's approval **before anything is collected**; frozen before the scanner sees it; run once.
-   **In progress (branch `7/pr2-heldout-set`, resume here):** sources approved (MSB, appsecco
-   vulnerable-mcp-servers-lab, MCPSecBench — verbatim, MIT, pinned); MCPTox waits for its authors (owner
-   asked; no rewrites of unlicensed material). **MCPTox (2026-10-16):** the owner e-mailed its authors (Zhiqiang Wang, cc
-   Haohua Du) asking them to add a licence to `github.com/zhiqiangwang4/MCPTox-Benchmark`. If they agree, it
-   becomes a **second, separately pre-registered and frozen** held-out set; until then it stays out.
-   Amendment 1 to the pre-registration (2026-10-16, before the template was read): MSB's description/`Args:`
-   insertion code is disabled at `c1d6a70`; the 10 MSB PI items are built with that code's placement and
-   reported as their own subgroup, not pooled into the headline claimed number (owner decision). `bench/corpus/heldout-7/PREREGISTRATION.md` committed
-   (bb17bbb) before any extraction — it fixes the labels, per-kind claims, dedupe and reporting rules.
-   Next, in order: download the three pinned commits into a new scratchpad directory (untrusted data;
-   scripts elsewhere; `python -I`); extract by parsing only (`ast`; TypeScript compiler API for JS); label
-   per the pre-registration, assigning each out-of-scope parameter's bucket before the run; dedupe against
-   `bench/corpus/*.json` (list overlaps); NOTICE entries; write `heldout.json` + `MANIFEST.sha256`;
-   commit; add `bench:heldout` (Wilson 95% CIs, claimed and unclaimed tables, every miss and exclusion);
-   run **once**; report; PR; ask before merging. Do not change the scanner in that PR.
+   **Done in Phase 7 PR 2 (branch `7/pr2-heldout-set`; report `docs/reviews/phase-7-heldout.md`).** Sources:
+   MSB `c1d6a70`, MCPSecBench `7612c5a`, appsecco lab `47b7f20` (MIT, verbatim, parse-only). Pre-registration
+   `bb17bbb`; amendment 1 `a5cfdc3` (MSB's description/`Args:` insertion code is disabled at `c1d6a70`; its
+   10→9 PI items use that code's placement and are reported as their own subgroup, never pooled — owner
+   decision); frozen `3892407` (88 items, 52 exclusions, 3 not extractable, 0 dev/test overlaps); run once.
+   **Result: claimed headline 1/4 (Wilson 4.6–69.9%), MSB PI subgroup 0/9 (0–29.9%), outside the claims
+   0/75; only 1 of 88 items raised any finding.** The scanner does not generalise to third-party injection
+   wording (`<INFORMATION>` user-impersonation blocks, `[important]` tool-selection and ordering directives);
+   README now says so. Not tuned on; this set is now observed. **Owner decides** whether a scanner
+   generalisation round (new author-written dev examples of those families first) is inserted before item 3.
+   **MCPTox (2026-10-16):** the owner e-mailed its authors (Zhiqiang Wang, cc Haohua Du) asking them to add
+   a licence to `github.com/zhiqiangwang4/MCPTox-Benchmark`. If they agree, it becomes a **second, separately
+   pre-registered and frozen** held-out set (and the fresh measurement of any scanner fix); until then it
+   stays out.
 3. **Tier-1 runtime benchmark** (`mcp-attack-bench`): scenario format, adapter spec, defense-independent
    oracles.
 4. **Baselines and ablations** — no defense, scanner only, deny-all-egress;

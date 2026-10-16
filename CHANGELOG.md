@@ -4,6 +4,12 @@
 
 ### Added
 
+- **Fresh third-party held-out set for the scanner** (`npm run bench:heldout`, run once;
+  `docs/reviews/phase-7-heldout.md`). 88 poisoned definitions from MSB and MCPSecBench (MIT, verbatim),
+  pre-registered and frozen with a SHA-256 manifest before the scanner saw them. **The scanner caught 1
+  of 4 claimed description injections and 0 of 9 MSB prompt injections; only 1 of 88 items raised any
+  finding.** It does not recognise common third-party injection wording; the README says so.
+
 - **Entropy-based possible-secret detection.** Random-looking tokens with no known format are redacted
   in the event log and counted on each ingested output (`mcphantom trace` shows them). By default they
   do **not** change the session label, since they can't be told apart from random ids;
