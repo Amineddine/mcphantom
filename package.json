@@ -30,6 +30,7 @@
     "bench:posthog": "tsx bench/posthog-scan.mts",
     "bench:may-receive": "tsx bench/may-receive-bench.mts",
     "bench:heldout": "tsx bench/heldout-bench.mts",
+    "bench:runtime": "tsx bench/runtime-bench.mts",
     "demo": "tsx src/demo/run.ts",
     "check": "npm run lint && npm run typecheck && npm run build && npm test",
     "prepare": "node scripts/install-hooks.mjs"

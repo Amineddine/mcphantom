@@ -383,6 +383,21 @@ the owner confirms every merge, in this order:
    stays out.
 3. **Tier-1 runtime benchmark** (`mcp-attack-bench`): scenario format, adapter spec, defense-independent
    oracles.
+   **Shape (owner, 2026-10-16): two tiers.** (a) Scenario format, oracles and metrics run as
+   **decision-level replay**: recorded traces go to the gate in process (decide → sent → ingest, as the
+   gateway does; `ask` counts as not delivered, as without elicitation), no servers, no network; the
+   attack oracle reads the harness's delivery log (what each server would have received) for the
+   ground-truth encodings of the canary, never the defense's own evidence. Canaries are assembled from
+   fragments at load time and stored in traces as placeholders; injection points carry the inert
+   `[[UNTRUSTED_PLACEHOLDER]]` marker, never injection prose. (b) The black-box MCP-proxy adapter (§6) is
+   specified, and exercised only with the existing demo fixtures (loopback-only sink, already in CI) on a
+   handful of scenarios. If anything is interrupted: stop, tell the owner, no retries.
+   **Done in Phase 7 PR 3 (branch `7/pr3-runtime-bench`):** spec `docs/benchmark.md`; 83 recorded traces
+   (`bench/attack/`); `npm run bench:runtime`; oracles + pinned results in `test/attack-bench.test.ts`; tier (b)
+   in `test/attack-bench.blackbox.e2e.test.ts` (ran without interruption). MCPhantom at defaults: 0/60 claimed
+   attacks, 2 partial leaks (split secret to the bounded sink server: 2 of 3 fragments before the cumulative
+   block), 4/15 false blocks (all over-tainting), 8/8 outside-claims attacks get through. Author-written: a
+   regression floor, not performance on real attacks.
 4. **Baselines and ablations** — no defense, scanner only, deny-all-egress;
    Layer 1 only, each Layer-2 matcher off in turn, entropy `on_hit` levels, both `may_receive` modes
    (this is also the "how much does Layer 2 add over Layer 1" measurement). Third-party tools only where
