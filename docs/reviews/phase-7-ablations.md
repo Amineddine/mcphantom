@@ -103,7 +103,7 @@ takes a third constructor argument. No configuration can reach the hook, and the
 
 ## Owner review
 
-*Draft from the owner's messages in this session; the owner edits this section before merge.*
+*Owner review, edited by the owner (Amineddine Znin) before merge.*
 
 - **Verdict:** Approved. The ablations answer the question I asked: what each layer actually contributes. Under the default config, Layer 2 does not change any trifecta decision. Its value is where it decides on its own: may_receive-bounded servers (0 → 7/60 attacks succeed without it) and from() policies (0 → 4/5). Trifecta in audit mode lets 48/60 through, which confirms Layer 1 is the core protection.
 - **Changed or overrode:**
@@ -117,7 +117,7 @@ takes a third constructor argument. No configuration can reach the hook, and the
     (decision 4).
   - Earlier rules applied: ablate the partial-leak case and report it either way in the README; partial leaks
     are their own metric in every table.
-- **Accepted as known risks:** * 
+- **Accepted as known risks:**
   - R7a-1: context mode costs false blocks (4 → 6 of 15) because tools with no confidentiality set count as internal. Accepted because it's opt-in and documented. Follow-up: init prompts users to classify tools and warns about context mode's false-block cost.
   - Evidence mode can leak the first fragments of a split secret to a bounded server before blocking. Context mode closes it; documented in the known limitations.
-  - R7a-2 (matchers share normalized hashes, so "normalized off" is a partial cut), R7a-4 (the policy family's random-shaped canary made one row measure entropy; the next family uses a low-entropy canary) and R7a-5 (policy traces mislabelled claimed: true; reported separately, fixed at the next trace change): low severity, accepted. None affects protection.
+  - R7a-2 (matchers share normalized hashes, so "normalized off" is a partial cut), R7a-4 (the policy family's random-shaped canary made one row measure entropy; the next family uses a low-entropy canary) and R7a-5 (unclassified-source traces mislabelled claimed: true; reported separately, fixed at the next trace change): low severity, accepted. None affects protection.
