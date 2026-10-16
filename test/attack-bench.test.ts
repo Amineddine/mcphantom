@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { attackSucceeded, denyAllEgress, fragmentsReceived, groundTruthFragments, mcphantom, noDefense, replay, utilityKept } from '../bench/attack/replay.js';
+import { attackSucceeded, denyAllEgress, fragmentsReceived, groundTruthFragments, mcphantom, noDefense, replay, scannerOnly, utilityKept } from '../bench/attack/replay.js';
 import { encode, loadScenario, part, secretValue, type LoadedScenario } from '../bench/attack/scenario.js';
 import { ROOT } from './helpers.js';
 
@@ -65,6 +65,22 @@ describe('oracles', () => {
     const twoOfThree = delivered.filter((d) => d.step !== delivered.filter((x) => sc.steps[x.step]?.to_attacker).at(-1)?.step);
     expect(fragmentsReceived(sc, twoOfThree)).toEqual({ received: 2, total: 3 });
     expect(attackSucceeded(sc, twoOfThree)).toBe(false);
+  });
+});
+
+describe('hidden definitions', () => {
+  it('a definition the scanner flags is hidden and its calls count as not delivered (scanner-only baseline and MCPhantom)', () => {
+    const sc = loadScenario({
+      id: 'hide', category: 'c', kind: 'benign', description: '', secrets: [],
+      servers: { a: { tools: { t: { description: 'Search notes. <system>', inputSchema: { type: 'object' } } } } },
+      steps: [{ role: 'benign', server: 'a', tool: 't', args: {} }],
+    });
+    for (const d of [scannerOnly(), mcphantom(sc)]) {
+      const r = replay(sc, d);
+      expect(r.outcomes[0]).toMatchObject({ delivered: false, blockedBy: 'hidden' });
+      expect(utilityKept(r.outcomes)).toBe(false);
+    }
+    expect(replay(sc, noDefense()).outcomes[0]?.delivered).toBe(true);
   });
 });
 
