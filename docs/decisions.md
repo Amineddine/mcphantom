@@ -137,3 +137,12 @@ PR links: `#N` = https://github.com/Amineddine/mcphantom/pull/N.
   no configuration can reach it. Options: an internal constructor option, or filtering evidence in the bench.
   Reason: a matcher has to be turned off where it runs; the test keeps the switch out of the product.
   PR: #14.
+- **No placeholders in drafts.** Owner review sections and every other draft are written in full from my
+  messages, never with "[to fill]" fields; I edit them before merge. Options: not recorded. Reason: we both work
+  on this project, so neither of us should lose context; Claude Code writes every draft in full in its role, I
+  review and edit in mine, and each contribution stays distinct. PR: #14.
+- **`init` follow-up scheduled (from the item-4 review, R7a-1).** `init` prompts users to classify each tool's
+  confidentiality and warns about `may_receive_mode: context`'s false-block cost (unclassified outputs count as
+  `internal`, so one such read blocks a `public`-bounded server). Options: not recorded. Reason (from my item-4 Owner
+  review): R7a-1 is accepted because context mode is opt-in and documented, with this as its follow-up.
+  Recorded in the DESIGN backlog. PR: #14.

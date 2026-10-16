@@ -617,6 +617,13 @@ Every phase ends with green CI, a commit, and a written hostile review with its 
 
 ### Backlog (owner)
 
+- **`init`: classification prompt and context-mode warning** (owner, 2026-10-16; from R7a-1 in
+  `docs/reviews/phase-7-ablations.md`; not yet assigned to a phase). `init` prompts the user to set each tool's
+  confidentiality, because unclassified outputs count as `internal`. When a server is given `may_receive_mode:
+  context`, it warns about the false-block cost: once the session holds data above the bound, every call to that
+  server is blocked, and on a `public` bound one unclassified read is enough (measured: 4 → 6 of 15 false
+  blocks in `bench:ablations`).
+
 - **Configurable per-call attribution limits** (owner, 2026-10-15; not scheduled): field size (64 KiB),
   field count (512), call size (1 MiB) and decode budget (128 KiB) are constants. Under `may_receive`
   option B, a call past them to a bounded server is denied once the session holds data above the bound,
