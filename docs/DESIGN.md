@@ -367,8 +367,16 @@ the owner confirms every merge, in this order:
    **Result: claimed headline 1/4 (Wilson 4.6–69.9%), MSB PI subgroup 0/9 (0–29.9%), outside the claims
    0/75; only 1 of 88 items raised any finding.** The scanner does not generalise to third-party injection
    wording (`<INFORMATION>` user-impersonation blocks, `[important]` tool-selection and ordering directives);
-   README now says so. Not tuned on; this set is now observed. **Owner decides** whether a scanner
-   generalisation round (new author-written dev examples of those families first) is inserted before item 3.
+   README now leads with it (the runtime trifecta block, not the scanner, is the core protection). Not tuned
+   on; this set is now observed. Owner (2026-10-16): item 3 goes next; the scanner round comes later, as
+   item 2b below.
+2b. **Scanner generalisation (after item 3; owner rule 2026-10-16).** Detector improvements come **only from
+   new author-written dev examples written from the five failure categories** in
+   `docs/reviews/phase-7-heldout.md` (fake markup outside the tag list; user impersonation and polite
+   imperatives; bracketed emphasis markers; tool-selection directives; ordering directives naming an
+   operation) — categories, not the missed tokens. Measured on dev while tuning, then on a **different,
+   separately pre-registered and frozen held-out set** (MCPTox if licensed, or another fresh source).
+   `heldout-7` is never used to claim a fix. False positives re-measured on the benign corpus.
    **MCPTox (2026-10-16):** the owner e-mailed its authors (Zhiqiang Wang, cc Haohua Du) asking them to add
    a licence to `github.com/zhiqiangwang4/MCPTox-Benchmark`. If they agree, it becomes a **second, separately
    pre-registered and frozen** held-out set (and the fresh measurement of any scanner fix); until then it
