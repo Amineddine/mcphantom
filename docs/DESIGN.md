@@ -564,6 +564,10 @@ OS/Node CI jobs and gitleaks; strict; enforced for admins; no force pushes). All
 branch → PR → all checks green → **the owner confirms** → merge. One PR per reviewable unit; a PR that
 changes a Layer-2 matcher or decoder also reruns `bench:evasion` and `bench:policy` and commits the
 results. Nothing is tagged, released or published without the owner's confirmation.
+Every owner decision gets an entry in `docs/decisions.md` (date, decision, options, reason, PR) in the PR
+that carries it; every new phase or item review ends with an "Owner review" section (verdict, what the
+owner changed or overrode, accepted risks), drafted from the owner's messages and edited by the owner
+before merge (owner process rule, 2026-10-16).
 
 **Process guardrails (mechanical, not memory):** `npm install` installs a versioned pre-push hook
 (`.githooks/pre-push` via `scripts/install-hooks.mjs`) that blocks a push unless `npm run check` passes

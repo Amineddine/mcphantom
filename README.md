@@ -295,12 +295,21 @@ If MCPhantom misrepresents your work, please open an issue.
 
 ## How this was built
 
-MCPhantom was developed with Claude Code (Anthropic's coding agent) under my design direction and
-review. I set the scope, the threat model and the decisions recorded in
-[docs/DESIGN.md](docs/DESIGN.md), and reviewed every phase. Each phase ends with a hostile self-review,
-published in [docs/reviews/](docs/reviews/). Those reviews are the record: they list the defects found
-(including the ones in earlier phases' work), how each was fixed, and which code paths are still
-untested.
+**Designed, directed and reviewed by me (Amineddine Znin); implemented with Claude Code** (Anthropic's
+coding agent).
+
+- **Design and direction (me):** scope, threat model, architecture and every decision on what is claimed,
+  measured, published or deferred. Each decision is logged with its date, the options considered and my
+  reason in [docs/decisions.md](docs/decisions.md); the design is [docs/DESIGN.md](docs/DESIGN.md).
+- **Implementation (Claude Code):** the code, tests, benchmarks and first drafts of the docs, built phase
+  by phase against that design.
+- **Review (me):** I review every phase and pull request, and every merge waits for my confirmation. Each
+  phase also ends with a hostile self-review in [docs/reviews/](docs/reviews/), listing the defects found
+  (including those in earlier phases' work), how each was fixed and which code paths are still untested.
+  From Phase 7 item 4 on, each review ends with an "Owner review" section: my verdict, what I changed or
+  overrode, and the risks I accept.
+
+Walkthrough video: coming soon.
 
 ## Security and contributing
 
