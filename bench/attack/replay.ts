@@ -11,7 +11,7 @@ import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { ConfigSchema } from '../../src/config/schema.js';
 import { PolicyEngine } from '../../src/policy/engine.js';
 import { scanTool } from '../../src/scanner/scan.js';
-import { TaintEngine } from '../../src/taint/engine.js';
+import { TaintEngine, type Ablation } from '../../src/taint/engine.js';
 import { encode, part, type LoadedScenario, type ScenarioStep } from './scenario.js';
 
 export interface Delivered {
@@ -119,23 +119,34 @@ export function scannerOnly(): Defense {
   };
 }
 
-/** MCPhantom at default settings, configured with the scenario's classifications (what `init` + an
- *  operator's classification would produce), plus any extra config for ablations (Phase 7 item 4). */
-export function mcphantom(sc: LoadedScenario, extra: Record<string, unknown> = {}, name = 'MCPhantom (defaults)'): Defense {
+export interface MCPhantomOptions {
+  name?: string;
+  /** Extra top-level configuration (e.g. `secrets`, `scan`, `taint`), merged over the scenario's. */
+  extra?: Record<string, unknown>;
+  /** `may_receive_mode` for every server the scenario bounds with `may_receive`. */
+  mayReceiveMode?: 'evidence' | 'context';
+  /** Internal switches that no configuration can reach (Phase 7 item 4 ablations). */
+  ablation?: Ablation;
+}
+
+/** MCPhantom at default settings, configured with the scenario's classifications, rules and declassify
+ *  entries (what `init` + an operator's configuration would produce), plus the ablation options. */
+export function mcphantom(sc: LoadedScenario, opts: MCPhantomOptions = {}): Defense {
   const servers = Object.fromEntries(Object.entries(sc.servers).map(([s, spec]) => [s, {
     command: 'x',
-    ...(spec.may_receive ? { may_receive: spec.may_receive } : {}),
+    ...(spec.may_receive ? { may_receive: spec.may_receive, ...(opts.mayReceiveMode ? { may_receive_mode: opts.mayReceiveMode } : {}) } : {}),
     tools: Object.fromEntries(Object.entries(spec.tools).map(([t, ts]) => [t, ts.classification])),
   }]));
-  const config = ConfigSchema.parse({ version: 1, servers, ...extra });
-  const engine = new TaintEngine(config, new PolicyEngine(config));
+  const config = ConfigSchema.parse({ version: 1, servers, ...(sc.declassify ? { declassify: sc.declassify } : {}), ...opts.extra });
+  const engine = new TaintEngine(config, new PolicyEngine(config), opts.ablation);
+  const name = opts.name ?? 'MCPhantom (defaults)';
   const exposed = (st: ScenarioStep) => `${st.server}__${st.tool}`;
   return {
     name,
     list: (s) => new Set([...allVisible(s)].filter((k) => {
       const [srv, t] = k.split('/') as [string, string];
       const spec = s.servers[srv]?.tools[t];
-      return spec ? !scanTool(toolDef(t, spec), { block: config.scan.block }).flagged : false;
+      return spec ? !(config.scan.enabled && config.scan.mode === 'hide' && scanTool(toolDef(t, spec), { block: config.scan.block }).flagged) : false;
     })),
     call: (st) => {
       const d = engine.decide(st.server, st.tool, exposed(st), st.args);
