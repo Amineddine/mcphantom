@@ -176,3 +176,14 @@ PR links: `#N` = https://github.com/Amineddine/mcphantom/pull/N.
   only workflows on the default branch. It is dispatched against `7/pr5-latency` once #17 is merged and the
   branch updated. Options: (a) a workflow-only PR to `main`; (b) a push trigger on a dedicated branch. Reason: not
   stated. PR: #16.
+
+## 2026-10-17 (after #15)
+
+- **Item 5 Owner review verdict stands** ("Approved as a measurement PR"); #15 merged. Options and reason: not
+  recorded beyond the approval. PR: #15.
+- **R7p-3: fix before item 6, as its own PR, combining all three options.** Tier B gets a byte budget with
+  oldest-first eviction; overflow marks the session degraded; deny-side `from()` rules fail closed in a degraded
+  session. Rerun the F3 identifier-flood arm to show the 4/5 policy attacks are blocked, report the false-block
+  cost, and update the README limitation. Options: any one of the three, or all. Reason: not stated. PR: the R7p-3 PR.
+- **R7p-2: cap evidence per argument** to the strongest few entries plus a count; in the R7p-3 PR if small,
+  otherwise right after it. Options: cap, or leave it bounded only by the index. Reason: not stated. PR: the R7p-3 PR.
