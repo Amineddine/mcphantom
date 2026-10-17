@@ -171,8 +171,9 @@ miss are in the linked files.
 | Baselines and ablations (pre-registered; same traces plus a `from()` policy family and an unclassified-source family) | Layer 2 changes **no trifecta decision** (the invariant reads Layer-1 labels); it decides `may_receive` and `from()` rules. Layer 1 only: 7/60 claimed attacks succeed (all to the bounded sink server) and 4/5 policy-family attacks on internal data succeed; one declassified benign trace becomes a false block. Trifecta in audit mode: 48/60. `may_receive_mode: context`: 0 partial leaks, 6/15 false blocks. Entropy `on_hit: secret` stops 3/3 random secrets from an unclassified source at 1/3 false blocks. | `npm run bench:ablations` → [results](bench/results/ablations.md), [review](docs/reviews/phase-7-ablations.md) |
 | Layer-2 attribution under evasion | **143/143** claimed transformations caught; **0/39** of the transformations the design says it does not catch; **0/36** false attributions on unrelated benign pairs | `npm run bench:evasion` → [results](bench/results/evasion-bench.md) |
 | Scanner under disguise (author-written examples) | **90/90** claimed disguises caught | `npm run bench:evasion` |
-| Decision latency (laptop, i5-8250U) | p50 1.6 ms (small args), 86 ms (128 KB body) | `npm run bench:policy` → [results](bench/results/policy-bench.md) |
-| Proxy overhead per call | low single-digit ms at 1 KB; ~37 ms at 1 MB | `npm run bench:latency` → [results](bench/results/phase1-latency.md) |
+| Proxy overhead per call (pre-registered; GitHub-hosted Linux VMs, 3 × 10 launches, bootstrap 95% CIs; shared VMs, variance reported) | gateway − direct p50: **+5 ms** at 1 KiB with payload logging off; **+37 ms** at 64 KiB; **+119 ms** at 1 MiB (laptop: +248 ms). At 1 MiB, 59% of the cost is indexing the output; the SDK's parsing and validation is about 4%. A real server (`server-filesystem`, 64 KiB file): +42 ms. | `npm run bench:perf` → [results](bench/results/perf.md), [review](docs/reviews/phase-7-perf.md) |
+| Decision latency, in process (same VMs) | p50 0.3 ms (small args); 24 ms (128 KB body); 39 ms (slash-heavy 128 KB, 0/3,000 deadline denials); 11 ms for a short body once the 32 MiB index is full | `npm run bench:perf` |
+| Memory and eviction (same VMs) | Tier A never exceeds its budget; RSS ≈ 200 MiB at 32 MiB after 4,000 calls. Under eviction at any budget, 0/60 claimed suite attacks succeed, and partial leaks fall to 0 (fail-closed), at +2 false blocks. **An identifier flood followed by eviction defeats `from()` deny rules: 4/5 policy-family attacks succeed** (see Known limitations). | `npm run bench:perf -- --parts eviction` → [results](bench/results/eviction.md) |
 
 **Real-world reference: PostHog's MCP server.** What PostHog already does well, what MCPhantom adds,
 the "untrusted event data" scenario and the catalog scan: [docs/posthog.md](docs/posthog.md).
@@ -242,6 +243,15 @@ agent is safe.
   above the bound — and outputs of tools with no confidentiality set count as `internal`, so on a
   `may_receive: public` server one unclassified read is enough (2 extra false blocks on the benchmark's
   2 benign sink-server traces). Measured in `npm run bench:ablations`.
+- **An untrusted source can evict the evidence a `from()` rule needs.** Tier B (identifier hashes) never evicts
+  and silently drops new identifiers once full. An attacker-controlled source that first floods it (≈ 111k
+  distinct tokens), then fills Tier A, leaves `from(arg.to, "untrusted")` no evidence. Such a rule is
+  precision-mode, so it does not fail closed: 4 of 5 policy-family attacks on `internal` data succeed in the
+  eviction benchmark, at every budget. The trifecta check and `may_receive` are unaffected (0/60). Measured in
+  `npm run bench:perf -- --parts eviction`; a fix is open (review R7p-3).
+- **Large outputs are slow.** At 1 MiB the gateway adds about 120 ms per call on a CI VM, about 250 ms on a 2017
+  laptop, mostly indexing the output. Decisions slow down as the index fills: 82 ms for an 8 KiB argument with
+  a full 32 MiB index.
 - **Images and audio** are labelled by their source but not inspected.
 - **Large inputs fail closed.** Policy evaluation has a 50 ms deadline; an extreme call (≈ 4000 fields
   on a slow machine) can be denied.

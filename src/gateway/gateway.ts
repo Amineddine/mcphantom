@@ -37,6 +37,7 @@ import type { Config } from '../config/schema.js';
 import type { EventInput, Store } from '../store/store.js';
 import { errorMessage } from '../util/errors.js';
 import type { Logger } from '../util/log.js';
+import { StageClock, type TimingSink } from '../util/timings.js';
 import { TaintEngine, type Decision, type IngestResult } from '../taint/engine.js';
 import { scanInstructions, scanPrompt, scanTool, type ScanOptions, type ScanResult } from '../scanner/scan.js';
 import { RugpullChecker, type PinResult } from '../rugpull/checker.js';
@@ -59,6 +60,9 @@ export interface GatewayOptions {
   version: string;
   /** Pin checker for rug-pull detection. Omit (or pass an unlocked checker) to disable. */
   rugpull?: RugpullChecker;
+  /** Internal stage timing for `bench:perf` only (src/util/timings.ts). Not part of the configuration;
+   *  the CLI never passes it. */
+  timings?: TimingSink;
 }
 
 const LOG_LEVELS: LoggingLevel[] = ['debug', 'info', 'notice', 'warning', 'error', 'critical', 'alert', 'emergency'];
@@ -236,12 +240,16 @@ export class Gateway {
 
     s.setRequestHandler(CallToolRequestSchema, (req, extra) => {
       const exposed = req.params.name;
+      const clock = this.opts.timings ? new StageClock(this.opts.timings) : undefined;
       return this.handle('tools/call', { name: exposed }, req.params, extra, async (meta) => {
         const route = await this.resolveTool(exposed, extra.signal);
         meta.server = route.serverId;
         const u = this.requireReady(route.serverId);
+        clock?.lap('resolve');
         const decision = this.taint.decide(route.serverId, route.name, exposed, req.params.arguments ?? {});
+        clock?.lap('decide');
         this.recordDecision(decision);
+        clock?.lap('audit.decision');
         if (decision.verdict === 'deny') {
           meta.outcome = 'denied';
           return blockedResult(decision);
@@ -258,15 +266,20 @@ export class Gateway {
         }
         // From here the arguments leave the gateway: record them for the cumulative matcher.
         this.taint.sent(exposed, req.params.arguments ?? {});
+        clock?.lap('sent');
         const result = (await u.client.callTool(
           forUpstream(req.params, { name: route.name }),
           undefined,
           this.requestOptions(extra, req.params._meta, this.opts.config.timeouts.tool_call_ms),
         )) as CallToolResult;
         await this.flushProgress(extra);
-        this.recordIngest(this.taint.ingest('tool', route.serverId, exposed, route.name, result));
+        clock?.lap('upstream');
+        const ingested = this.taint.ingest('tool', route.serverId, exposed, route.name, result);
+        clock?.lap('ingest');
+        this.recordIngest(ingested);
+        clock?.lap('audit.ingest');
         return result;
-      });
+      }, undefined, clock);
     });
 
     if (caps.prompts) this.installPromptHandlers();
@@ -425,6 +438,7 @@ export class Gateway {
     _extra: Extra,
     fn: (meta: { server?: string; outcome?: string }) => Promise<T>,
     summarize?: (r: T) => unknown,
+    clock?: StageClock,
   ): Promise<T> {
     const meta: { server?: string; outcome?: string } = {};
     const t0 = performance.now();
@@ -435,6 +449,8 @@ export class Gateway {
         durationMs: performance.now() - t0,
         payload: { params, result: summarize ? summarize(result) : result },
       });
+      clock?.lap('audit.request');
+      clock?.end();
       return result;
     } catch (err) {
       const e = toMcpError(err, meta.server);
@@ -442,6 +458,7 @@ export class Gateway {
         kind: 'request', method, name: initial.name, server: meta.server, outcome: 'error',
         durationMs: performance.now() - t0, payload: { params }, error: e.message,
       });
+      clock?.end();
       throw e;
     }
   }

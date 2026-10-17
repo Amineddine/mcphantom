@@ -357,7 +357,7 @@ secrets, ~1.5% base64url type-prefix collisions, evidence-mode bypass by undecod
 not proposing `may_receive`, exfiltration channels tested at the decision level only (server-backed
 scenarios stopped twice by a safety classifier; owner: do not retry).
 
-**Next (resume point, 2026-10-16, after #14): Phase 7 item 5**, plan approved by the owner (2026-10-15), one PR per item,
+**Next (resume point, 2026-10-17, after #15): Phase 7 item 6 (AgentDojo port)**, after the owner's decision on R7p-2/R7p-3; plan approved by the owner (2026-10-15), one PR per item,
 the owner confirms every merge, in this order:
 1. **R6b-1** — `may_receive` searches whole argument fields for clear-text credentials and denies a call
    to a bounded server when the decision is attribution-degraded; the false-block cost on large benign
@@ -417,8 +417,16 @@ the owner confirms every merge, in this order:
    Layer 1 only, each Layer-2 matcher off in turn, entropy `on_hit` levels, both `may_receive` modes
    (this is also the "how much does Layer 2 add over Layer 1" measurement). Third-party tools only where
    the licence allows and they do not call a remote service.
-5. **Latency, memory, eviction loss** — **resume here.** ≥ 10 launches per configuration, bootstrap CIs, quiet Linux runner
-   and laptop; includes the 1 MB regression and the slash-heavy 128 KB case (R6b-10).
+5. **Latency, memory, eviction loss** — **done in #15** (pending the owner's merge); review
+   `docs/reviews/phase-7-perf.md`, results `bench/results/perf.md` and `bench/results/eviction.md`.
+   - The decision-event growth found while building it was fixed first, in #17. The workflow went to `main` in #16.
+   - 1 MiB: +119 ms on CI, 59% of it ingest.
+   - Eviction: 0/60 suite attacks succeed in every arm. The identifier flood followed by eviction defeats
+     `from()` deny rules (4/5).
+   - Open for the owner: R7p-2 (cap evidence per decision) and R7p-3 (Tier-B overflow signal / fail-closed
+     `from()`).
+
+   **Next: item 6, resume here** (after the owner decides on R7p-2 / R7p-3).
 6. **AgentDojo port** — licence check first; decision-level or fixture tests with inert placeholders and
    no injection prose (the channel-test approach). If anything is interrupted: stop, tell the owner, do
    not retry.

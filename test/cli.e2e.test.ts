@@ -86,7 +86,9 @@ describe('mcphantom CLI', () => {
     expect(r.stdout).toMatch(/valid, 1 server/);
   });
 
-  it('approve pins definitions and lock diff then reports no drift; a changed config shows drift', () => {
+  // Three CLI launches in a row (approve also starts the fixture): 15 s alone from the TypeScript sources,
+  // 33 s under the full suite, past the 30 s default (Phase 7 item 5 review). Each launch has its own 60 s cap.
+  it('approve pins definitions and lock diff then reports no drift; a changed config shows drift', { timeout: 180_000 }, () => {
     const cfgFile = path.join(home, 'gw.yaml');
     const approve = runCli(['approve', '--config', cfgFile, '--yes']);
     expect(approve.status).toBe(0);
