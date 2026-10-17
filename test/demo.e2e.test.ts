@@ -65,10 +65,12 @@ describe('demo: exfiltration via indirect prompt injection', () => {
       expect(leaked.some((x) => x.body.includes(CANARY))).toBe(false); // ORACLE: nothing left
       const denials = h.store.events({ kind: 'decision' }).filter((e) => e.outcome === 'denied');
       expect(denials).toHaveLength(1);
-      const d = JSON.parse(denials[0]?.payload ?? '{}') as { rule?: string; untrustedSources: unknown[]; secretSources: unknown[] };
+      const d = JSON.parse(denials[0]?.payload ?? '{}') as { rule?: string; sources: { firstUntrusted?: unknown; firstSecret?: unknown; untrustedOutputs: { count: number }; secretOutputs: { count: number } } };
       expect(d.rule).toBe('trifecta');
-      expect(d.untrustedSources.length).toBeGreaterThan(0);
-      expect(d.secretSources.length).toBeGreaterThan(0);
+      expect(d.sources.untrustedOutputs.count).toBeGreaterThan(0);
+      expect(d.sources.secretOutputs.count).toBeGreaterThan(0);
+      expect(d.sources.firstUntrusted).toBeDefined();
+      expect(d.sources.firstSecret).toBeDefined();
     } finally {
       await h.close();
     }

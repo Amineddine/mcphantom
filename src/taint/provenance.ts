@@ -137,8 +137,12 @@ export class ProvenanceIndex {
   private tierBCount = 0;
   private readonly maxTierABytes: number;
   private readonly maxTierBEntries: number;
-  /** Outputs whose full text is gone; their identifiers may also be gone if Tier B overflowed. */
-  evicted: OutputRef[] = [];
+  /** Outputs whose full text is gone (a count: a list would grow with the session). Their identifiers
+   *  may also be gone if Tier B overflowed. */
+  private evictedCount = 0;
+  /** Bytes the owner keeps outside the index for this session (the engine's source summary), charged
+   *  against the same budget. */
+  private external = 0;
   /** What forwarded calls sent to each tool, for the cumulative matcher. */
   private readonly sinks = new SinkBuffers();
   /** Matchers that run. All of them, except in the ablation benchmark (`bench:ablations`): the set is
@@ -190,11 +194,11 @@ export class ProvenanceIndex {
     this.tierA.push({ ref, raw, norm, fp, bytes });
     this.tierABytes += bytes;
     const evictions: EvictionNotice[] = [];
-    while (this.tierABytes > this.maxTierABytes && this.tierA.length > 0) {
+    while (this.tierABytes + this.external > this.maxTierABytes && this.tierA.length > 0) {
       const e = this.tierA.shift();
       if (!e) break;
       this.tierABytes -= e.bytes;
-      this.evicted.push(e.ref);
+      this.evictedCount++;
       evictions.push({ output: e.ref, bytes: e.bytes });
     }
     return { secrets: [...secrets], identifiers, evictions, decodeTruncated };
@@ -364,8 +368,13 @@ export class ProvenanceIndex {
     return out;
   }
 
-  get stats(): { tierABytes: number; tierAOutputs: number; tierBEntries: number; evicted: number; sinks: number; sinkChars: number } {
+  /** Sets the bytes charged from outside the index (see {@link external}); applied at the next `add`. */
+  chargeExternal(bytes: number): void {
+    this.external = bytes;
+  }
+
+  get stats(): { tierABytes: number; tierAOutputs: number; tierBEntries: number; evicted: number; sinks: number; sinkChars: number; externalBytes: number } {
     const s = this.sinks.stats;
-    return { tierABytes: this.tierABytes, tierAOutputs: this.tierA.length, tierBEntries: this.tierBCount, evicted: this.evicted.length, sinks: s.sinks, sinkChars: s.chars };
+    return { tierABytes: this.tierABytes, tierAOutputs: this.tierA.length, tierBEntries: this.tierBCount, evicted: this.evictedCount, sinks: s.sinks, sinkChars: s.chars, externalBytes: this.external };
   }
 }

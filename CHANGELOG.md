@@ -54,6 +54,16 @@
 
 ### Fixed
 
+- **Per-call cost no longer grows with the session.** Every decision event carried the full lists of the
+  session's untrusted and secret outputs, so redacting and storing it cost ≈ 0.1 ms more per untrusted output
+  seen (10 ms at 100, 95 ms at 1,000, ≈ 190 ms at 2,000 — on every `tools/call`), and the lists grew without
+  bound in memory. Decisions now carry a bounded summary (`sources`) that still names the outputs that drove
+  the label (`firstUntrusted`, `firstInternal`, `firstSecret`), with counts and up to 16 source names per
+  label; the full list is the session's `taint` events, which `mcphantom trace` reads. The summary counts
+  against `taint.max_index_mb`, and the index keeps an eviction count instead of a list. Found while building
+  the Phase 7 latency benchmark; guarded by `test/decision-growth.test.ts`. The decision payload's
+  `untrustedSources` / `secretSources` fields are replaced by `sources`; `trace` still reads older logs.
+
 - **A policy `ask` was skipped in trifecta audit mode.** With `taint.trifecta: log`, a call that tripped
   the invariant was allowed without asking, even when a policy rule required confirmation. The `ask`
   now applies; the decision's reason also records the audited invariant. The default

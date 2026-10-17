@@ -3,6 +3,7 @@ import type { Classification, Config } from '../config/schema.js';
 import { hasOutsideTarget } from './egress.js';
 import { BOTTOM, canExfiltrate, confAtLeast, join, type Confidentiality, type Effect, type Label } from './labels.js';
 import { ProvenanceIndex, type DegradeCause, type EvictionNotice, type Evidence, type Matcher, type OutputRef } from './provenance.js';
+import { describeSources, SourceLog, type SessionSources } from './sources.js';
 import { leaves, resultTexts } from './text.js';
 import { PolicyEngine, type PolicyOutcome } from '../policy/engine.js';
 import { findSecrets } from '../secrets/detectors.js';
@@ -71,9 +72,9 @@ export interface Decision {
   tool: string;
   effect: Effect;
   context: Label;
-  /** Outputs that made the context untrusted / secret: the Layer-1 explanation. */
-  untrustedSources: OutputRef[];
-  secretSources: OutputRef[];
+  /** The Layer-1 explanation, bounded: the outputs that raised the context label, and a summary of the
+   *  session's untrusted and secret outputs (each is logged once, as its `taint` event). */
+  sources: SessionSources;
   /** Layer-2 attribution of this call's arguments. Explanation only; never grounds an allow. */
   evidence: Evidence[];
   /** True if attribution was bounded for this call (size caps, decode budget) or for an earlier
@@ -105,8 +106,8 @@ export class TaintEngine {
   private seq = 0;
   private decisions = 0;
   context: Label = BOTTOM;
-  private readonly untrustedSources: OutputRef[] = [];
-  private readonly secretSources: OutputRef[] = [];
+  /** Bounded whatever the session's length; its bytes count against the index budget. */
+  private readonly sources = new SourceLog();
   private degraded = false;
   /** Highest confidentiality among outputs attribution lost track of (evicted, or decoded only in
    *  part); `public` while none. Read by the `may_receive` bound (R6b-1, Phase 7). */
@@ -142,8 +143,8 @@ export class TaintEngine {
     }
     const before = this.context;
     this.context = join(this.context, provisional.label);
-    if (provisional.label.integrity === 'untrusted') this.untrustedSources.push(provisional);
-    if (provisional.label.confidentiality === 'secret') this.secretSources.push(provisional);
+    this.sources.add(provisional, before, this.context);
+    this.index.chargeExternal(this.sources.bytes);
     const labelled = (l: Label): boolean => l.integrity === 'untrusted' || l.confidentiality !== 'public';
     for (const e of added.evictions) if (labelled(e.output.label)) this.loseTrack(e.output.label, 'evicted');
     if (added.decodeTruncated && labelled(provisional.label)) this.loseTrack(provisional.label, 'output-decode');
@@ -180,7 +181,7 @@ export class TaintEngine {
     const policy = this.policy?.evaluate({ serverId, toolName, args, context: this.context, provenanceOf: (v, deterministic) => this.provenanceOf(v, deterministic) });
     const base = {
       id, server: serverId, tool, effect, context: { ...this.context },
-      untrustedSources: [...this.untrustedSources], secretSources: [...this.secretSources],
+      sources: this.sources.snapshot(),
       evidence: attribution.evidence, attributionDegraded: this.degraded || attribution.degraded,
       degradedBy: [...attribution.degradedBy, ...this.sessionCauses],
       ...(policy ? { policy } : {}),
@@ -205,8 +206,8 @@ export class TaintEngine {
       const enforced = this.config.taint.trifecta === 'deny';
       const why = upgraded ? 'write to a target outside the declared workspace (treated as egress)' : `${effect} call`;
       const reason =
-        `${why} while the session holds untrusted content (${describe(this.untrustedSources)}) ` +
-        `and secret data (${describe(this.secretSources)})${enforced ? '' : ' — audit mode, not blocked'}`;
+        `${why} while the session holds untrusted content (${describeSources(base.sources.untrustedOutputs)}) ` +
+        `and secret data (${describeSources(base.sources.secretOutputs)})${enforced ? '' : ' — audit mode, not blocked'}`;
       // Audit mode records the invariant but must not displace a policy `ask`: returning `allow` here
       // would silently skip an author-written confirmation (fail-open, found in 6b).
       if (!enforced && policy?.effect === 'ask') {
@@ -316,7 +317,3 @@ function allowReason(effect: Effect, ctx: Label): string {
   return 'no secret data in context';
 }
 
-function describe(refs: OutputRef[]): string {
-  const names = [...new Set(refs.map((r) => r.source))];
-  return names.length <= 3 ? names.join(', ') : `${names.slice(0, 3).join(', ')} and ${names.length - 3} more`;
-}
