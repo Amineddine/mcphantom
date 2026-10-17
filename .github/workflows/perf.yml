@@ -1,0 +1,74 @@
+name: perf
+
+# Phase 7 item 5 (pre-registered in bench/perf/PREREGISTRATION-perf.md): the primary latency / memory /
+# eviction dataset. Manual only — never on push or pull_request. Three replicate jobs, each on its own fresh
+# GitHub-hosted VM (a shared VM, not a quiet machine; the report shows the VM-to-VM spread). Results are
+# uploaded as artifacts and committed by hand; this workflow writes nothing to the repository.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: perf
+  cancel-in-progress: false
+
+jobs:
+  perf:
+    name: perf replicate ${{ matrix.replicate }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        replicate: [1, 2, 3]
+    steps:
+      # Actions pinned to commit SHAs (tag in the comment), as in ci.yml.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      # --ignore-scripts: no dependency install scripts (as in ci.yml).
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - name: bench:perf L, B, D, M2 (10 launches per configuration)
+        run: npm run bench:perf -- --env ci --replicate ${{ matrix.replicate }} --parts latency,breakdown,decision,memory
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: perf-ci-${{ matrix.replicate }}
+          path: bench/results/perf/ci-${{ matrix.replicate }}.json
+          if-no-files-found: error
+          retention-days: 30
+
+  # E — eviction loss is deterministic (no timing), so it runs once, split across 8 VMs by trace
+  # (pre-registration amendment 3); the shards are merged by bench/perf/report.mts.
+  eviction:
+    name: eviction shard ${{ matrix.shard }}/8
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - name: bench:perf eviction (shard ${{ matrix.shard }} of 8)
+        run: npm run bench:perf -- --env ci --replicate 1 --parts eviction --shard ${{ matrix.shard }}/8
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: perf-eviction-${{ matrix.shard }}
+          path: bench/results/perf/ci-1-eviction-${{ matrix.shard }}of8.json
+          if-no-files-found: error
+          retention-days: 30
