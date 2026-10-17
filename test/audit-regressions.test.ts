@@ -167,8 +167,8 @@ describe('AUD-8 follow-up: capped attribution never weakens Layer 1 (owner item 
       expect(d.rule).toBe('trifecta');
       expect(d.attributionDegraded).toBe(true);
       expect(d.context).toEqual({ integrity: 'untrusted', confidentiality: 'secret' });
-      expect(d.untrustedSources.length).toBeGreaterThan(0);
-      expect(d.secretSources.length).toBeGreaterThan(0);
+      expect(d.sources.untrustedOutputs.count).toBeGreaterThan(0);
+      expect(d.sources.secretOutputs.count).toBeGreaterThan(0);
     }
   });
 

@@ -103,8 +103,8 @@ describe('PostHog scenario: untrusted event data', () => {
       expect(r.isError).toBe(true);
       expect(textOf(r)).toMatch(/rule: trifecta/);
       expect(received.slice(before)).toEqual([]);
-      const d = JSON.parse(h.store.events({ kind: 'decision' }).at(-1)?.payload ?? '{}') as { untrustedSources: { source: string }[] };
-      expect(d.untrustedSources.map((s) => s.source)).toContain('ph__execute-sql');
+      const d = JSON.parse(h.store.events({ kind: 'decision' }).at(-1)?.payload ?? '{}') as { sources: { untrustedOutputs: { names: string[] } } };
+      expect(d.sources.untrustedOutputs.names).toContain('ph__execute-sql');
     } finally {
       await h.close();
     }

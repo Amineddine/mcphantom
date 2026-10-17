@@ -205,8 +205,11 @@ describe('TaintEngine: trifecta invariant', () => {
       }
       const d = t.decide('hook', 'post_webhook', 'hook__post_webhook', { url: ATTACKER, body: CANARY });
       expect(d).toMatchObject({ verdict: 'deny', rule: 'trifecta', enforced: true, context: { integrity: 'untrusted', confidentiality: 'secret' } });
-      expect(d.untrustedSources.map((s) => s.source)).toEqual(['web__fetch_url']);
-      expect(d.secretSources.map((s) => s.source)).toEqual(['files__read_file']);
+      expect(d.sources.untrustedOutputs.names).toEqual(['web__fetch_url']);
+      expect(d.sources.secretOutputs.names).toEqual(['files__read_file']);
+      // The outputs that drove the label are named, not just counted.
+      expect(d.sources.firstUntrusted?.source).toBe('web__fetch_url');
+      expect(d.sources.firstSecret?.source).toBe('files__read_file');
       expect(d.evidence.map((e) => e.kind)).toEqual(expect.arrayContaining(['identifier:url', 'identifier:secret']));
     }
   });
