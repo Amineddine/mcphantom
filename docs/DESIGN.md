@@ -168,6 +168,12 @@ The provenance index and the cumulative-reassembly buffers are bounded per sessi
   than Tier A under a separate budget (default 4 MiB per session). When Tier A text is evicted,
   exact/normalized/decoded attribution of *identifiers* still works through Tier B.
 - **Cumulative buffers**: per (session, sink) byte cap and time window.
+- **Layer-1 source summary** (Phase 7 item 5 fix): what a decision says about the outputs behind the
+  label is bounded — the first output that made the context untrusted / internal / secret, counts, and at
+  most 16 distinct source names per label — and its bytes are charged against the Tier-A budget. Each
+  output is logged once, as its `taint` event; a decision references the last output id (`through`), and
+  `mcphantom trace` rebuilds the full list from the log. (Before: every decision carried, and redacted, the
+  full lists — ≈ 0.1 ms more per untrusted output on every call, unbounded in memory.)
 
 Eviction **never silently weakens protection**:
 

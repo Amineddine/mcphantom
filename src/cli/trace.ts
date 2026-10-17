@@ -44,13 +44,13 @@ export function runTrace(opts: TraceOptions, out: (s: string) => void): number {
         out(`No taint decisions in session ${sessionId ?? '(unknown)'}.`);
         return 1;
       }
-      renderDecision(lastDecision, out);
+      renderDecision(lastDecision, events, out);
       return 0;
     }
     out(`session ${sessionId ?? '(unknown)'} — ${events.length} taint event(s)\n`);
     for (const e of events) {
       if (e.kind === 'taint') renderIngest(e, out);
-      else if (e.kind === 'decision') renderDecision(e, out);
+      else if (e.kind === 'decision') renderDecision(e, events, out);
       else out(`  · evicted provenance for ${e.name ?? '?'} (memory budget)`);
     }
     return 0;
@@ -72,15 +72,51 @@ function renderIngest(e: StoredEvent, out: (s: string) => void): void {
   out(`  ⇩ ${e.name ?? '?'} → context ${p.contextAfter.integrity}/${p.contextAfter.confidentiality}${secrets}${possible}`);
 }
 
-function renderDecision(e: StoredEvent, out: (s: string) => void): void {
-  const d = parsePayload(e) as Decision | undefined;
+/** Decisions logged before the bound (item 5 fix) carried the full lists; they are still readable. */
+type LoggedDecision = Omit<Decision, 'sources'> & { sources?: Decision['sources']; untrustedSources?: { source: string }[]; secretSources?: { source: string }[] };
+
+/**
+ * Distinct sources of the session's `taint` events with the given label, up to output `through`: each output
+ * is logged once when it enters the context, so these are the full lists a decision summarises.
+ */
+function sourcesUpTo(events: StoredEvent[], through: string | undefined, label: 'untrusted' | 'secret'): string[] {
+  const upTo = Number((through ?? 'o0').slice(1));
+  const names = new Set<string>();
+  for (const ev of events) {
+    if (ev.kind !== 'taint') continue;
+    const o = (parsePayload(ev) as { output?: { id?: string; source?: string; label?: { integrity?: string; confidentiality?: string } } } | undefined)?.output;
+    if (!o?.id || !o.source || Number(o.id.slice(1)) > upTo) continue;
+    if (label === 'untrusted' ? o.label?.integrity === 'untrusted' : o.label?.confidentiality === 'secret') names.add(o.source);
+  }
+  return [...names];
+}
+
+function renderSources(d: LoggedDecision, events: StoredEvent[], out: (s: string) => void): void {
+  if (d.sources === undefined) {
+    if (d.untrustedSources?.length) out(`    untrusted from: ${[...new Set(d.untrustedSources.map((s) => s.source))].join(', ')}`);
+    if (d.secretSources?.length) out(`    secret from:    ${[...new Set(d.secretSources.map((s) => s.source))].join(', ')}`);
+    return;
+  }
+  const s = d.sources;
+  for (const [label, set, raised] of [['untrusted', s.untrustedOutputs, s.firstUntrusted], ['secret', s.secretOutputs, s.firstSecret]] as const) {
+    if (set.count === 0) continue;
+    // The full list from the log; the decision's own bounded name list if those events were pruned.
+    const logged = sourcesUpTo(events, s.through, label);
+    const names = logged.length > 0 ? logged : set.names;
+    const more = logged.length > 0 ? '' : set.others > 0 ? ` (+${String(set.others)} output(s) from other sources)` : '';
+    const first = raised ? ` — first: ${raised.source} (${raised.id})` : '';
+    out(`    ${label === 'untrusted' ? 'untrusted from:' : 'secret from:   '} ${names.join(', ')}${more}; ${String(set.count)} output(s)${first}`);
+  }
+}
+
+function renderDecision(e: StoredEvent, events: StoredEvent[], out: (s: string) => void): void {
+  const d = parsePayload(e) as LoggedDecision | undefined;
   if (!d) return;
   const mark = d.verdict === 'deny' ? 'DENY' : d.verdict === 'ask' ? 'ASK' : d.rule ? 'FLAG' : 'allow';
   out(`\n  [${mark}] ${d.tool}  (decision ${d.id})`);
   out(`    context: ${d.context.integrity}/${d.context.confidentiality}; effect: ${d.effect}`);
   out(`    reason:  ${d.reason}`);
-  if (d.untrustedSources.length) out(`    untrusted from: ${[...new Set(d.untrustedSources.map((s) => s.source))].join(', ')}`);
-  if (d.secretSources.length) out(`    secret from:    ${[...new Set(d.secretSources.map((s) => s.source))].join(', ')}`);
+  renderSources(d, events, out);
   for (const ev of d.evidence) {
     const how = [
       ev.matcher,
