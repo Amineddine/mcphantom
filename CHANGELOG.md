@@ -4,6 +4,17 @@
 
 ### Added
 
+- **Latency, memory and eviction benchmark** (`npm run bench:perf`; `docs/reviews/phase-7-perf.md`), pre-registered.
+  It ran once on GitHub-hosted Linux VMs (3 replicates × 10 launches, cluster-bootstrap CIs) and on a laptop
+  (reduced set).
+  - gateway − direct p50: +119 ms at 1 MiB (59% indexing the output, about 4% SDK); +5 ms at 1 KiB with payload
+    logging off.
+  - Tier A stays within its budget.
+  - Under eviction, 0/60 suite attacks succeed and partial leaks fall to 0. An identifier flood followed by
+    eviction defeats `from()` deny rules (4/5); see Known limitations.
+  - An internal, test-pinned timing hook breaks a call into stages. `.github/workflows/perf.yml` (manual) produces
+    the CI dataset.
+
 - **Baselines and ablations** (`npm run bench:ablations`; `docs/reviews/phase-7-ablations.md`), pre-registered and
   run once. Layer 2 changes no trifecta decision (the invariant reads Layer-1 labels); it decides `may_receive` and
   `from()` rules — off, 7/60 claimed attacks reach the bounded sink server and 4/5 policy-family attacks on internal

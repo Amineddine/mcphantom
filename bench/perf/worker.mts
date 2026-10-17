@@ -18,6 +18,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { stringify } from 'yaml';
 import { prose } from './filler.js';
+import { SIZES, type SizeId } from './sizes.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const TSX = pathToFileURL(createRequire(import.meta.url).resolve('tsx')).href;
@@ -26,13 +27,6 @@ const CLI = path.join(ROOT, 'dist', 'cli', 'main.js');
 const ENTRY = path.join(ROOT, 'bench', 'perf', 'timed-gateway.mts');
 const FS_SERVER = path.join(ROOT, 'node_modules', '@modelcontextprotocol', 'server-filesystem', 'dist', 'index.js');
 
-export const SIZES = {
-  '1k': { label: '1 KiB', text: () => 'x'.repeat(1024), warm: 20, n: 200 },
-  '64k': { label: '64 KiB', text: () => 'x'.repeat(65_536), warm: 20, n: 100 },
-  '1m': { label: '1 MiB', text: () => 'x'.repeat(1_048_576), warm: 5, n: 20 },
-  slash128k: { label: '128 KiB slash-heavy (R6b-10)', text: () => 'aBcdefghijklmnoP/'.repeat(7710), warm: 5, n: 40 },
-} as const;
-export type SizeId = keyof typeof SIZES;
 
 export interface Job {
   part: 'latency' | 'breakdown' | 'decision' | 'memory';

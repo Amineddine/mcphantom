@@ -12,7 +12,7 @@ import { loadScenario } from '../attack/scenario.js';
 import { rate } from '../attack/stats.js';
 import { memoryPerTrace, report as evictionReport, ARMS, BUDGETS, type TraceRun } from './eviction.js';
 import { bootstrapDeltas, bootstrapQuantiles, BOOTSTRAP_B, BOOTSTRAP_SEED, median, spread, type Estimate, type Nested } from './stats.js';
-import { SIZES } from './worker.mjs';
+import { SIZES } from './sizes.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const RESULTS = path.join(here, '..', 'results');
@@ -41,7 +41,8 @@ type MemoryRun = { series: Record<string, { calls: number; rss: number; heapUsed
 /** `[vm][launch][sample]` for one part/size/arm. */
 // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-parameters -- names the raw run shape at each call site
 function nest<T>(rs: typeof raws, part: string, pick: (run: T) => number[] | undefined): Nested {
-  return rs.map((r) => ((r.results[part] as T[] | undefined) ?? []).map((run) => pick(run) ?? []));
+  // Only files that ran this part are VMs for it (the eviction shards ran no latency part).
+  return rs.filter((r) => Array.isArray(r.results[part])).map((r) => (r.results[part] as T[]).map((run) => pick(run) ?? []));
 }
 const hasData = (n: Nested) => n.some((vm) => vm.some((l) => l.length > 0));
 
@@ -163,7 +164,7 @@ for (const g of groups) {
   const runs = (r: (typeof raws)[number]) => (r.results.memory as MemoryRun[] | undefined) ?? [];
   const all = g.raws.flatMap(runs);
   if (all.length === 0) continue;
-  L.push(`## M2 — long session (${g.name})`, '', '4,000 calls echoing 8 KiB of identifier-free prose through a real gateway process. Medians across launches (and VMs); MiB.', '');
+  L.push(`## M2 — long session (${g.name})`, '', '4,000 calls reading 8 KiB files of identifier-free prose through `server-filesystem` and a real gateway process (amendment 1). Medians across launches (and VMs); MiB.', '');
   L.push('| budget | calls | RSS | heapUsed | Tier A | Tier B entries | evicted |', '|---|---|---|---|---|---|---|');
   const mib = (b: number) => (b / 2 ** 20).toFixed(1);
   const checks: string[] = [];
