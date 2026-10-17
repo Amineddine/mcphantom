@@ -146,3 +146,25 @@ PR links: `#N` = https://github.com/Amineddine/mcphantom/pull/N.
   `internal`, so one such read blocks a `public`-bounded server). Options: not recorded. Reason (from my item-4 Owner
   review): R7a-1 is accepted because context mode is opt-in and documented, with this as its follow-up.
   Recorded in the DESIGN backlog. PR: #14.
+
+## 2026-10-17
+
+- **Item 5: the 1 MB cost is broken down with internal timing instrumentation.** Internal only, test-pinned
+  like the ablation hook, and its own overhead measured. Options: timing hooks inside the gateway, or turning
+  stages off through the configuration (which cannot isolate SDK validation or the transport hop). Reason: not
+  stated beyond accepting the recommendation. PR: #15.
+- **Item 5: GitHub-hosted `ubuntu-latest` through `workflow_dispatch` is the primary dataset.** The workflow
+  file is shown to me before its first run, and run-to-run variance is reported honestly. Options: a
+  GitHub-hosted runner (a shared VM, not truly quiet), a self-hosted runner (none exists), or the laptop alone.
+  Reason: not stated beyond accepting the recommendation. PR: #15.
+- **Item 5: eviction budgets 32 / 4 / 1 / 0.25 / 0.0625 MiB with benign filler, plus an adversarial-filler
+  arm.** In that arm the untrusted source itself emits outputs sized to force eviction right before the attack
+  step; attack success, partial leaks, false blocks and fail-closed denies are reported for it per budget.
+  Options: benign filler only, or benign plus adversarial. Reason: adversarial filler is the real eviction
+  threat. PR: #15.
+- **Item 5: the laptop runs a reduced comparison set only** — 1 MB and the slash-heavy 128 KB case, ≥ 10
+  launches each, plugged in, environment recorded; not the full matrix. Options: the full matrix on the laptop,
+  or a reduced set. Reason: this machine has run out of memory before. PR: #15.
+- **Item 5: fix the flaky e2e test in this PR.** `test/cli.e2e.test.ts` "approve pins definitions…" timed out
+  at 30 s under full-suite load; raise its timeout or isolate it from that load, and log it in the review.
+  Options: raise the timeout, or isolate the test. Reason: not stated. PR: #15.
