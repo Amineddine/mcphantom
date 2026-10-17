@@ -168,3 +168,11 @@ PR links: `#N` = https://github.com/Amineddine/mcphantom/pull/N.
 - **Item 5: fix the flaky e2e test in this PR.** `test/cli.e2e.test.ts` "approve pins definitions…" timed out
   at 30 s under full-suite load; raise its timeout or isolate it from that load, and log it in the review.
   Options: raise the timeout, or isolate the test. Reason: not stated. PR: #15.
+- **Item 5: fix the decision-event growth first, in its own PR (option B).** Each event must still name the
+  untrusted source(s) that drove it; the full list is stored once and referenced, not truncated; in-memory lists
+  are bounded and counted against the index budget; the growth probe becomes a CI test; today's numbers are the
+  "before" in the item-5 review. Options: A — run item 5 as is, fix later; B — fix first. Reason: not stated. PR: #17.
+- **Item 5: `perf.yml` approved as shown, and added to `main` on its own** (option a), since GitHub dispatches
+  only workflows on the default branch. It is dispatched against `7/pr5-latency` once #17 is merged and the
+  branch updated. Options: (a) a workflow-only PR to `main`; (b) a push trigger on a dedicated branch. Reason: not
+  stated. PR: #16.
