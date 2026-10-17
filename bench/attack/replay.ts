@@ -11,7 +11,7 @@ import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { ConfigSchema } from '../../src/config/schema.js';
 import { PolicyEngine } from '../../src/policy/engine.js';
 import { scanTool } from '../../src/scanner/scan.js';
-import { TaintEngine, type Ablation } from '../../src/taint/engine.js';
+import { TaintEngine, type Ablation, type Decision } from '../../src/taint/engine.js';
 import { encode, part, type LoadedScenario, type ScenarioStep } from './scenario.js';
 
 export interface Delivered {
@@ -127,6 +127,10 @@ export interface MCPhantomOptions {
   mayReceiveMode?: 'evidence' | 'context';
   /** Internal switches that no configuration can reach (Phase 7 item 4 ablations). */
   ablation?: Ablation;
+  /** Sees each decision (eviction bench, Phase 7 item 5); never read by the oracles. */
+  observe?: (st: ScenarioStep, d: Decision) => void;
+  /** Receives the engine once built, for its index statistics (item 5 memory). */
+  onEngine?: (engine: TaintEngine) => void;
 }
 
 /** MCPhantom at default settings, configured with the scenario's classifications, rules and declassify
@@ -139,6 +143,7 @@ export function mcphantom(sc: LoadedScenario, opts: MCPhantomOptions = {}): Defe
   }]));
   const config = ConfigSchema.parse({ version: 1, servers, ...(sc.declassify ? { declassify: sc.declassify } : {}), ...opts.extra });
   const engine = new TaintEngine(config, new PolicyEngine(config), opts.ablation);
+  opts.onEngine?.(engine);
   const name = opts.name ?? 'MCPhantom (defaults)';
   const exposed = (st: ScenarioStep) => `${st.server}__${st.tool}`;
   return {
@@ -150,6 +155,7 @@ export function mcphantom(sc: LoadedScenario, opts: MCPhantomOptions = {}): Defe
     })),
     call: (st) => {
       const d = engine.decide(st.server, st.tool, exposed(st), st.args);
+      opts.observe?.(st, d);
       // Without elicitation the gateway denies `ask`; the bench client has none.
       if (d.verdict !== 'allow') return { delivered: false, blockedBy: d.verdict === 'ask' ? 'ask' : (d.rule ?? 'deny') };
       engine.sent(exposed(st), st.args);

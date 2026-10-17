@@ -15,6 +15,7 @@ import { Gateway } from '../src/gateway/gateway.js';
 import type { RugpullChecker } from '../src/rugpull/checker.js';
 import { SqliteStore } from '../src/store/store.js';
 import { silentLogger } from '../src/util/log.js';
+import type { TimingSink } from '../src/util/timings.js';
 import { buildEverythingServer } from './fixtures/servers/everything-lib.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -49,7 +50,7 @@ export interface GatewayHarness {
 
 export async function startGateway(
   servers: Record<string, Record<string, unknown>>,
-  opts: { config?: Record<string, unknown>; clientCapabilities?: ClientCapabilities; knownSecrets?: string[]; setupClient?: (c: Client) => void; rugpull?: RugpullChecker } = {},
+  opts: { config?: Record<string, unknown>; clientCapabilities?: ClientCapabilities; knownSecrets?: string[]; setupClient?: (c: Client) => void; rugpull?: RugpullChecker; timings?: TimingSink } = {},
 ): Promise<GatewayHarness> {
   const config = makeConfig({ servers, ...opts.config });
   const dataDir = tempDir();
@@ -66,7 +67,7 @@ export async function startGateway(
   });
   const sessionId = 'test-session';
   store.startSession({ id: sessionId });
-  const gateway = await Gateway.create({ config, store, logger: silentLogger, sessionId, version: '0.0.0-test', ...(opts.rugpull ? { rugpull: opts.rugpull } : {}) });
+  const gateway = await Gateway.create({ config, store, logger: silentLogger, sessionId, version: '0.0.0-test', ...(opts.rugpull ? { rugpull: opts.rugpull } : {}), ...(opts.timings ? { timings: opts.timings } : {}) });
   const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
   await gateway.connect(serverSide);
   const client = new Client({ name: 'test-client', version: '1.0.0' }, { capabilities: opts.clientCapabilities ?? {} });

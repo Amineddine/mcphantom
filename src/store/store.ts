@@ -1,7 +1,9 @@
 import path from 'node:path';
+import { performance } from 'node:perf_hooks';
 import Database from 'better-sqlite3';
 import { Redactor, safeCut, TRUNCATED } from '../secrets/redact.js';
 import { checkPrivate, ensurePrivateDir, ensurePrivateFile, restrictFile } from '../security/fileperms.js';
+import type { TimingSink } from '../util/timings.js';
 import type { Logger } from '../util/log.js';
 
 export type EventKind =
@@ -91,6 +93,8 @@ export interface StoreOptions {
   redactEntropy?: boolean;
   insecurePermissions: 'fix' | 'warn' | 'refuse';
   logger: Logger;
+  /** Internal stage timing for `bench:perf` only (src/util/timings.ts); not part of the configuration. */
+  timings?: TimingSink;
 }
 
 const SCHEMA_VERSION = 1;
@@ -205,7 +209,9 @@ export class SqliteStore implements Store {
   }
 
   append(e: EventInput): void {
-    this.insertStmt.run({
+    const tm = this.opts.timings;
+    const t0 = tm ? performance.now() : 0;
+    const row = {
       ts: Date.now(),
       session_id: e.sessionId,
       kind: e.kind,
@@ -216,7 +222,13 @@ export class SqliteStore implements Store {
       duration_ms: e.durationMs ?? null,
       payload: e.payload === undefined ? null : this.serializePayload(e.payload),
       error: e.error === undefined ? null : this.redactor.redactString(safeCut(e.error, 4096)),
-    });
+    };
+    const t1 = tm ? performance.now() : 0;
+    this.insertStmt.run(row);
+    if (tm) {
+      tm('redact', t0, t1);
+      tm('store.write', t1, performance.now());
+    }
   }
 
   /** Exposed for tests: exactly what would be written for a payload. */

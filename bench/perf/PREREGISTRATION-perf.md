@@ -201,4 +201,20 @@ Tier B intact.
 
 ## Amendments
 
-None yet.
+All three were made on 2026-10-17, after smoke runs of the harness (`--smoke`: 1 launch, minimal counts,
+never reported) and **before the first real run**. No prediction changed.
+
+1. **M2 workload.** The long session reads 50 distinct 8 KiB prose files through
+   `@modelcontextprotocol/server-filesystem` (`read_text_file`, short path arguments) instead of echoing 8 KiB
+   arguments. Output size, content and call counts are unchanged.
+   Cause: Layer 2 attributes every argument against all of Tier A, with copy and fuzzy matching. A probe put
+   one decision on an 8 KiB argument at ≈ 19 ms against 80 outputs, i.e. ≈ 450 ms against a full 32 MiB
+   index. At that cost 4,000 calls × 10 launches × 2 budgets would take hours, and the session would measure
+   attribution, not memory.
+2. **D gains one case:** an 8 KiB prose body against a full 32 MiB Tier A (20 calls per launch), so the cost
+   in amendment 1 is measured, not only observed in a probe. Reported, not predicted.
+3. **E runs once, in shards.** E is deterministic. It runs in a separate job of the same dispatch, split by
+   trace into 8 shards on 8 VMs (`--shard i/8`: traces whose position in their set is i − 1 mod 8), not on
+   each replicate VM. The report merges the shards.
+   Cause: ≈ 52 ms per 64 KiB prose ingest and ≈ 190 ms per 64 KiB token ingest make the arms about 3 CPU-hours
+   per run. Running it three times would add no information to a deterministic result.
