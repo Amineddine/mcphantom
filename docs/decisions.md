@@ -187,3 +187,27 @@ PR links: `#N` = https://github.com/Amineddine/mcphantom/pull/N.
   cost, and update the README limitation. Options: any one of the three, or all. Reason: not stated. PR: the R7p-3 PR.
 - **R7p-2: cap evidence per argument** to the strongest few entries plus a count; in the R7p-3 PR if small,
   otherwise right after it. Options: cap, or leave it bounded only by the index. Reason: not stated. PR: the R7p-3 PR.
+
+## 2026-10-18
+
+- **R7p-3 + R7p-2 plan approved as written** (option 1).
+  - Tier B is charged against `taint.max_index_mb` at measured per-entry costs. Tier A evicts first; Tier B
+    evicts oldest-first only once Tier A is empty, and an identifier seen again counts as new.
+  - Every Tier B eviction marks the session degraded.
+  - A deny-side `from()` with no match is an error (fail closed) when the session lost track of outputs of that
+    level, or when attribution could not check the value in full.
+  - R7p-2 goes in the same PR: 4 evidence entries per argument, 32 per decision, the cited one always kept,
+    plus a count.
+  - Options: as written; eviction by global age across both tiers; R7p-2 in its own PR. Reason: not stated
+    beyond the approval. PR: the R7p-3 PR.
+- **R7p-3 rerun: the policy family runs on the laptop, the full suite on CI** (`perf.yml`, eviction shards
+  only, into `bench/results/perf-r7p3/`). Options: laptop + CI, or the policy family only. Reason: not stated
+  beyond accepting the recommendation. PR: the R7p-3 PR.
+- **The allow-side `from()` hole is the next PR, right after the R7p-3 PR.**
+  - In a degraded session, a negated `from()` in an allow rule or declassify condition evaluates to an error,
+    so the declassify does not apply and the trifecta check stays in force (fail closed, as on the deny side).
+  - Policy lint makes `!from(...)` inside a declassify or allow condition an error, unless the rule is
+    explicitly marked precision-mode. The message explains that absence of evidence is not proof of no flow.
+  - Tests for both, and any false-block change on the policy family measured.
+  - Options: not recorded (Claude Code flagged the hole while planning R7p-3). Reason: not stated. PR: the PR
+    after the R7p-3 PR.

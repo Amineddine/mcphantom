@@ -164,9 +164,16 @@ The provenance index and the cumulative-reassembly buffers are bounded per sessi
 - **Tier A — full text** (needed for fuzzy/semantic matching): LRU by ingestion time, byte budget
   (default 32 MiB per session, 256 MiB global).
 - **Tier B — identifier fingerprints**: hashes of high-entropy tokens extracted from every output
-  (secrets, URLs, e-mail addresses, hostnames, long tokens). Small (tens of bytes each); kept far longer
-  than Tier A under a separate budget (default 4 MiB per session). When Tier A text is evicted,
-  exact/normalized/decoded attribution of *identifiers* still works through Tier B.
+  (secrets, URLs, e-mail addresses, hostnames, long tokens). When Tier A text is evicted,
+  exact/normalized/decoded attribution of *identifiers* still works through Tier B. **As built (R7p-3 fix,
+  Phase 7):** Tier B shares the per-session byte budget with Tier A. Each entry is charged its measured heap
+  cost: 288 B, plus 40 B for each further output on it. Over the budget, Tier A evicts oldest first, and
+  Tier B evicts its oldest entries only once Tier A is empty, so Tier B outlives Tier A. An identifier seen
+  again in a newer output counts as new, so a flood cannot push out what the session keeps seeing.
+  - Before the fix, Tier B had a fixed 200,000-entry cap outside the budget (≈ 56 MB unaccounted). Once full,
+    it silently stopped indexing.
+  - An untrusted source could flood it with random tokens and then force Tier-A eviction. That hid every
+    later recipient from `from()` deny rules (4/5 policy attacks in item 5's F3 arm).
 - **Cumulative buffers**: per (session, sink) byte cap and time window.
 - **Layer-1 source summary** (Phase 7 item 5 fix): what a decision says about the outputs behind the
   label is bounded — the first output that made the context untrusted / internal / secret, counts, and at
@@ -180,7 +187,14 @@ Eviction **never silently weakens protection**:
 1. Layer-1 labels are a running join and do not depend on the index; evicted data still taints.
 2. Every eviction emits an `eviction` event (what tier, how many bytes, label of the evicted output).
 3. A decision made after an eviction that dropped data with a non-public or untrusted label carries
-   an `attribution_degraded` flag, visible in the trace and the dashboard.
+   an `attribution_degraded` flag, visible in the trace and the dashboard. Tier A and Tier B evictions both
+   count.
+   - A `may_receive` bound fails closed on lost data above it (R6b-1).
+   - A deny-side `from(v, level)` with no match fails closed (a policy error, so the call is denied) when the
+     session lost track of any output of that `level`, or when attribution could not check `v` in full
+     (R7p-3). Allow rules and declassify conditions only ever use evidence that exists.
+   - The evidence a decision records is capped at the strongest 4 entries per argument (32 per decision),
+     plus a count (R7p-2). The verdict is reached on all of it.
 4. The benchmark reports memory (RSS and index bytes) and **attribution loss caused by eviction**:
    the same scenarios replayed at several budgets, counting decisions whose evidence changed.
 
