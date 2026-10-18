@@ -194,3 +194,100 @@ The suite's 60 claimed attacks stay at 0 / 60 in every arm and at every budget.
   - R7p-2 (uncapped evidence) and R7p-3 (silent Tier-B overflow lets `from()` deny rules be evaded) are open,
     and their fixes are decided separately from this PR. R7p-3 is in the README's known limitations. Neither
     affects the trifecta invariant or `may_receive`: 0 / 60 suite attacks succeed in every arm.
+
+---
+
+## Addendum — the R7p-3 fix (and R7p-2), 2026-10-18
+
+Branch `7/r7p3-tierb`. Owner decisions: 2026-10-17 and 2026-10-18 in [`docs/decisions.md`](../decisions.md).
+Pre-registration [`bench/perf/PREREGISTRATION-r7p3.md`](../../bench/perf/PREREGISTRATION-r7p3.md), committed and
+pushed (`5224d09`) before the rerun; two amendments, both after the CI run: CI also ran the policy family, and two
+report-only changes. Results: [`bench/results/eviction-r7p3.md`](../../bench/results/eviction-r7p3.md) (before → after
+against [`eviction.md`](../../bench/results/eviction.md), which is unchanged); raw data in `bench/results/perf-r7p3/`.
+
+### What changed
+
+- **Tier B shares the byte budget** (`src/taint/provenance.ts`).
+  - Each entry is charged 288 B and each further output on an entry 40 B: the heap cost measured on Node 22
+    (≈ 280 B / ≈ 34 B), rounded up.
+  - Over the budget, Tier A evicts oldest first. Only once Tier A is empty does Tier B evict its oldest entries,
+    and a repeated identifier moves to the newest end.
+  - The 200,000-entry cap, which held ≈ 56 MB outside the budget, is gone. Tier B evictions are reported once per
+    output (`tier: 'B'`, `entries`) and logged as `eviction` events.
+- **Degraded state** (`src/taint/engine.ts`). A Tier B eviction marks the session degraded, as a Tier A eviction
+  does: it feeds `may_receive`'s fail-closed check (R6b-1). The engine also records the integrity level of every
+  output it lost track of.
+- **Deny-side `from()` fails closed** (`src/policy/functions.ts`).
+  - With no match, `from(v, level)` in a deny or ask rule is an error when the session lost track of an output of
+    that `level`, or when attribution could not check `v` in full (over 64 KiB). The policy engine turns the
+    error into a deny whose reason names the bound and the way out.
+  - An error rather than `true`, so `!from(...)` fails closed too, while `false && from(...)` stays false
+    (tested).
+  - Allow rules and declassify conditions are unchanged.
+- **R7p-2.** `capEvidence` keeps the strongest 4 entries per argument (32 per decision), always including the one
+  a `may_receive` deny cites, plus `evidenceOmitted`. `mcphantom trace` prints the count. Measured on the review's
+  shape (a 1 KiB argument repeated in every output): 10 / 100 / 1,000 matching outputs give a decision of 1,552 /
+  1,563 / 1,574 characters. Before: 2.6 / 20 / 197 KB.
+- **Tests:** `test/tierb-budget.test.ts` (13 tests). Two existing tests had budgets of 200 bytes and of 1.5 × one
+  output's Tier A size; they were resized so that only Tier A evicts, and now assert the tier.
+- **Harness:** `bench:perf --sets / --out-dir`; a per-ingest index-bound check (Q-8); `report-eviction.mts`.
+  `perf.yml` gained two choice inputs (`jobs`, `out_dir`) so the eviction shards can run alone.
+
+### Rerun
+
+- **CI:** `perf.yml` run [39088191904](https://github.com/Amineddine/mcphantom/actions/runs/39088191904) on
+  `5224d09`, eviction job only, 8 shards, both sets (amendment 1). It took about 10 minutes, against about 3
+  CPU-hours for item 5's eviction run. Observed, not measured further. The likely cause is that Tier B no longer
+  grows to 200k entries under F3.
+- **Laptop:** the policy family, as registered. Its 128 rows are **identical** to CI's policy rows, trace by
+  trace, including the index-bound field.
+
+### Predictions vs results
+
+| prediction | result |
+|---|---|
+| Q-1 policy family 0 / 5 in every cell; under F3 denied on evidence; `pol-declassify-attack` stopped by its rule | **held** — F3 4 / 5 → 0 / 5 at every budget; no claimed attack has a fail-closed deny |
+| Q-2 partial leaks 0 / 5 | held |
+| Q-3 false blocks 2 / 2 in F1 ≤ 1 MiB, F2 and F3 at every budget; F0 and F1 at 32 / 4 MiB 0 / 2 | **held exactly** (both benign traces denied fail-closed by the deny rule) |
+| Q-4 3 fail-closed traces per Q-3 cell, 0 elsewhere | held |
+| Q-5 `out-pol-recipient-spelled-out` 1 / 1 → 0 / 1 in the Q-3 cells | held (a side effect of failing closed, not a new claim) |
+| Q-6 suite unchanged; F3 fail-closed may fall | held — 0 / 60, partial leaks and false blocks identical in every cell; F3 fail-closed traces 9 → 4 (evidence is found first) |
+| Q-7 Tier B evictions only in F3, every trace | held (80 / 80 suite, 8 / 8 policy; 0 elsewhere) |
+| Q-8 index ≤ budget after every ingest | **missed** — 418 of 1,335 traces, all F3, over by at most 270 bytes (R7p-9) |
+| Q-9 M1 entry counts unchanged; Tier B bytes reported | counts held; the bytes table was missing and was added to the report after the run (amendment 2): suite 576 B, policy 1,728 / 2,880 B (median / max) |
+
+### Findings
+
+| id | severity | finding | resolution |
+|---|---|---|---|
+| R7p-3 | Medium | (see above) | **Fixed** in this PR; 0 / 5 under the flood at a cost of 2 / 2 benign policy traces under eviction. README limitation rewritten. |
+| R7p-2 | Medium | (see above) | **Fixed** in this PR; decision size constant (≈ 1.5 KB at 1,000 matches). |
+| R7p-9 | Low (open) | **The index can exceed its budget right after an ingest, by one output's source-summary growth.** `TaintEngine.ingest` grows the source summary and calls `chargeExternal` after `index.add()` has already trimmed. The new charge is applied at the next ingest. Seen only under F3, where Tier B alone fills the budget: at most 270 bytes over. It predates this PR (#17). | Not fixed here: this PR's code stays what was measured (owner decision). Its own PR follows: trim again after the summary is charged, a test, and a Q-8 recheck on F3. |
+| R7p-10 | Info | The full-suite `npm run check` once timed out the CLI e2e test "runs as a stdio gateway for a real MCP client…" at 30 s under load. Alone it passes (5 / 5, 52 s), and the pre-push run passed 531 / 531. It is the same load pattern as R7p-7, in a different test. | Fixed in this PR (owner decision): the whole file gets a 180 s timeout; each launch keeps its 60 s cap. |
+
+### Not tested / not measured
+
+- **A Tier B flood sent after the recipient, then an attack.** Covered at the decision level only
+  (`test/tierb-budget.test.ts`); the harness has no such arm.
+- **Losing track through partial decoding** (an untrusted output over 128 KiB) driving the `from()` fail-closed
+  path. The code shares the eviction path, but no test exercises it.
+- **Latency of the fix.** L, B, D and M2 were not rerun; item 5's numbers stand. The fix adds a map delete + set per
+  repeated identifier on ingest, and work at decision time only for a `from()` with no match.
+- **The global (cross-session) budget, HTTP upstreams:** as in item 5.
+- **The allow-side hole** (`!from()` in an allow rule or declassify condition in a degraded session): the next PR,
+  by owner decision.
+
+### Owner review — Amineddine Znin
+
+- **Verdict:** Approved to merge once CI is green. I approved the plan as written before any code, and the rerun
+  as the policy family on the laptop and the full suite on CI.
+- **What I decided:**
+  - R7p-3 combines all three fixes: a Tier B byte budget with oldest-first eviction; overflow marks the session
+    degraded; deny-side `from()` fails closed in a degraded session.
+  - R7p-2 goes in this PR.
+  - R7p-9 is not fixed here: this PR's code stays exactly what was measured. It gets its own small PR right
+    after, with a test and a Q-8 recheck on the F3 arm.
+  - R7p-10: the whole `test/cli.e2e.test.ts` file gets a 180 s timeout, in this PR.
+  - The allow-side `!from()` hole is the next PR after that, with its own lint rule, tests and a policy-family
+    measurement.
+- **Known and left open:** R7p-9 until its PR; the allow-side hole until its PR.

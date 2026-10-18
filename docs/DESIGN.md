@@ -164,9 +164,16 @@ The provenance index and the cumulative-reassembly buffers are bounded per sessi
 - **Tier A — full text** (needed for fuzzy/semantic matching): LRU by ingestion time, byte budget
   (default 32 MiB per session, 256 MiB global).
 - **Tier B — identifier fingerprints**: hashes of high-entropy tokens extracted from every output
-  (secrets, URLs, e-mail addresses, hostnames, long tokens). Small (tens of bytes each); kept far longer
-  than Tier A under a separate budget (default 4 MiB per session). When Tier A text is evicted,
-  exact/normalized/decoded attribution of *identifiers* still works through Tier B.
+  (secrets, URLs, e-mail addresses, hostnames, long tokens). When Tier A text is evicted,
+  exact/normalized/decoded attribution of *identifiers* still works through Tier B. **As built (R7p-3 fix,
+  Phase 7):** Tier B shares the per-session byte budget with Tier A. Each entry is charged its measured heap
+  cost: 288 B, plus 40 B for each further output on it. Over the budget, Tier A evicts oldest first, and
+  Tier B evicts its oldest entries only once Tier A is empty, so Tier B outlives Tier A. An identifier seen
+  again in a newer output counts as new, so a flood cannot push out what the session keeps seeing.
+  - Before the fix, Tier B had a fixed 200,000-entry cap outside the budget (≈ 56 MB unaccounted). Once full,
+    it silently stopped indexing.
+  - An untrusted source could flood it with random tokens and then force Tier-A eviction. That hid every
+    later recipient from `from()` deny rules (4/5 policy attacks in item 5's F3 arm).
 - **Cumulative buffers**: per (session, sink) byte cap and time window.
 - **Layer-1 source summary** (Phase 7 item 5 fix): what a decision says about the outputs behind the
   label is bounded — the first output that made the context untrusted / internal / secret, counts, and at
@@ -180,7 +187,14 @@ Eviction **never silently weakens protection**:
 1. Layer-1 labels are a running join and do not depend on the index; evicted data still taints.
 2. Every eviction emits an `eviction` event (what tier, how many bytes, label of the evicted output).
 3. A decision made after an eviction that dropped data with a non-public or untrusted label carries
-   an `attribution_degraded` flag, visible in the trace and the dashboard.
+   an `attribution_degraded` flag, visible in the trace and the dashboard. Tier A and Tier B evictions both
+   count.
+   - A `may_receive` bound fails closed on lost data above it (R6b-1).
+   - A deny-side `from(v, level)` with no match fails closed (a policy error, so the call is denied) when the
+     session lost track of any output of that `level`, or when attribution could not check `v` in full
+     (R7p-3). Allow rules and declassify conditions only ever use evidence that exists.
+   - The evidence a decision records is capped at the strongest 4 entries per argument (32 per decision),
+     plus a count (R7p-2). The verdict is reached on all of it.
 4. The benchmark reports memory (RSS and index bytes) and **attribution loss caused by eviction**:
    the same scenarios replayed at several budgets, counting decisions whose evidence changed.
 
@@ -357,7 +371,7 @@ secrets, ~1.5% base64url type-prefix collisions, evidence-mode bypass by undecod
 not proposing `may_receive`, exfiltration channels tested at the decision level only (server-backed
 scenarios stopped twice by a safety classifier; owner: do not retry).
 
-**Next (resume point, 2026-10-17, after #15): Phase 7 item 6 (AgentDojo port)**, after the owner's decision on R7p-2/R7p-3; plan approved by the owner (2026-10-15), one PR per item,
+**Next (resume point, 2026-10-18): after the R7p-3 PR (#18), the R7p-9 PR, then the allow-side `from()` PR, then Phase 7 item 6 (AgentDojo port)**; plan approved by the owner (2026-10-15), one PR per item,
 the owner confirms every merge, in this order:
 1. **R6b-1** — `may_receive` searches whole argument fields for clear-text credentials and denies a call
    to a bounded server when the decision is attribution-degraded; the false-block cost on large benign
@@ -426,7 +440,24 @@ the owner confirms every merge, in this order:
    - Open for the owner: R7p-2 (cap evidence per decision) and R7p-3 (Tier-B overflow signal / fail-closed
      `from()`).
 
-   **Next: item 6, resume here** (after the owner decides on R7p-2 / R7p-3).
+   **Merged as #15 (`4f27b26`).** Owner decisions 2026-10-17 (`docs/decisions.md`):
+   **R7p-3 fix — built on `7/r7p3-tierb` (2026-10-18; addendum in `docs/reviews/phase-7-perf.md`, results `bench/results/eviction-r7p3.md`).** All three parts:
+   - Tier B gets a byte budget with oldest-first eviction, charged like Tier A;
+   - Tier-B overflow or eviction marks the session degraded;
+   - deny-side `from()` rules fail closed in a degraded session (allow-side `from()` and `declassify` already
+     need evidence).
+
+   Then rerun the F3 identifier-flood arm (`bench:perf -- --parts eviction`, policy family at least). It must
+   show the 4/5 policy attacks blocked; report the false-block cost and update the README limitation.
+   **R7p-2** (cap evidence per argument to the strongest few entries plus a count) goes in the same PR if small,
+   otherwise right after it. **Done in the same PR.** Rerun (pre-registered, `5224d09`): policy family 4/5 → 0/5 under the
+   flood, at 2/2 benign false blocks wherever eviction reaches an untrusted output; suite unchanged (0/60). Next, its own
+   small PR (owner, 2026-10-18): R7p-9 (the index can exceed its budget by ≤ 270 bytes right after an ingest; the
+   source-summary charge lags by one ingest) — trim again after the charge, a test, recheck Q-8 on the F3 arm.
+   **Next PR (owner, 2026-10-18): the allow-side hole.** In a degraded session a negated `from()` in an allow rule or
+   declassify condition is an error (the declassify does not apply; the trifecta check stays); policy lint makes
+   `!from(...)` in a declassify or allow condition an error unless the rule is explicitly marked precision-mode;
+   tests for both; measure the false-block change on the policy family. Then item 6.
 6. **AgentDojo port** — licence check first; decision-level or fixture tests with inert placeholders and
    no injection prose (the channel-test approach). If anything is interrupted: stop, tell the owner, do
    not retry.

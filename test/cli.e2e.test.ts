@@ -29,7 +29,10 @@ function runCli(args: string[], env: Record<string, string> = {}) {
   return spawnSync(cli.command, [...cli.args, ...args], { encoding: 'utf8', env: { ...process.env, MCPHANTOM_HOME: home, ...env }, timeout: 60_000 });
 }
 
-describe('mcphantom CLI', () => {
+// Every test here launches the CLI (and often a fixture server) from the TypeScript sources: seconds alone,
+// past the 30 s default under the full suite. Two tests timed out that way (Phase 7 item 5 review R7p-7, R7p-3
+// addendum R7p-10), so the whole file gets 180 s; each launch keeps its own 60 s cap.
+describe('mcphantom CLI', { timeout: 180_000 }, () => {
   it('prints its version and help', () => {
     const v = runCli(['--version']);
     expect(v.status).toBe(0);
@@ -86,9 +89,8 @@ describe('mcphantom CLI', () => {
     expect(r.stdout).toMatch(/valid, 1 server/);
   });
 
-  // Three CLI launches in a row (approve also starts the fixture): 15 s alone from the TypeScript sources,
-  // 33 s under the full suite, past the 30 s default (Phase 7 item 5 review). Each launch has its own 60 s cap.
-  it('approve pins definitions and lock diff then reports no drift; a changed config shows drift', { timeout: 180_000 }, () => {
+  // Three CLI launches in a row (approve also starts the fixture): 15 s alone, 33 s under the full suite.
+  it('approve pins definitions and lock diff then reports no drift; a changed config shows drift', () => {
     const cfgFile = path.join(home, 'gw.yaml');
     const approve = runCli(['approve', '--config', cfgFile, '--yes']);
     expect(approve.status).toBe(0);

@@ -173,7 +173,7 @@ miss are in the linked files.
 | Scanner under disguise (author-written examples) | **90/90** claimed disguises caught | `npm run bench:evasion` |
 | Proxy overhead per call (pre-registered; GitHub-hosted Linux VMs, 3 × 10 launches, bootstrap 95% CIs; shared VMs, variance reported) | gateway − direct p50: **+5 ms** at 1 KiB with payload logging off; **+37 ms** at 64 KiB; **+119 ms** at 1 MiB (laptop: +248 ms). At 1 MiB, 59% of the cost is indexing the output; the SDK's parsing and validation is about 4%. A real server (`server-filesystem`, 64 KiB file): +42 ms. | `npm run bench:perf` → [results](bench/results/perf.md), [review](docs/reviews/phase-7-perf.md) |
 | Decision latency, in process (same VMs) | p50 0.3 ms (small args); 24 ms (128 KB body); 39 ms (slash-heavy 128 KB, 0/3,000 deadline denials); 11 ms for a short body once the 32 MiB index is full | `npm run bench:perf` |
-| Memory and eviction (same VMs) | Tier A never exceeds its budget; RSS ≈ 200 MiB at 32 MiB after 4,000 calls. Under eviction at any budget, 0/60 claimed suite attacks succeed, and partial leaks fall to 0 (fail-closed), at +2 false blocks. **An identifier flood followed by eviction defeats `from()` deny rules: 4/5 policy-family attacks succeed** (see Known limitations). | `npm run bench:perf -- --parts eviction` → [results](bench/results/eviction.md) |
+| Memory and eviction (same VMs) | Tier A never exceeds its budget; RSS ≈ 200 MiB at 32 MiB after 4,000 calls. Under eviction at any budget, 0/60 claimed suite attacks succeed, and partial leaks fall to 0 (fail-closed), at +2 false blocks. An identifier flood followed by eviction defeated `from()` deny rules (4/5); after the R7p-3 fix 0/5 succeed, and those rules fail closed, at the cost of 2/2 benign policy traces under eviction (see Known limitations). | `npm run bench:perf -- --parts eviction` → [before](bench/results/eviction.md), [after](bench/results/eviction-r7p3.md) |
 
 **Real-world reference: PostHog's MCP server.** What PostHog already does well, what MCPhantom adds,
 the "untrusted event data" scenario and the catalog scan: [docs/posthog.md](docs/posthog.md).
@@ -243,12 +243,20 @@ agent is safe.
   above the bound — and outputs of tools with no confidentiality set count as `internal`, so on a
   `may_receive: public` server one unclassified read is enough (2 extra false blocks on the benchmark's
   2 benign sink-server traces). Measured in `npm run bench:ablations`.
-- **An untrusted source can evict the evidence a `from()` rule needs.** Tier B (identifier hashes) never evicts
-  and silently drops new identifiers once full. An attacker-controlled source that first floods it (≈ 111k
-  distinct tokens), then fills Tier A, leaves `from(arg.to, "untrusted")` no evidence. Such a rule is
-  precision-mode, so it does not fail closed: 4 of 5 policy-family attacks on `internal` data succeed in the
-  eviction benchmark, at every budget. The trifecta check and `may_receive` are unaffected (0/60). Measured in
-  `npm run bench:perf -- --parts eviction`; a fix is open (review R7p-3).
+- **Under eviction, `from()` deny rules fail closed, and that blocks benign calls too.** An untrusted source can
+  flood the provenance index and force eviction.
+  - Before the R7p-3 fix, Tier B (identifier hashes) silently stopped indexing once full, and a flood followed by
+    eviction defeated `from(arg.to, "untrusted")` rules: 4 of 5 policy-family attacks succeeded.
+  - Now Tier B shares the byte budget, evicts oldest first, and every eviction marks the session degraded. A
+    deny-side `from()` with no match in a session that lost track of outputs of that level is denied
+    fail-closed.
+  - Measured: 0/5 policy-family attacks succeed in every eviction arm and at every budget.
+  - The cost: once any untrusted output has been evicted, every benign call those rules guard is denied too (2/2
+    benign policy traces, wherever eviction reaches an untrusted output). The way out is a larger
+    `taint.max_index_mb` or a new session.
+  - The trifecta check and `may_receive` were unaffected before and after (0/60).
+  - Measured in `npm run bench:perf -- --parts eviction` ([before](bench/results/eviction.md),
+    [after](bench/results/eviction-r7p3.md)).
 - **Large outputs are slow.** At 1 MiB the gateway adds about 120 ms per call on a CI VM, about 250 ms on a 2017
   laptop, mostly indexing the output. Decisions slow down as the index fills: 82 ms for an 8 KiB argument with
   a full 32 MiB index.

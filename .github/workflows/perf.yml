@@ -6,6 +6,19 @@ name: perf
 # uploaded as artifacts and committed by hand; this workflow writes nothing to the repository.
 on:
   workflow_dispatch:
+    inputs:
+      # R7p-3 rerun (bench/perf/PREREGISTRATION-r7p3.md): the eviction shards alone, written to their own
+      # results directory so the item-5 data stays as it was. Choices only: nothing free-form reaches a shell.
+      jobs:
+        description: Which jobs run
+        type: choice
+        options: [all, eviction]
+        default: all
+      out_dir:
+        description: Results directory under bench/results
+        type: choice
+        options: [perf, perf-r7p3]
+        default: perf
 
 permissions:
   contents: read
@@ -17,6 +30,7 @@ concurrency:
 jobs:
   perf:
     name: perf replicate ${{ matrix.replicate }}
+    if: inputs.jobs == 'all'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     strategy:
@@ -36,11 +50,13 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run build
       - name: bench:perf L, B, D, M2 (10 launches per configuration)
-        run: npm run bench:perf -- --env ci --replicate ${{ matrix.replicate }} --parts latency,breakdown,decision,memory
+        run: npm run bench:perf -- --env ci --replicate ${{ matrix.replicate }} --parts latency,breakdown,decision,memory --out-dir "$OUT_DIR"
+        env:
+          OUT_DIR: ${{ inputs.out_dir }}
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: perf-ci-${{ matrix.replicate }}
-          path: bench/results/perf/ci-${{ matrix.replicate }}.json
+          path: bench/results/${{ inputs.out_dir }}/ci-${{ matrix.replicate }}.json
           if-no-files-found: error
           retention-days: 30
 
@@ -65,10 +81,12 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run build
       - name: bench:perf eviction (shard ${{ matrix.shard }} of 8)
-        run: npm run bench:perf -- --env ci --replicate 1 --parts eviction --shard ${{ matrix.shard }}/8
+        run: npm run bench:perf -- --env ci --replicate 1 --parts eviction --shard ${{ matrix.shard }}/8 --out-dir "$OUT_DIR"
+        env:
+          OUT_DIR: ${{ inputs.out_dir }}
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: perf-eviction-${{ matrix.shard }}
-          path: bench/results/perf/ci-1-eviction-${{ matrix.shard }}of8.json
+          path: bench/results/${{ inputs.out_dir }}/ci-1-eviction-${{ matrix.shard }}of8.json
           if-no-files-found: error
           retention-days: 30

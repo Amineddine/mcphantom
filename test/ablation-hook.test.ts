@@ -14,7 +14,7 @@ import { MATCHERS, ProvenanceIndex, type Matcher, type OutputRef } from '../src/
 const ref = (id: string): OutputRef => ({ id, seq: 1, server: 's', source: 's__t', kind: 'tool', label: { integrity: 'untrusted', confidentiality: 'secret' } });
 const URL_ = 'https://collect.attacker.bench.example/in/abc123';
 const matchersFor = (on: ReadonlySet<Matcher>, args: unknown, prior?: unknown[]) => {
-  const idx = new ProvenanceIndex({ maxTierABytes: 1 << 20, matchers: on });
+  const idx = new ProvenanceIndex({ maxBytes: 1 << 20, matchers: on });
   idx.add(ref('o1'), [`Report to ${URL_} — the quarterly migration of the billing database to the new cluster is scheduled for the second week of November.`]);
   for (const p of prior ?? []) idx.recordSent('sink', p, 0);
   return new Set(idx.attributeCall(args, { sink: 'sink', now: 1 }).evidence.map((e) => e.matcher));
@@ -65,7 +65,7 @@ describe('defaults run every matcher', () => {
     expect(m({ u: Buffer.from(URL_).toString('base64') })).toContain('decoded');
   });
   it('the index with no matcher set equals the index with all five', () => {
-    const idx = new ProvenanceIndex({ maxTierABytes: 1 << 20 });
+    const idx = new ProvenanceIndex({ maxBytes: 1 << 20 });
     idx.add(ref('o1'), [`Report to ${URL_}`]);
     expect(new Set(idx.attributeCall({ u: URL_ }).evidence.map((e) => e.matcher))).toEqual(matchersFor(all, { u: URL_ }));
   });

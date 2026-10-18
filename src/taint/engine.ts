@@ -75,8 +75,13 @@ export interface Decision {
   /** The Layer-1 explanation, bounded: the outputs that raised the context label, and a summary of the
    *  session's untrusted and secret outputs (each is logged once, as its `taint` event). */
   sources: SessionSources;
-  /** Layer-2 attribution of this call's arguments. Explanation only; never grounds an allow. */
+  /** Layer-2 attribution of this call's arguments. Explanation only; never grounds an allow. Capped
+   *  (R7p-2, Phase 7): the strongest {@link MAX_EVIDENCE_PER_ARG} entries per argument and
+   *  {@link MAX_EVIDENCE} in all, always including the one a `may_receive` deny cites; the verdict was
+   *  reached on all of it. */
   evidence: Evidence[];
+  /** Evidence entries left out of `evidence` by the cap (absent when none). */
+  evidenceOmitted?: number;
   /** True if attribution was bounded for this call (size caps, decode budget) or for an earlier
    *  output carrying a non-bottom label (eviction, decode cap), so the absence of evidence may be an
    *  artefact of a bound. */
@@ -113,6 +118,9 @@ export class TaintEngine {
    *  part); `public` while none. Read by the `may_receive` bound (R6b-1, Phase 7). */
   private degradedConf: Confidentiality = 'public';
   private readonly sessionCauses = new Set<'evicted' | 'output-decode'>();
+  /** Integrity levels of every output attribution lost track of, labelled or not: a deny-side `from()`
+   *  of that level cannot trust a missing match (R7p-3, Phase 7). */
+  private readonly lostIntegrity = new Set<Label['integrity']>();
   private readonly policy: PolicyEngine | undefined;
 
   private readonly argCredentials: boolean;
@@ -121,7 +129,7 @@ export class TaintEngine {
    *  and nothing in the gateway passes it. Omitted, every matcher and check runs. */
   constructor(config: Config, policy?: PolicyEngine, ablation: Ablation = {}) {
     this.config = config;
-    this.index = new ProvenanceIndex({ maxTierABytes: config.taint.max_index_mb * 1024 * 1024, ...(ablation.matchers ? { matchers: ablation.matchers } : {}) });
+    this.index = new ProvenanceIndex({ maxBytes: config.taint.max_index_mb * 1024 * 1024, ...(ablation.matchers ? { matchers: ablation.matchers } : {}) });
     this.policy = policy;
     this.argCredentials = ablation.argCredentials ?? true;
   }
@@ -146,8 +154,14 @@ export class TaintEngine {
     this.sources.add(provisional, before, this.context);
     this.index.chargeExternal(this.sources.bytes);
     const labelled = (l: Label): boolean => l.integrity === 'untrusted' || l.confidentiality !== 'public';
-    for (const e of added.evictions) if (labelled(e.output.label)) this.loseTrack(e.output.label, 'evicted');
-    if (added.decodeTruncated && labelled(provisional.label)) this.loseTrack(provisional.label, 'output-decode');
+    for (const e of added.evictions) {
+      this.lostIntegrity.add(e.output.label.integrity);
+      if (labelled(e.output.label)) this.loseTrack(e.output.label, 'evicted');
+    }
+    if (added.decodeTruncated) {
+      this.lostIntegrity.add(provisional.label.integrity);
+      if (labelled(provisional.label)) this.loseTrack(provisional.label, 'output-decode');
+    }
     return {
       ref: provisional, secretsDetected: added.secrets, possibleSecrets: possible, identifiers: added.identifiers, evictions: added.evictions,
       decodeTruncated: added.decodeTruncated, contextBefore: before, contextAfter: this.context,
@@ -178,11 +192,18 @@ export class TaintEngine {
     // `..` escape) is exfiltration in disguise, so it is treated as `egress` for the invariant.
     const effect: Effect = cls.effect === 'write' && hasOutsideTarget(args, cls.workspace, cls.pathArgs) ? 'egress' : cls.effect;
     const upgraded = effect !== cls.effect;
-    const policy = this.policy?.evaluate({ serverId, toolName, args, context: this.context, provenanceOf: (v, deterministic) => this.provenanceOf(v, deterministic) });
+    const policy = this.policy?.evaluate({
+      serverId, toolName, args, context: this.context,
+      provenanceOf: (v, deterministic) => this.provenanceOf(v, deterministic), unsure: (v, level) => this.unsure(v, level),
+    });
+    const mayReceive = this.config.servers[serverId]?.may_receive;
+    const violation = mayReceive ? this.mayReceiveViolation(serverId, mayReceive, args, attribution.evidence, attribution.degradedBy) : undefined;
+    const ev = capEvidence(attribution.evidence, violation?.hit);
     const base = {
       id, server: serverId, tool, effect, context: { ...this.context },
       sources: this.sources.snapshot(),
-      evidence: attribution.evidence, attributionDegraded: this.degraded || attribution.degraded,
+      evidence: ev.kept, ...(ev.omitted > 0 ? { evidenceOmitted: ev.omitted } : {}),
+      attributionDegraded: this.degraded || attribution.degraded,
       degradedBy: [...attribution.degradedBy, ...this.sessionCauses],
       ...(policy ? { policy } : {}),
     };
@@ -194,11 +215,7 @@ export class TaintEngine {
     }
 
     // 2. The server's `may_receive` bound: every call sends its arguments to the server's operator.
-    const bound = this.config.servers[serverId]?.may_receive;
-    if (bound) {
-      const why = this.mayReceiveViolation(serverId, bound, args, attribution.evidence, attribution.degradedBy);
-      if (why) return { ...base, verdict: 'deny', rule: 'may_receive', enforced: true, reason: `server '${serverId}' may receive at most ${bound} data; ${why}` };
-    }
+    if (violation) return { ...base, verdict: 'deny', rule: 'may_receive', enforced: true, reason: `server '${serverId}' may receive at most ${mayReceive} data; ${violation.why}` };
 
     // 3. The trifecta invariant, unless a named declassify entry lifts it for this call.
     const trifecta = canExfiltrate(effect) && this.context.integrity === 'untrusted' && this.context.confidentiality === 'secret';
@@ -242,31 +259,31 @@ export class TaintEngine {
    * both cases only if what it might have missed is above the bound. The reason names the bound and
    * the way out. Context mode adds the sound check on the context label.
    */
-  private mayReceiveViolation(serverId: string, bound: Confidentiality, args: unknown, evidence: Evidence[], callDegradedBy: DegradeCause[]): string | undefined {
+  private mayReceiveViolation(serverId: string, bound: Confidentiality, args: unknown, evidence: Evidence[], callDegradedBy: DegradeCause[]): { why: string; hit?: Evidence } | undefined {
     const above = (c: Confidentiality): boolean => c !== bound && confAtLeast(c, bound);
     if (this.config.servers[serverId]?.may_receive_mode === 'context' && above(this.context.confidentiality)) {
-      return `the session context is ${this.context.confidentiality} (may_receive_mode: context)`;
+      return { why: `the session context is ${this.context.confidentiality} (may_receive_mode: context)` };
     }
     if (this.argCredentials && above('secret')) {
       for (const leaf of leaves(args)) {
         const rule = secretRuleIn(leaf.value);
-        if (rule) return `argument ${leaf.path} carries a credential (${rule})`;
+        if (rule) return { why: `argument ${leaf.path} carries a credential (${rule})` };
       }
     }
     const hit = evidence.find((e) => above(e.output.label.confidentiality));
-    if (hit) return `argument ${hit.argPath} came from ${hit.output.source}, labelled ${hit.output.label.confidentiality} (${hit.matcher})`;
+    if (hit) return { why: `argument ${hit.argPath} came from ${hit.output.source}, labelled ${hit.output.label.confidentiality} (${hit.matcher})`, hit };
     const raise = `or raise may_receive for '${serverId}' if it may receive ${this.context.confidentiality} data`;
     // Attribution's per-call bounds were hit: it cannot say these arguments are clean. Only matters if
     // the session holds something above the bound at all.
     const hiding = callDegradedBy.filter((c) => c in CALL_BOUND);
     if (hiding.length > 0 && above(this.context.confidentiality)) {
       const what = hiding.map((c) => CALL_BOUND[c as keyof typeof CALL_BOUND]).join('; ');
-      return `fail-closed: attribution could not check these arguments (${what}) and the session holds ${this.context.confidentiality} data. To send this, split it into smaller calls (fields ≤ 64 KiB, ≤ 512 fields, ≤ 128 KiB of text in all), ${raise}`;
+      return { why: `fail-closed: attribution could not check these arguments (${what}) and the session holds ${this.context.confidentiality} data. To send this, split it into smaller calls (fields ≤ 64 KiB, ≤ 512 fields, ≤ 128 KiB of text in all), ${raise}` };
     }
     // Attribution lost track of earlier outputs above the bound.
     if (above(this.degradedConf)) {
       const fix = this.sessionCauses.has('evicted') ? 'raise taint.max_index_mb (the provenance index evicted it), start a new session, ' : 'start a new session (an output over 128 KiB was decoded only in part), ';
-      return `fail-closed: attribution lost track of ${this.degradedConf} data earlier in this session. To continue, ${fix}${raise}`;
+      return { why: `fail-closed: attribution lost track of ${this.degradedConf} data earlier in this session. To continue, ${fix}${raise}` };
     }
     return undefined;
   }
@@ -285,16 +302,80 @@ export class TaintEngine {
   /** Integrity levels the provenance index attributes to a value — for the policy `from()` predicate. */
   provenanceOf(value: string, deterministic = false): Set<'trusted' | 'untrusted'> {
     const out = new Set<'trusted' | 'untrusted'>();
-    for (const e of this.index.attribute({ v: value })) {
+    const a = this.index.attributeCall({ v: value });
+    this.lastLookup = { value, degradedBy: a.degradedBy };
+    for (const e of a.evidence) {
       if (deterministic && (e.matcher === 'fuzzy' || e.matcher === 'cumulative')) continue;
       out.add(e.output.label.integrity);
     }
     return out;
   }
 
+  /** The bounds the last `provenanceOf` lookup hit, so `unsure` (called right after it by `from()`) need
+   *  not attribute the value twice. */
+  private lastLookup: { value: string; degradedBy: DegradeCause[] } | undefined;
+
+  /**
+   * Why a missing `from(value, level)` match proves nothing, or undefined (deny-side `from()`, R7p-3):
+   * attribution lost track of an output of that level earlier in the session, or a bound stopped it
+   * from checking this value in full.
+   */
+  unsure(value: string, level: Label['integrity']): string | undefined {
+    if (this.lostIntegrity.has(level)) {
+      const evicted = this.sessionCauses.has('evicted') || !this.sessionCauses.has('output-decode');
+      const how = [...(evicted ? ['the provenance index evicted some'] : []), ...(this.sessionCauses.has('output-decode') ? ['an output over 128 KiB was decoded only in part'] : [])].join('; ');
+      const fix = evicted ? 'raise taint.max_index_mb or start a new session' : 'start a new session';
+      return `attribution lost track of ${level} outputs earlier in this session (${how}), so a missing match does not show the value is not from them. To continue, ${fix}`;
+    }
+    const degradedBy = this.lastLookup?.value === value ? this.lastLookup.degradedBy : this.index.attributeCall({ v: value }).degradedBy;
+    const hidden = degradedBy.filter((c) => c in CALL_BOUND);
+    if (hidden.length > 0) {
+      return `attribution could not check this value in full (${hidden.map((c) => CALL_BOUND[c as keyof typeof CALL_BOUND]).join('; ')}). To continue, send a shorter value`;
+    }
+    return undefined;
+  }
+
   get indexStats() {
     return this.index.stats;
   }
+}
+
+/** Evidence kept per argument path and per decision (R7p-2, Phase 7). */
+export const MAX_EVIDENCE_PER_ARG = 4;
+export const MAX_EVIDENCE = 32;
+
+const CONF_RANK: Record<Confidentiality, number> = { secret: 2, internal: 1, public: 0 };
+const MATCHER_RANK: Record<Matcher, number> = { exact: 0, normalized: 1, decoded: 2, fuzzy: 3, cumulative: 4 };
+
+/**
+ * The evidence a decision records: per argument path the strongest entries — higher confidentiality,
+ * then untrusted, then the stronger matcher, then the newer output — up to the caps, plus `pinned`
+ * (the entry a deny cites). Kept entries stay in attribution order. Uncapped, a repeated argument
+ * gave one entry per earlier output still in the index that it matched (R7p-2).
+ */
+export function capEvidence(all: Evidence[], pinned?: Evidence): { kept: Evidence[]; omitted: number } {
+  if (all.length <= MAX_EVIDENCE_PER_ARG) return { kept: all, omitted: 0 };
+  const strength = (e: Evidence): number[] => [
+    -CONF_RANK[e.output.label.confidentiality], e.output.label.integrity === 'untrusted' ? 0 : 1, MATCHER_RANK[e.matcher], -e.output.seq,
+  ];
+  const ranked = [...all].sort((a, b) => {
+    const x = strength(a);
+    const y = strength(b);
+    for (let i = 0; i < x.length; i++) if ((x[i] ?? 0) !== (y[i] ?? 0)) return (x[i] ?? 0) - (y[i] ?? 0);
+    return 0;
+  });
+  const keep = new Set<Evidence>(pinned ? [pinned] : []);
+  const perArg = new Map<string, number>(pinned ? [[pinned.argPath, 1]] : []);
+  for (const e of ranked) {
+    if (keep.size >= MAX_EVIDENCE) break;
+    if (keep.has(e)) continue;
+    const n = perArg.get(e.argPath) ?? 0;
+    if (n >= MAX_EVIDENCE_PER_ARG) continue;
+    perArg.set(e.argPath, n + 1);
+    keep.add(e);
+  }
+  const kept = all.filter((e) => keep.has(e));
+  return { kept, omitted: all.length - kept.length };
 }
 
 /** Attribution bounds that can hide a credential, an identifier or a verbatim copy, as reported to the

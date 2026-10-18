@@ -161,7 +161,7 @@ interface Result {
 const results: Result[] = [];
 
 function runAttribution(id: string, group: string, transform: string, claimed: boolean, outputs: { text: string; integrity: 'trusted' | 'untrusted' }[], calls: Calls, split?: 'dev'): void {
-  const idx = new ProvenanceIndex({ maxTierABytes: 32 * 1024 * 1024 });
+  const idx = new ProvenanceIndex({ maxBytes: 32 * 1024 * 1024 });
   outputs.forEach((o, i) => {
     const ref: OutputRef = { id: `o${i + 1}`, seq: i + 1, server: 'src', source: 'src__read', kind: 'tool', label: { integrity: o.integrity, confidentiality: 'internal' } };
     idx.add(ref, [o.text]);

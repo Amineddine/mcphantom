@@ -5,6 +5,8 @@
  *   npm run build && npm run bench:perf -- --env laptop --set reduced      # the owner's reduced laptop set
  *   npm run bench:perf -- --parts eviction [--shard 3/8]                   # E + M1 only (deterministic)
  *   options: --parts latency,breakdown,decision,memory,eviction  --launches 10  --smoke
+ *            --sets suite,policy (eviction only)  --out-dir bench/results/<dir> (default perf; the R7p-3 rerun
+ *            writes to perf-r7p3 so the item-5 data stays as it was)
  *
  * Latency, breakdown, decision and memory run as independent launches: each launch is a fresh process
  * (`bench/perf/worker.mts`), started one after another. Eviction and per-trace memory are deterministic and
@@ -28,7 +30,7 @@ const TSX = pathToFileURL(createRequire(import.meta.url).resolve('tsx')).href;
 const { values: v } = parseArgs({
   options: {
     env: { type: 'string', default: 'laptop' }, replicate: { type: 'string', default: '1' }, set: { type: 'string', default: 'full' },
-    parts: { type: 'string' }, shard: { type: 'string' }, launches: { type: 'string', default: '10' }, smoke: { type: 'boolean', default: false },
+    parts: { type: 'string' }, shard: { type: 'string' }, sets: { type: 'string', default: 'suite,policy' }, 'out-dir': { type: 'string', default: 'perf' }, launches: { type: 'string', default: '10' }, smoke: { type: 'boolean', default: false },
   },
 });
 const reduced = v.set === 'reduced';
@@ -99,10 +101,12 @@ for (const part of parts.filter((p) => p !== 'eviction') as Job['part'][]) {
 }
 if (parts.includes('eviction')) {
   const load = (f: string) => (JSON.parse(fs.readFileSync(path.join(here, 'attack', f), 'utf8')) as unknown[]).map(loadScenario);
+  const want = new Set(v.sets.split(','));
   const sets = [
-    { id: 'suite', title: 'Item-3 suite (83 traces, unchanged)', scenarios: load('scenarios.json') },
-    { id: 'policy', title: 'Policy family (8 traces, unchanged)', scenarios: load('scenarios-policy.json') },
-  ];
+    { id: 'suite', title: 'Item-3 suite (83 traces, unchanged)', file: 'scenarios.json' },
+    { id: 'policy', title: 'Policy family (8 traces, unchanged)', file: 'scenarios-policy.json' },
+  ].filter((s) => want.has(s.id)).map((s) => ({ id: s.id, title: s.title, scenarios: load(s.file) }));
+  results.sets = sets.map((s) => s.id);
   const t0 = Date.now();
   const shard = v.shard ? (v.shard.split('/').map(Number) as [number, number]) : undefined;
   results.eviction = runAll(sets, { smoke: v.smoke, ...(shard ? { shard: [shard[0] - 1, shard[1]] as [number, number] } : {}) });
@@ -110,7 +114,7 @@ if (parts.includes('eviction')) {
   process.stderr.write(`eviction: done (${((Date.now() - t0) / 1000).toFixed(1)} s)\n`);
 }
 
-const outDir = v.smoke ? fs.mkdtempSync(path.join(os.tmpdir(), 'mcphantom-perf-smoke-')) : path.join(ROOT, 'bench', 'results', 'perf');
+const outDir = v.smoke ? fs.mkdtempSync(path.join(os.tmpdir(), 'mcphantom-perf-smoke-')) : path.join(ROOT, 'bench', 'results', path.basename(v['out-dir']));
 fs.mkdirSync(outDir, { recursive: true });
 const out = path.join(outDir, `${v.env}-${v.replicate}${parts.length === 1 ? `-${parts[0] ?? ''}` : ''}${v.shard ? `-${v.shard.replace('/', 'of')}` : ''}.json`);
 fs.writeFileSync(out, `${JSON.stringify({ env, results })}\n`);

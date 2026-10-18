@@ -65,6 +65,10 @@ export type DegradeCause = 'leaves' | 'leaf-size' | 'call-size' | 'decode-budget
 export interface EvictionNotice {
   output: OutputRef;
   bytes: number;
+  /** `A`: the output's full text was dropped (copy and fuzzy evidence gone). `B`: some of its identifier
+   *  hashes were dropped (`entries` of them), so it can no longer be attributed through those. */
+  tier: 'A' | 'B';
+  entries?: number;
 }
 
 interface TierA {
@@ -87,6 +91,11 @@ interface TierBEntry {
   rule?: string;
   outputs: TierBSource[];
 }
+
+/** Bytes charged per Tier B entry, and per further output on an entry: the measured V8 heap cost
+ *  (≈ 280 B and ≈ 34 B on Node 22: key string, map slot, entry object, source list), rounded up. */
+export const TIER_B_ENTRY_BYTES = 288;
+export const TIER_B_SOURCE_BYTES = 40;
 
 /** Minimum length of an argument value for a whole-value `copy` match; shorter values are too common. */
 const MIN_COPY_LEN = 16;
@@ -124,22 +133,26 @@ const SECRET_BEARING: ReadonlySet<Decoder> = new Set(['base64', 'hex', 'url', 'h
 /**
  * Per-session provenance index (DESIGN.md §2, "Bounded memory and eviction").
  *
- * Tier A keeps full text (normalized) for copy matching, FIFO under a byte budget. Tier B keeps only
- * SHA-256 hashes of identifiers — including identifiers found in decoded forms of an output — so it is
- * small, survives Tier-A eviction, and never retains a secret in plaintext. Eviction is reported to the
- * caller, which logs it and marks later decisions degraded; Layer-1 labels are unaffected because the
+ * Tier A keeps full text (normalized) for copy matching. Tier B keeps only SHA-256 hashes of
+ * identifiers — including identifiers found in decoded forms of an output — so it is small, survives
+ * Tier-A eviction, and never retains a secret in plaintext. Both tiers (and the owner's external bytes)
+ * share one byte budget: over it, Tier A evicts oldest first, and only when Tier A is empty does Tier B
+ * evict its oldest entries (an identifier seen again in a newer output counts as new). Every eviction
+ * is reported to the caller, which logs it and marks later decisions degraded (R7p-3, Phase 7: Tier B
+ * used to stop indexing silently at a fixed entry cap); Layer-1 labels are unaffected because the
  * context label is a running join.
  */
 export class ProvenanceIndex {
   private readonly tierA: TierA[] = [];
   private tierABytes = 0;
+  /** Insertion order is eviction order. */
   private readonly tierB = new Map<string, TierBEntry>();
-  private tierBCount = 0;
-  private readonly maxTierABytes: number;
-  private readonly maxTierBEntries: number;
-  /** Outputs whose full text is gone (a count: a list would grow with the session). Their identifiers
-   *  may also be gone if Tier B overflowed. */
+  private tierBBytes = 0;
+  private readonly maxBytes: number;
+  /** Outputs whose full text is gone (a count: a list would grow with the session). */
   private evictedCount = 0;
+  /** Tier B entries dropped. */
+  private tierBEvictedCount = 0;
   /** Bytes the owner keeps outside the index for this session (the engine's source summary), charged
    *  against the same budget. */
   private external = 0;
@@ -149,9 +162,9 @@ export class ProvenanceIndex {
    *  not reachable from the configuration. */
   private readonly on: ReadonlySet<Matcher>;
 
-  constructor(opts: { maxTierABytes: number; maxTierBEntries?: number; matchers?: ReadonlySet<Matcher> }) {
-    this.maxTierABytes = opts.maxTierABytes;
-    this.maxTierBEntries = opts.maxTierBEntries ?? 200_000;
+  /** `maxBytes`: the whole index (Tier A + Tier B + external), `taint.max_index_mb`. */
+  constructor(opts: { maxBytes: number; matchers?: ReadonlySet<Matcher> }) {
+    this.maxBytes = opts.maxBytes;
     this.on = opts.matchers ?? new Set(MATCHERS);
   }
 
@@ -174,10 +187,15 @@ export class ProvenanceIndex {
         for (const h of new Set([`r:${id.rawHash}`, `n:${id.normHash}`])) {
           const entry = this.tierB.get(h);
           if (entry) {
-            if (!entry.outputs.some((o) => o.ref.id === ref.id)) entry.outputs.push({ ref, ...(chain ? { chain } : {}) });
-          } else if (this.tierBCount < this.maxTierBEntries) {
+            if (entry.outputs.some((o) => o.ref.id === ref.id)) continue;
+            entry.outputs.push({ ref, ...(chain ? { chain } : {}) });
+            this.tierBBytes += TIER_B_SOURCE_BYTES;
+            // Seen again: move it to the newest end, so a flood cannot evict what the session keeps seeing.
+            this.tierB.delete(h);
+            this.tierB.set(h, entry);
+          } else {
             this.tierB.set(h, { kind: id.kind, ...(id.rule ? { rule: id.rule } : {}), outputs: [{ ref, ...(chain ? { chain } : {}) }] });
-            this.tierBCount++;
+            this.tierBBytes += TIER_B_ENTRY_BYTES;
           }
         }
       }
@@ -194,13 +212,31 @@ export class ProvenanceIndex {
     this.tierA.push({ ref, raw, norm, fp, bytes });
     this.tierABytes += bytes;
     const evictions: EvictionNotice[] = [];
-    while (this.tierABytes + this.external > this.maxTierABytes && this.tierA.length > 0) {
+    const over = (): boolean => this.tierABytes + this.tierBBytes + this.external > this.maxBytes;
+    while (over() && this.tierA.length > 0) {
       const e = this.tierA.shift();
       if (!e) break;
       this.tierABytes -= e.bytes;
       this.evictedCount++;
-      evictions.push({ output: e.ref, bytes: e.bytes });
+      evictions.push({ output: e.ref, bytes: e.bytes, tier: 'A' });
     }
+    // Tier B, oldest first, reported once per output that lost identifiers (not per entry: a flood
+    // evicts thousands of entries from a handful of outputs).
+    const lostB = new Map<string, EvictionNotice>();
+    for (const [h, entry] of this.tierB) {
+      if (!over()) break;
+      this.tierB.delete(h);
+      const bytes = TIER_B_ENTRY_BYTES + TIER_B_SOURCE_BYTES * (entry.outputs.length - 1);
+      this.tierBBytes -= bytes;
+      this.tierBEvictedCount++;
+      for (const o of entry.outputs) {
+        const n = lostB.get(o.ref.id) ?? { output: o.ref, bytes: 0, tier: 'B' as const, entries: 0 };
+        n.bytes += bytes / entry.outputs.length;
+        n.entries = (n.entries ?? 0) + 1;
+        lostB.set(o.ref.id, n);
+      }
+    }
+    for (const n of lostB.values()) evictions.push({ ...n, bytes: Math.round(n.bytes) });
     return { secrets: [...secrets], identifiers, evictions, decodeTruncated };
   }
 
@@ -373,8 +409,11 @@ export class ProvenanceIndex {
     this.external = bytes;
   }
 
-  get stats(): { tierABytes: number; tierAOutputs: number; tierBEntries: number; evicted: number; sinks: number; sinkChars: number; externalBytes: number } {
+  get stats(): { tierABytes: number; tierAOutputs: number; tierBEntries: number; tierBBytes: number; evicted: number; tierBEvicted: number; sinks: number; sinkChars: number; externalBytes: number } {
     const s = this.sinks.stats;
-    return { tierABytes: this.tierABytes, tierAOutputs: this.tierA.length, tierBEntries: this.tierBCount, evicted: this.evictedCount, sinks: s.sinks, sinkChars: s.chars, externalBytes: this.external };
+    return {
+      tierABytes: this.tierABytes, tierAOutputs: this.tierA.length, tierBEntries: this.tierB.size, tierBBytes: this.tierBBytes, evicted: this.evictedCount,
+      tierBEvicted: this.tierBEvictedCount, sinks: s.sinks, sinkChars: s.chars, externalBytes: this.external,
+    };
   }
 }
