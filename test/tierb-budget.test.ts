@@ -185,6 +185,24 @@ describe('deny-side from() fails closed in a degraded session (R7p-3)', () => {
   });
 });
 
+// R7p-9 (found by Q-8 of the R7p-3 rerun): the source summary grew after `add()` had trimmed, and its new
+// charge applied only at the next ingest, so with Tier B filling the budget the index sat ≤ 270 bytes over it.
+describe('the index fits its budget right after every ingest (R7p-9)', () => {
+  it('holds under an identifier flood followed by outputs from new sources (the summary grows each time)', () => {
+    const c = config([]);
+    const max = c.taint.max_index_mb * 1024 * 1024;
+    const e = new TaintEngine(c, new PolicyEngine(c));
+    const total = () => { const s = e.indexStats; return s.tierABytes + s.tierBBytes + s.externalBytes; };
+    floodFrom(e);
+    expect(total()).toBeLessThanOrEqual(max);
+    for (let i = 0; i < 20; i++) {
+      e.ingest('tool', 'web', `web://page/${String(i)}/${'p'.repeat(40)}`, 'fetch_page', text(`Contact: desk-${String(i)}@corp.bench.example`));
+      expect(total()).toBeLessThanOrEqual(max);
+    }
+    expect(e.indexStats.tierBEvicted).toBeGreaterThan(0);
+  });
+});
+
 describe('decision evidence is capped per argument (R7p-2)', () => {
   it('1,000 matching outputs give the strongest few entries and a count, not 1,000 entries', () => {
     const c = config([]);

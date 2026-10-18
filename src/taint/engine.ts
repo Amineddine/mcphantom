@@ -152,9 +152,9 @@ export class TaintEngine {
     const before = this.context;
     this.context = join(this.context, provisional.label);
     this.sources.add(provisional, before, this.context);
-    this.index.chargeExternal(this.sources.bytes);
+    const evictions = [...added.evictions, ...this.index.chargeExternal(this.sources.bytes)];
     const labelled = (l: Label): boolean => l.integrity === 'untrusted' || l.confidentiality !== 'public';
-    for (const e of added.evictions) {
+    for (const e of evictions) {
       this.lostIntegrity.add(e.output.label.integrity);
       if (labelled(e.output.label)) this.loseTrack(e.output.label, 'evicted');
     }
@@ -163,7 +163,7 @@ export class TaintEngine {
       if (labelled(provisional.label)) this.loseTrack(provisional.label, 'output-decode');
     }
     return {
-      ref: provisional, secretsDetected: added.secrets, possibleSecrets: possible, identifiers: added.identifiers, evictions: added.evictions,
+      ref: provisional, secretsDetected: added.secrets, possibleSecrets: possible, identifiers: added.identifiers, evictions,
       decodeTruncated: added.decodeTruncated, contextBefore: before, contextAfter: this.context,
     };
   }

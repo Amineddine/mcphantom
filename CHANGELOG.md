@@ -4,6 +4,9 @@
 
 ### Fixed
 
+- **R7p-9: the provenance index fits its budget right after every ingest.** The source summary's charge was
+  applied one ingest late, so under an identifier flood the index could sit up to 270 bytes over budget. The
+  eviction recheck (all arms) now shows 0 / 1,335 traces over the budget, with every verdict unchanged.
 - **R7p-3: an identifier flood can no longer hide evidence from `from()` deny rules.**
   - Tier B (identifier hashes) is now charged against `taint.max_index_mb`, at 288 B per entry, and evicts oldest
     first once Tier A is empty. Before, it had a 200,000-entry cap outside the budget (≈ 56 MB) and silently

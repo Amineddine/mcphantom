@@ -17,7 +17,7 @@ on:
       out_dir:
         description: Results directory under bench/results
         type: choice
-        options: [perf, perf-r7p3]
+        options: [perf, perf-r7p3, perf-r7p9]
         default: perf
 
 permissions:

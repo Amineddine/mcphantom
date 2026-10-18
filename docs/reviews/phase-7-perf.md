@@ -291,3 +291,35 @@ against [`eviction.md`](../../bench/results/eviction.md), which is unchanged); r
   - The allow-side `!from()` hole is the next PR after that, with its own lint rule, tests and a policy-family
     measurement.
 - **Known and left open:** R7p-9 until its PR; the allow-side hole until its PR.
+
+---
+
+## Addendum — the R7p-9 fix, 2026-10-18
+
+Branch `7/r7p9-index-bound`. Owner decision: 2026-10-18 in [`docs/decisions.md`](../decisions.md) (R7p-9 in its
+own PR, after #18).
+
+- **Cause.** `TaintEngine.ingest` grew the source summary and called `chargeExternal` after `index.add()` had
+  already trimmed. The new charge applied only at the next ingest, so the index could sit over its budget by one
+  output's summary growth. Q-8 of the R7p-3 rerun found it: 418 / 1,335 traces, all F3, at most 270 bytes over.
+- **Fix** (`src/taint/provenance.ts`, `src/taint/engine.ts`). The eviction loop is now `ProvenanceIndex.trim()`.
+  `chargeExternal()` calls it at once, and the engine treats those evictions like any other: logged, and the
+  session is marked degraded.
+- **Test.** `test/tierb-budget.test.ts` floods Tier B, then ingests 20 outputs from new sources. The index must
+  fit its budget after every ingest. It passes on the fix, and fails on the old code at 65,710 bytes against a
+  65,536-byte budget.
+- **Q-8 recheck.**
+  - Run: `perf.yml` [39092881360](https://github.com/Amineddine/mcphantom/actions/runs/39092881360) on `32bb1a2`,
+    eviction job only, all arms, into `bench/results/perf-r7p9/`. `perf.yml` gained that one `out_dir` choice.
+  - Result: **0 / 1,335 traces over the budget after any ingest** (was 418).
+  - Every one of the 1,426 rows has the same outcome, decisions and evidence as the R7p-3 run; only the index byte
+    counters differ.
+  - Report: [`bench/results/eviction-r7p9.md`](../../bench/results/eviction-r7p9.md).
+- **Not tested.** The global (cross-session) budget, as before.
+
+### Owner review — Amineddine Znin
+
+- **Verdict:** R7p-9 fixed in its own small PR right after #18, as I decided, with a test and Q-8 rechecked on
+  the F3 arm.
+- **What I decided:** #18's code stays exactly what was measured; this fix goes in its own PR. Trim again after
+  the source-summary charge, add a test, recheck Q-8 on F3.
