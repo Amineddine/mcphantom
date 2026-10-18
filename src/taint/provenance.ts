@@ -211,6 +211,11 @@ export class ProvenanceIndex {
     const bytes = raw.length + norm.length + fp.byteLength;
     this.tierA.push({ ref, raw, norm, fp, bytes });
     this.tierABytes += bytes;
+    return { secrets: [...secrets], identifiers, evictions: this.trim(), decodeTruncated };
+  }
+
+  /** Evicts until Tier A + Tier B + external bytes fit the budget: Tier A oldest first, then Tier B. */
+  private trim(): EvictionNotice[] {
     const evictions: EvictionNotice[] = [];
     const over = (): boolean => this.tierABytes + this.tierBBytes + this.external > this.maxBytes;
     while (over() && this.tierA.length > 0) {
@@ -237,7 +242,7 @@ export class ProvenanceIndex {
       }
     }
     for (const n of lostB.values()) evictions.push({ ...n, bytes: Math.round(n.bytes) });
-    return { secrets: [...secrets], identifiers, evictions, decodeTruncated };
+    return evictions;
   }
 
   /** Attributes each string leaf of `args` to earlier outputs. */
@@ -404,9 +409,12 @@ export class ProvenanceIndex {
     return out;
   }
 
-  /** Sets the bytes charged from outside the index (see {@link external}); applied at the next `add`. */
-  chargeExternal(bytes: number): void {
+  /** Sets the bytes charged from outside the index (see {@link external}) and evicts at once if they no
+   *  longer fit. Before (R7p-9, Phase 7), the new charge took effect only at the next `add`, so the index
+   *  could sit over its budget by one output's source-summary growth until then. */
+  chargeExternal(bytes: number): EvictionNotice[] {
     this.external = bytes;
+    return this.trim();
   }
 
   get stats(): { tierABytes: number; tierAOutputs: number; tierBEntries: number; tierBBytes: number; evicted: number; tierBEvicted: number; sinks: number; sinkChars: number; externalBytes: number } {
