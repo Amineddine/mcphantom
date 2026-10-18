@@ -3,7 +3,8 @@
  * with a before/after table against the item-5 run. It reads raw files from `bench/results/<dir>/` and the
  * "before" eviction rows from `bench/results/perf/`, which it leaves as they are.
  *
- *   npx tsx bench/perf/report-eviction.mts perf-r7p3 eviction-r7p3.md
+ *   npx tsx bench/perf/report-eviction.mts perf-r7p3 eviction-r7p3.md            # the R7p-3 rerun
+ *   npx tsx bench/perf/report-eviction.mts perf-r7p9 eviction-r7p9.md R7p-9      # the Q-8 recheck
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,7 +15,7 @@ import { memoryPerTrace, report as evictionReport, ARMS, BUDGETS, type TraceRun 
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const RESULTS = path.join(here, '..', 'results');
-const [dir = 'perf-r7p3', outName = 'eviction-r7p3.md'] = process.argv.slice(2);
+const [dir = 'perf-r7p3', outName = 'eviction-r7p3.md', fix = 'R7p-3'] = process.argv.slice(2);
 
 interface Raw { file: string; env: { runner: string; commit: string }; results: { eviction?: TraceRun[]; shard?: string; sets?: string[] } }
 const read = (d: string): Raw[] => {
@@ -60,8 +61,10 @@ const summary = (cs: TraceRun[]) => {
 };
 
 const L: string[] = [
-  '# Eviction loss after the R7p-3 fix', '',
-  'Rerun of Phase 7 item 5\'s eviction part (E) on the R7p-3 fix, pre-registered in `bench/perf/PREREGISTRATION-r7p3.md`.',
+  `# Eviction loss after the ${fix} fix`, '',
+  fix === 'R7p-3'
+    ? 'Rerun of Phase 7 item 5\'s eviction part (E) on the R7p-3 fix, pre-registered in `bench/perf/PREREGISTRATION-r7p3.md`.'
+    : `Rerun of Phase 7 item 5's eviction part (E) on the ${fix} fix: the same harness and predictions as \`bench/perf/PREREGISTRATION-r7p3.md\`, rechecking Q-8.`,
   'Deterministic decision-level replay, as before; the item-5 results (`bench/results/eviction.md`) are the "before".', '',
   `Source: ${after.map((r) => `\`bench/results/${r.file}\` (${(r.results.sets ?? ['suite', 'policy']).join(', ')}, ${r.results.shard ?? '1/1'}, ${r.env.runner}, commit \`${r.env.commit.slice(0, 7)}\`)`).join(', ')}.`, '',
   '| arm | what |', '|---|---|', ...ARMS.map((a) => `| ${a.id} | ${a.name} |`), '', `Budgets (MiB): ${BUDGETS.join(', ')}.`, '',
