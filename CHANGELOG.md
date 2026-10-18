@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Fixed
+
+- **R7p-3: an identifier flood can no longer hide evidence from `from()` deny rules.**
+  - Tier B (identifier hashes) is now charged against `taint.max_index_mb`, at 288 B per entry, and evicts oldest
+    first once Tier A is empty. Before, it had a 200,000-entry cap outside the budget (≈ 56 MB) and silently
+    stopped indexing.
+  - Every Tier B eviction is logged and marks the session degraded.
+  - A deny-side `from()` with no match fails closed (a policy error) when the session lost track of outputs of
+    that level, or when the value is over 64 KiB.
+  - Eviction benchmark rerun (pre-registered): 4/5 → 0/5 policy-family attacks under the flood. The cost is
+    2/2 benign policy traces under eviction. Suite unchanged (0/60).
+- **R7p-2: decision evidence is capped.** A decision records the strongest 4 entries per argument (32 in all),
+  always including the one a `may_receive` deny cites, plus an `evidenceOmitted` count. The verdict still uses
+  all of it. Before, 1,000 matching outputs gave a 197 KB decision.
+
 ### Added
 
 - **Latency, memory and eviction benchmark** (`npm run bench:perf`; `docs/reviews/phase-7-perf.md`), pre-registered.

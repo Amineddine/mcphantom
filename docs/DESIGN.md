@@ -371,7 +371,7 @@ secrets, ~1.5% base64url type-prefix collisions, evidence-mode bypass by undecod
 not proposing `may_receive`, exfiltration channels tested at the decision level only (server-backed
 scenarios stopped twice by a safety classifier; owner: do not retry).
 
-**Next (resume point, 2026-10-17, after #15 merged as `4f27b26`): the R7p-3 fix on branch `7/r7p3-tierb`, then Phase 7 item 6 (AgentDojo port)**; plan approved by the owner (2026-10-15), one PR per item,
+**Next (resume point, 2026-10-18): the R7p-3 PR (branch `7/r7p3-tierb`) awaits the owner's merge; then the allow-side `from()` PR, then Phase 7 item 6 (AgentDojo port)**; plan approved by the owner (2026-10-15), one PR per item,
 the owner confirms every merge, in this order:
 1. **R6b-1** — `may_receive` searches whole argument fields for clear-text credentials and denies a call
    to a bounded server when the decision is attribution-degraded; the false-block cost on large benign
@@ -441,7 +441,7 @@ the owner confirms every merge, in this order:
      `from()`).
 
    **Merged as #15 (`4f27b26`).** Owner decisions 2026-10-17 (`docs/decisions.md`):
-   **Resume here — R7p-3 fix, its own PR, branch `7/r7p3-tierb`, before item 6.** All three parts:
+   **R7p-3 fix — built on `7/r7p3-tierb` (2026-10-18; addendum in `docs/reviews/phase-7-perf.md`, results `bench/results/eviction-r7p3.md`).** All three parts:
    - Tier B gets a byte budget with oldest-first eviction, charged like Tier A;
    - Tier-B overflow or eviction marks the session degraded;
    - deny-side `from()` rules fail closed in a degraded session (allow-side `from()` and `declassify` already
@@ -450,7 +450,14 @@ the owner confirms every merge, in this order:
    Then rerun the F3 identifier-flood arm (`bench:perf -- --parts eviction`, policy family at least). It must
    show the 4/5 policy attacks blocked; report the false-block cost and update the README limitation.
    **R7p-2** (cap evidence per argument to the strongest few entries plus a count) goes in the same PR if small,
-   otherwise right after it. Then item 6.
+   otherwise right after it. **Done in the same PR.** Rerun (pre-registered, `5224d09`): policy family 4/5 → 0/5 under the
+   flood, at 2/2 benign false blocks wherever eviction reaches an untrusted output; suite unchanged (0/60). Open for
+   the owner: R7p-9 (the index can exceed its budget by ≤ 270 bytes right after an ingest; the source-summary
+   charge lags by one ingest).
+   **Next PR (owner, 2026-10-18): the allow-side hole.** In a degraded session a negated `from()` in an allow rule or
+   declassify condition is an error (the declassify does not apply; the trifecta check stays); policy lint makes
+   `!from(...)` in a declassify or allow condition an error unless the rule is explicitly marked precision-mode;
+   tests for both; measure the false-block change on the policy family. Then item 6.
 6. **AgentDojo port** — licence check first; decision-level or fixture tests with inert placeholders and
    no injection prose (the channel-test approach). If anything is interrupted: stop, tell the owner, do
    not retry.

@@ -66,4 +66,14 @@ Anything changed after it is an amendment, dated and listed at the end, never a 
 
 ## Amendments
 
-None.
+1. **2026-10-18, after the CI run and before the laptop run finished: CI also ran the policy family.**
+   - `perf.yml` does not pass `--sets`, so the 8 eviction shards (run
+     [39088191904](https://github.com/Amineddine/mcphantom/actions/runs/39088191904) on `5224d09`) used the
+     default, `suite,policy`. The laptop run of the policy family went ahead as registered.
+   - Replay is deterministic, so the two must agree. The report uses the CI rows (the first files read), and the
+     review checks that the laptop's rows are identical, trace by trace.
+   - No prediction changed.
+2. **2026-10-18, report only (no rerun).** After the run, two report changes:
+   - `report-eviction.mts` gained the Tier B bytes table that Q-9 promised but the harness had not printed. The
+     raw rows already held `tierBBytes`.
+   - The Q-8 section shows counts and the largest excess per cell instead of naming every trace.

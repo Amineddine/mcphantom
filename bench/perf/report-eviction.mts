@@ -83,8 +83,27 @@ for (const set of sets) {
   L.push('');
 }
 const over = dedup.filter((r) => r.budget !== null && (r.maxIndexBytes ?? 0) > r.budget * 1024 * 1024);
-L.push('## Index bound (Q-8)', '', `Traces where Tier A + Tier B + external bytes exceeded the budget after any ingest: ${String(over.length)} of ${String(dedup.filter((r) => r.budget !== null).length)}${over.length ? ` (${over.map((r) => `\`${r.id}\` ${r.arm} at ${String(r.budget)}`).join(', ')})` : ''}.`, '');
+const q8 = new Map<string, { n: number; of: number; bytes: number }>();
+for (const r of dedup.filter((x) => x.budget !== null)) {
+  const k = `${r.arm}|${String(r.budget)}`;
+  const c = q8.get(k) ?? { n: 0, of: 0, bytes: 0 };
+  c.of++;
+  const excess = (r.maxIndexBytes ?? 0) - (r.budget ?? 0) * 1024 * 1024;
+  if (excess > 0) { c.n++; c.bytes = Math.max(c.bytes, excess); }
+  q8.set(k, c);
+}
+L.push('## Index bound (Q-8)', '', `Traces where Tier A + Tier B + external bytes exceeded the budget right after an ingest: ${String(over.length)} of ${String(dedup.filter((r) => r.budget !== null).length)}.`, '',
+  '| arm | budget (MiB) | traces over | largest excess (bytes) |', '|---|---|---|---|',
+  ...[...q8].filter(([, c]) => c.n > 0).map(([k, c]) => { const [arm, b] = k.split('|'); return `| ${arm ?? ''} | ${b ?? ''} | ${String(c.n)} / ${String(c.of)} | ${String(c.bytes)} |`; }), '');
 L.push('## Full tables (after)', '', ...evictionReport(dedup, sets));
 L.push('## M1 — index size at the end of each trace (F0, defaults)', '', ...memoryPerTrace(dedup), '');
+// Q-9: Tier B bytes, first reported here (added to the report after the run; the raw rows already held them).
+const f0 = dedup.filter((r) => r.arm === 'F0');
+L.push('Tier B bytes at the end of each trace (F0), added after the run from the same raw rows:', '', '| set | Tier B bytes (median / max) |', '|---|---|');
+for (const s of sets) {
+  const b = f0.filter((r) => r.set === s.id).map((r) => r.index.tierBBytes ?? 0).sort((x, y) => x - y);
+  L.push(`| ${s.id} | ${String(b[Math.floor(b.length / 2)] ?? 0)} / ${String(b[b.length - 1] ?? 0)} |`);
+}
+L.push('');
 fs.writeFileSync(path.join(RESULTS, path.basename(outName)), `${L.join('\n')}\n`);
 process.stdout.write(`wrote bench/results/${path.basename(outName)} from ${String(after.length)} raw file(s)\n`);
