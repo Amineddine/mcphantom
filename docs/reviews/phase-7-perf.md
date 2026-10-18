@@ -262,8 +262,8 @@ against [`eviction.md`](../../bench/results/eviction.md), which is unchanged); r
 |---|---|---|---|
 | R7p-3 | Medium | (see above) | **Fixed** in this PR; 0 / 5 under the flood at a cost of 2 / 2 benign policy traces under eviction. README limitation rewritten. |
 | R7p-2 | Medium | (see above) | **Fixed** in this PR; decision size constant (≈ 1.5 KB at 1,000 matches). |
-| R7p-9 | Low (open) | **The index can exceed its budget right after an ingest, by one output's source-summary growth.** `TaintEngine.ingest` grows the source summary and calls `chargeExternal` after `index.add()` has already trimmed. The new charge is applied at the next ingest. Seen only under F3, where Tier B alone fills the budget: at most 270 bytes over. It predates this PR (#17). | Not fixed (the code changed after the pre-registration). Proposal: trim again after the summary is charged, with a test. Owner decision. |
-| R7p-10 | Info | The full-suite `npm run check` once timed out the CLI e2e test "runs as a stdio gateway for a real MCP client…" at 30 s under load. Alone it passes (5 / 5, 52 s), and the pre-push run passed 531 / 531. It is the same load pattern as R7p-7, in a different test. | Not changed; reported. |
+| R7p-9 | Low (open) | **The index can exceed its budget right after an ingest, by one output's source-summary growth.** `TaintEngine.ingest` grows the source summary and calls `chargeExternal` after `index.add()` has already trimmed. The new charge is applied at the next ingest. Seen only under F3, where Tier B alone fills the budget: at most 270 bytes over. It predates this PR (#17). | Not fixed here: this PR's code stays what was measured (owner decision). Its own PR follows: trim again after the summary is charged, a test, and a Q-8 recheck on F3. |
+| R7p-10 | Info | The full-suite `npm run check` once timed out the CLI e2e test "runs as a stdio gateway for a real MCP client…" at 30 s under load. Alone it passes (5 / 5, 52 s), and the pre-push run passed 531 / 531. It is the same load pattern as R7p-7, in a different test. | Fixed in this PR (owner decision): the whole file gets a 180 s timeout; each launch keeps its 60 s cap. |
 
 ### Not tested / not measured
 
@@ -277,29 +277,17 @@ against [`eviction.md`](../../bench/results/eviction.md), which is unchanged); r
 - **The allow-side hole** (`!from()` in an allow rule or declassify condition in a degraded session): the next PR,
   by owner decision.
 
-### Owner review (addendum)
+### Owner review — Amineddine Znin
 
-*Drafted by Claude Code from the owner's messages in the session (2026-10-17 and 2026-10-18); edited by the owner
-(Amineddine Znin) before merge.*
-
-- **Verdict:**
-  - The fix was built as I decided on 2026-10-17: all three parts (Tier B byte budget with oldest-first eviction,
-    overflow marks the session degraded, deny-side `from()` fails closed) and R7p-2 in the same PR.
-  - I approved the plan as written before any code was written. I approved the rerun as the policy family on
-    the laptop and the full suite on CI.
-  - The rerun shows what I asked it to show: the 4 / 5 policy attacks are blocked, the false-block cost is
-    reported, and the README limitation is updated.
-- **Changed or overrode:**
-  - Chose to combine all three R7p-3 options rather than pick one.
-  - Put R7p-2 in this PR.
-  - Approved the eviction order (Tier A first, Tier B oldest-first) and the error-based fail-closed `from()`.
-  - Decided that the allow-side `!from()` hole Claude Code flagged while planning is the next PR, with its own
-    lint rule, tests and policy-family measurement.
-- **Accepted as known risks:**
-  - Failing closed is coarse. Once any untrusted output has been evicted, every benign call guarded by a deny-side
-    `from(…, "untrusted")` rule is denied (2 / 2 benign policy traces under eviction), until the session ends or
-    the budget is raised.
-  - The suite numbers are unchanged, including its 7 / 12 false blocks under F2/F3 from item 5.
-  - R7p-9 (a ≤ 270-byte overshoot right after an ingest) and R7p-10 (an e2e timeout under load) are reported, not
-    fixed here.
-  - The allow-side hole stays open until the next PR.
+- **Verdict:** Approved to merge once CI is green. I approved the plan as written before any code, and the rerun
+  as the policy family on the laptop and the full suite on CI.
+- **What I decided:**
+  - R7p-3 combines all three fixes: a Tier B byte budget with oldest-first eviction; overflow marks the session
+    degraded; deny-side `from()` fails closed in a degraded session.
+  - R7p-2 goes in this PR.
+  - R7p-9 is not fixed here: this PR's code stays exactly what was measured. It gets its own small PR right
+    after, with a test and a Q-8 recheck on the F3 arm.
+  - R7p-10: the whole `test/cli.e2e.test.ts` file gets a 180 s timeout, in this PR.
+  - The allow-side `!from()` hole is the next PR after that, with its own lint rule, tests and a policy-family
+    measurement.
+- **Known and left open:** R7p-9 until its PR; the allow-side hole until its PR.

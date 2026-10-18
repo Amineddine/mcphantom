@@ -184,9 +184,9 @@ PR links: `#N` = https://github.com/Amineddine/mcphantom/pull/N.
 - **R7p-3: fix before item 6, as its own PR, combining all three options.** Tier B gets a byte budget with
   oldest-first eviction; overflow marks the session degraded; deny-side `from()` rules fail closed in a degraded
   session. Rerun the F3 identifier-flood arm to show the 4/5 policy attacks are blocked, report the false-block
-  cost, and update the README limitation. Options: any one of the three, or all. Reason: not stated. PR: the R7p-3 PR.
+  cost, and update the README limitation. Options: any one of the three, or all. Reason: not stated. PR: #18.
 - **R7p-2: cap evidence per argument** to the strongest few entries plus a count; in the R7p-3 PR if small,
-  otherwise right after it. Options: cap, or leave it bounded only by the index. Reason: not stated. PR: the R7p-3 PR.
+  otherwise right after it. Options: cap, or leave it bounded only by the index. Reason: not stated. PR: #18.
 
 ## 2026-10-18
 
@@ -199,10 +199,10 @@ PR links: `#N` = https://github.com/Amineddine/mcphantom/pull/N.
   - R7p-2 goes in the same PR: 4 evidence entries per argument, 32 per decision, the cited one always kept,
     plus a count.
   - Options: as written; eviction by global age across both tiers; R7p-2 in its own PR. Reason: not stated
-    beyond the approval. PR: the R7p-3 PR.
+    beyond the approval. PR: #18.
 - **R7p-3 rerun: the policy family runs on the laptop, the full suite on CI** (`perf.yml`, eviction shards
   only, into `bench/results/perf-r7p3/`). Options: laptop + CI, or the policy family only. Reason: not stated
-  beyond accepting the recommendation. PR: the R7p-3 PR.
+  beyond accepting the recommendation. PR: #18.
 - **The allow-side `from()` hole is the next PR, right after the R7p-3 PR.**
   - In a degraded session, a negated `from()` in an allow rule or declassify condition evaluates to an error,
     so the declassify does not apply and the trifecta check stays in force (fail closed, as on the deny side).
@@ -211,3 +211,9 @@ PR links: `#N` = https://github.com/Amineddine/mcphantom/pull/N.
   - Tests for both, and any false-block change on the policy family measured.
   - Options: not recorded (Claude Code flagged the hole while planning R7p-3). Reason: not stated. PR: the PR
     after the R7p-3 PR.
+- **R7p-9 is not fixed in #18; #18's code stays exactly what was measured.** It gets its own small PR right after:
+  trim the index again after the source-summary charge, add a test, and recheck Q-8 on the F3 arm. Options: fix
+  in #18, fix in its own PR, or leave it as a finding. Reason: not stated beyond the decision. PR: the PR after #18.
+- **R7p-10: the whole `test/cli.e2e.test.ts` file gets a 180 s timeout**, as decided for the earlier flaky test in
+  that file (item-5 review R7p-7). It goes in #18 (a test-only change). Options: its own 180 s timeout, or report
+  only. Reason: not stated beyond the decision. PR: #18.

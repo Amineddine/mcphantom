@@ -371,7 +371,7 @@ secrets, ~1.5% base64url type-prefix collisions, evidence-mode bypass by undecod
 not proposing `may_receive`, exfiltration channels tested at the decision level only (server-backed
 scenarios stopped twice by a safety classifier; owner: do not retry).
 
-**Next (resume point, 2026-10-18): the R7p-3 PR (branch `7/r7p3-tierb`) awaits the owner's merge; then the allow-side `from()` PR, then Phase 7 item 6 (AgentDojo port)**; plan approved by the owner (2026-10-15), one PR per item,
+**Next (resume point, 2026-10-18): after the R7p-3 PR (#18), the R7p-9 PR, then the allow-side `from()` PR, then Phase 7 item 6 (AgentDojo port)**; plan approved by the owner (2026-10-15), one PR per item,
 the owner confirms every merge, in this order:
 1. **R6b-1** — `may_receive` searches whole argument fields for clear-text credentials and denies a call
    to a bounded server when the decision is attribution-degraded; the false-block cost on large benign
@@ -451,9 +451,9 @@ the owner confirms every merge, in this order:
    show the 4/5 policy attacks blocked; report the false-block cost and update the README limitation.
    **R7p-2** (cap evidence per argument to the strongest few entries plus a count) goes in the same PR if small,
    otherwise right after it. **Done in the same PR.** Rerun (pre-registered, `5224d09`): policy family 4/5 → 0/5 under the
-   flood, at 2/2 benign false blocks wherever eviction reaches an untrusted output; suite unchanged (0/60). Open for
-   the owner: R7p-9 (the index can exceed its budget by ≤ 270 bytes right after an ingest; the source-summary
-   charge lags by one ingest).
+   flood, at 2/2 benign false blocks wherever eviction reaches an untrusted output; suite unchanged (0/60). Next, its own
+   small PR (owner, 2026-10-18): R7p-9 (the index can exceed its budget by ≤ 270 bytes right after an ingest; the
+   source-summary charge lags by one ingest) — trim again after the charge, a test, recheck Q-8 on the F3 arm.
    **Next PR (owner, 2026-10-18): the allow-side hole.** In a degraded session a negated `from()` in an allow rule or
    declassify condition is an error (the declassify does not apply; the trifecta check stays); policy lint makes
    `!from(...)` in a declassify or allow condition an error unless the rule is explicitly marked precision-mode;
