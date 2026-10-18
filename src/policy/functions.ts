@@ -12,6 +12,9 @@ export interface PolicyContext {
   /** Returns the integrity levels attributed to a string value by the provenance index. With
    *  `deterministic`, only exact / normalized / decoded evidence counts (no fuzzy similarity). */
   provenanceOf(value: string, deterministic: boolean): Set<'trusted' | 'untrusted'>;
+  /** Why a missing match for `level` proves nothing for this value (attribution lost track of outputs
+   *  of that level, or could not check the value in full), with the way out; undefined if it does. */
+  unsure?(value: string, level: 'trusted' | 'untrusted'): string | undefined;
   /** True while an `allow` rule or a declassify condition is evaluated: evidence that can ground an
    *  allow must be deterministic (owner decision: fuzzy and cumulative evidence never grounds one). */
   allowSide?: boolean;
@@ -36,7 +39,9 @@ function checkDeadline(ctx: PolicyContext): void {
  *
  * `from(..., "untrusted")` with no match returns false — a *precision-mode* predicate: absence of a
  * provenance match is not proof of absence of flow (encoding/paraphrase). The linter warns on any rule
- * that relies on it, and Layer 1 still applies. This is the documented, bypassable layer.
+ * that relies on it, and Layer 1 still applies. This is the documented, bypassable layer. In a deny or
+ * ask rule, a missing match where attribution lost track of outputs of that level (eviction, partial
+ * decoding) or could not check the value in full is an error instead, so the rule fails closed.
  */
 export function buildFunctions(ctx: PolicyContext): CelFuncDef[] {
   return [
@@ -55,7 +60,12 @@ export function buildFunctions(ctx: PolicyContext): CelFuncDef[] {
     celFunc('from', [CelScalar.STRING, CelScalar.STRING], CelScalar.BOOL, (value: string, level: string) => {
       checkDeadline(ctx);
       if (level !== 'trusted' && level !== 'untrusted') throw new Error(`from(): unknown integrity level "${level}"`);
-      return ctx.provenanceOf(value, ctx.allowSide === true).has(level);
+      if (ctx.provenanceOf(value, ctx.allowSide === true).has(level)) return true;
+      // Deny side: where attribution could have missed the match, fail closed (R7p-3, Phase 7). An error,
+      // not `true`, so a negated `!from(...)` fails closed too; CEL still lets `false && error` be false.
+      const why = ctx.allowSide === true ? undefined : ctx.unsure?.(value, level);
+      if (why) throw new Error(`from(): fail-closed: ${why}`);
+      return false;
     }),
   ];
 }

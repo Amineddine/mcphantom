@@ -42,6 +42,8 @@ export interface EvalInputs {
   args: unknown;
   context: Label;
   provenanceOf: (value: string, deterministic: boolean) => Set<'trusted' | 'untrusted'>;
+  /** See {@link PolicyContext.unsure}; omitted, a missing match is always trusted. */
+  unsure?: (value: string, level: 'trusted' | 'untrusted') => string | undefined;
 }
 
 /** Argument-size caps that bound policy evaluation cost (owner note #2): total string bytes and the
@@ -121,6 +123,8 @@ export class PolicyEngine {
     }
     const start = this.now();
     this.ctx.provenanceOf = inputs.provenanceOf;
+    if (inputs.unsure) this.ctx.unsure = inputs.unsure;
+    else delete this.ctx.unsure;
     this.ctx.deadline = start + EVAL_BUDGET_MS;
     this.ctx.now = this.now;
     const bindings: Record<string, CelInput> = { arg: toCel(argObj), context: { integrity: inputs.context.integrity, confidentiality: inputs.context.confidentiality } };

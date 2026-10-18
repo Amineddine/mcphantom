@@ -128,5 +128,6 @@ function renderDecision(e: StoredEvent, events: StoredEvent[], out: (s: string) 
     ].filter((x) => x !== undefined).join(', ');
     out(`    evidence: ${ev.argPath} ${ev.kind} (${how}) ← ${ev.output.source}`);
   }
+  if (d.evidenceOmitted) out(`    evidence: +${d.evidenceOmitted} weaker match(es) not recorded (the verdict used them all)`);
   if (d.attributionDegraded) out('    note: attribution hit a bound (memory budget, size or decode limit); evidence may be incomplete (Layer 1 still applied)');
 }

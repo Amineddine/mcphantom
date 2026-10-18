@@ -15,7 +15,7 @@ const CANARY = ['AKIA', 'CUMULATIVE', 'TEST42'].join('');
 const ref = (id: string): OutputRef => ({ id, seq: 1, server: 'files', source: 'files__read', kind: 'tool', label: { integrity: 'trusted', confidentiality: 'secret' } });
 
 function indexWithSecret(): ProvenanceIndex {
-  const idx = new ProvenanceIndex({ maxTierABytes: 1e6 });
+  const idx = new ProvenanceIndex({ maxBytes: 1e6 });
   idx.add(ref('o1'), [`AWS_ACCESS_KEY_ID=${CANARY}\n`]);
   return idx;
 }

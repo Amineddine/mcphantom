@@ -801,7 +801,7 @@ export class Gateway {
       payload: { output: r.ref, secretsDetected: r.secretsDetected, possibleSecrets: r.possibleSecrets, identifiers: r.identifiers, contextBefore: r.contextBefore, contextAfter: r.contextAfter },
     });
     for (const e of r.evictions) {
-      this.audit({ kind: 'eviction', server: e.output.server, name: e.output.source, payload: { output: e.output, bytes: e.bytes, stats: this.taint.indexStats } });
+      this.audit({ kind: 'eviction', server: e.output.server, name: e.output.source, payload: { output: e.output, bytes: e.bytes, tier: e.tier, ...(e.entries !== undefined ? { entries: e.entries } : {}), stats: this.taint.indexStats } });
     }
   }
 
