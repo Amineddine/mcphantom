@@ -24,7 +24,6 @@ export const ARMS: { id: Arm; name: string }[] = [
   { id: 'F2', name: 'adversarial filler: the untrusted source, sized to the budget, right before the attack step' },
   { id: 'F3', name: 'identifier flood first (Tier B), then F2' },
 ];
-const TIER_B_CAP = 200_000;
 const KiB = 1024;
 const MiB = 1024 * KiB;
 
@@ -67,7 +66,9 @@ export interface TraceRun {
   /** Per own step: verdict, rule, fail-closed, evidence keys. */
   decisions: ({ verdict: string; rule?: string; failClosed: boolean; evidence: string[] } | null)[];
   fillerSteps: number; fillerBlocked: number;
-  index: { tierABytes: number; tierAOutputs: number; tierBEntries: number; evicted: number; sinks: number; sinkChars: number };
+  index: { tierABytes: number; tierAOutputs: number; tierBEntries: number; tierBBytes?: number; tierBEvicted?: number; evicted: number; sinks: number; sinkChars: number };
+  /** Largest Tier A + Tier B + external bytes after any ingest (R7p-3 rerun, Q-8). */
+  maxIndexBytes?: number;
 }
 
 export function run(set: string, sc0: LoadedScenario, arm: Arm, budget: number | null): TraceRun | null {
@@ -79,6 +80,7 @@ export function run(set: string, sc0: LoadedScenario, arm: Arm, budget: number |
   const decisions: TraceRun['decisions'] = sc0.steps.map(() => null);
   let engine: TaintEngine | undefined;
   let ingests = 0;
+  let maxIndexBytes = 0;
   const def = mcphantom(sc, {
     name: arm, ...(budget !== null ? { extra: { taint: { max_index_mb: budget } } } : {}),
     onEngine: (e) => { engine = e; },
@@ -97,6 +99,10 @@ export function run(set: string, sc0: LoadedScenario, arm: Arm, budget: number |
       ingests++;
       outputStep.set(`o${ingests}`, orig[stepIdx.get(st) ?? -1] ?? null);
       def.ingest(st, output);
+      if (engine) {
+        const s = engine.indexStats;
+        maxIndexBytes = Math.max(maxIndexBytes, s.tierABytes + s.tierBBytes + s.externalBytes);
+      }
     },
   };
   const { outcomes, delivered } = replay(sc, wrapped);
@@ -107,7 +113,7 @@ export function run(set: string, sc0: LoadedScenario, arm: Arm, budget: number |
     fragments: fragmentsReceived(sc, delivered),
     utility: utilityKept(ownOutcomes),
     blocked: ownOutcomes.filter((o) => !o.delivered).map((o) => `step ${orig[o.step] ?? '?'} (${o.role}): ${o.blockedBy ?? '?'}`),
-    decisions, fillerSteps: built.fillerSteps, fillerBlocked: outcomes.filter((o) => orig[o.step] === null && !o.delivered).length,
+    decisions, fillerSteps: built.fillerSteps, fillerBlocked: outcomes.filter((o) => orig[o.step] === null && !o.delivered).length, maxIndexBytes,
     index: engine ? engine.indexStats : { tierABytes: 0, tierAOutputs: 0, tierBEntries: 0, evicted: 0, sinks: 0, sinkChars: 0 },
   };
 }
@@ -152,7 +158,7 @@ export function report(rows: TraceRun[], sets: { id: string; title: string; scen
     const ref = new Map(rs.filter((r) => r.arm === 'F0').map((r) => [r.id, r]));
     const ids = new Set(ref.keys());
     L.push(`### ${set.title}`, '');
-    L.push('| arm | budget (MiB) | attack success | partial leaks | false blocks | utility under attack | fail-closed denies (decisions / traces) | verdict changes vs F0 (decisions) | evidence changes vs F0 (decisions) | Tier A evictions (median / trace) | Tier B at cap (traces) | filler calls not delivered |');
+    L.push('| arm | budget (MiB) | attack success | partial leaks | false blocks | utility under attack | fail-closed denies (decisions / traces) | verdict changes vs F0 (decisions) | evidence changes vs F0 (decisions) | Tier A evictions (median / trace) | Tier B evictions (traces) | filler calls not delivered |');
     L.push('|---|---|---|---|---|---|---|---|---|---|---|---|');
     const cells = new Map<string, TraceRun[]>();
     for (const r of rs) {
@@ -175,7 +181,7 @@ export function report(rows: TraceRun[], sets: { id: string; title: string; scen
           if (evChanged(d, base.decisions[i] ?? null)) ec++;
         });
       }
-      L.push(`| ${arm} | ${budget} | ${rate(atk.filter((r) => r.success).length, atk.length)} | ${rate(atk.filter(partialLeak).length, atk.length)} | ${rate(ben.filter((r) => !r.utility).length, ben.length)} | ${rate(atk.filter((r) => r.utility).length, atk.length)} | ${fcDec} / ${fcTr} | ${vc} | ${ec} | ${med(cs.map((r) => r.index.evicted))} | ${cs.filter((r) => r.index.tierBEntries >= TIER_B_CAP).length} / ${cs.length} | ${cs.reduce((a, r) => a + r.fillerBlocked, 0)} |`);
+      L.push(`| ${arm} | ${budget} | ${rate(atk.filter((r) => r.success).length, atk.length)} | ${rate(atk.filter(partialLeak).length, atk.length)} | ${rate(ben.filter((r) => !r.utility).length, ben.length)} | ${rate(atk.filter((r) => r.utility).length, atk.length)} | ${fcDec} / ${fcTr} | ${vc} | ${ec} | ${med(cs.map((r) => r.index.evicted))} | ${cs.filter((r) => (r.index.tierBEvicted ?? 0) > 0).length} / ${cs.length} | ${cs.reduce((a, r) => a + r.fillerBlocked, 0)} |`);
     }
     L.push('', `Traces without an untrusted source have no F2/F3 row: ${[...ids].filter((id) => !rs.some((r) => r.id === id && r.arm === 'F2')).map((id) => `\`${id}\``).join(', ') || 'none'}.`, '');
     const outside = rs.filter((r) => r.kind === 'attack' && !r.claimed);
